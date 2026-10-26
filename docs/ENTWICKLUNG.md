@@ -102,4 +102,5 @@ Nicht verabschiedet (2./3. Lesung voraussichtlich 9.–13.11.2026, Bundesrat 20.
 
 - EEG 2027 nach Verabschiedung (voraussichtlich November 2026) prüfen.
 - Quelle für historische Viertelstundenpreise zur Nachberechnung (SMARD.de?) und deren Nutzungsbedingungen.
-- Brand-Bilder.
+- Brand-Bilder (danach `ignore: brands` im CI-Job `hacs` entfernen).
+- `categories` im Manifest (Hinweis von hassfest).

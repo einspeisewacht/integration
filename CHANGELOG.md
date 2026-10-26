@@ -1,8 +1,8 @@
 # Changelog
 
-## Unveröffentlicht
+## 0.1.0b1 – 2026-10-26
 
-Erste Vorab-Version (MVP), geplant als `0.1.0b1`.
+Erste Vorab-Version (MVP) zum Testen.
 
 - **Einspeisung vergütet / unvergütet** (kWh) und **Erlös / entgangener Erlös** (€): jedes Zählerdelta wird zeitanteilig auf die Viertelstunden verteilt und mit dem Day-Ahead-Preis genau dieser Viertelstunde bewertet. Ein Preis von genau 0 ist nicht negativ.
 - **Viertelstunden ohne Vergütung** im laufenden Jahr (§ 51a EEG; zählt auch ohne Einspeisung).
