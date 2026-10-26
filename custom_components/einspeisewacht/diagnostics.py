@@ -61,5 +61,14 @@ async def async_get_config_entry_diagnostics(
                 str(y): c for y, c in engine.quarters.shadow_counts.items()
             },
             "skipped_without_price": engine.quarters.skipped_without_price,
+            "started": engine.quarters.started.isoformat()
+            if engine.quarters.started
+            else None,
+        },
+        "backfill": {
+            "enabled": runtime.backfill_enabled,
+            "done": engine.quarters.backfilled,
+            "error": runtime.backfill_error,
+            "missing_prices": runtime.backfill_missing,
         },
     }

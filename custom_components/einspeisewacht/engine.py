@@ -35,6 +35,9 @@ class Engine:
     quarters: QuarterCounter = field(default_factory=QuarterCounter)
     meter_events: Counter[str] = field(default_factory=Counter)
     last_parse: ParsedPrices | None = None
+    # Identifies the rule the quarter-hour counts were made with; counts made
+    # with another rule (after a reconfiguration) are discarded on restore.
+    rule_key: str = ""
 
     @property
     def rule(self) -> Rule:
@@ -77,11 +80,13 @@ class Engine:
             "ledger": self.ledger.as_dict(),
             "quarters": self.quarters.as_dict(),
             "meter_events": dict(self.meter_events),
+            "rule_key": self.rule_key,
         }
 
     def restore(self, data: dict[str, Any]) -> None:
         self.meter.restore(data.get("meter", {}))
         self.prices.restore(data.get("prices", {}))
         self.ledger.restore(data.get("ledger", {}))
-        self.quarters.restore(data.get("quarters", {}))
+        if data.get("rule_key") == self.rule_key:
+            self.quarters.restore(data.get("quarters", {}))
         self.meter_events = Counter(data.get("meter_events", {}))

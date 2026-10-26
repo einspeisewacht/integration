@@ -10,12 +10,13 @@ Einspeisewacht ist eine Home-Assistant-Integration für PV-Anlagen mit fester Ei
 ## Was Einspeisewacht kann
 
 - **Einspeisung vergütet / unvergütet** (kWh) und **Erlös / entgangener Erlös** (€) – für Energie-Dashboard und Langzeitstatistik.
-- **Viertelstunden ohne Vergütung** im laufenden Jahr – Grundlage der Nachholung nach § 51a EEG.
+- **Viertelstunden ohne Vergütung** im laufenden Jahr und die daraus folgende **Nachholung** nach § 51a EEG: Volllast-Viertelstunden und das Datum, bis zu dem die Vergütung dann läuft.
+- **Kalender „Negative Preise“** mit den Zeitfenstern ohne Vergütung – heute und, sobald die Prognose da ist, morgen.
 - **Vergütung aktiv** – Binärsensor für Automationen (Speicher laden, Wallbox, Abregeln).
 - Leitet die **geltende Regel** aus Inbetriebnahme, Leistung und Smart Meter ab – mit manueller Übersteuerung.
 - Bucht an Viertelstundengrenzen exakt: Ein Zählerdelta wird zeitanteilig auf die Viertelstunden verteilt, jede mit ihrem eigenen Preis. Ein Preis von genau 0 gilt nicht als negativ.
 - Erkennt Zähler-Resets und unplausible Sprünge und bucht sie nicht. Der Stand übersteht Neustarts.
-- Rein lokal: liest nur vorhandene Entitäten, keine Cloud.
+- Lokal: liest nur vorhandene Entitäten. Einzige Ausnahme, nur auf Wunsch: einmaliger Abruf früherer Preise von SMARD.de, damit die Nachholung auch die Zeit vor der Einrichtung enthält.
 
 ## Welche Regel gilt (§ 51 EEG)
 
@@ -50,6 +51,6 @@ Greift die Regel für deine Anlage noch nicht (z. B. ohne iMSys), zeigt Einspeis
 
 Mehrere Anlagen oder Zähler: je einen Eintrag anlegen. Ändern: *Einspeisewacht → ⋮ → Neu konfigurieren*.
 
-## Lizenz
+## Lizenz und Quellen
 
-MIT
+MIT. Historische Day-Ahead-Preise (optional): Bundesnetzagentur | [SMARD.de](https://www.smard.de), [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/); Einspeisewacht zählt daraus nur negative Viertelstunden.

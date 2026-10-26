@@ -1,0 +1,6 @@
+{
+  "epex_spot_2026-10-25.json": "Home Assistant sensor.epex_spot_data_market_price (EPEX Spot, Quelle SMARD.de), aufgenommen 2026-10-26. Zeitumstellung 25.10.2026. Daten: Bundesnetzagentur | SMARD.de, CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/).",
+  "smard_index_quarterhour.json": "https://www.smard.de/app/chart_data/4169/DE-LU/index_quarterhour.json, abgerufen 2026-10-26, unverändert. Bundesnetzagentur | SMARD.de, CC BY 4.0.",
+  "smard_week_2026-10-19.json": "https://www.smard.de/app/chart_data/4169/DE-LU/4169_DE-LU_quarterhour_1792360800000.json (Woche ab 19.10.2026, enthält die Zeitumstellung), abgerufen 2026-10-26, unverändert. Bundesnetzagentur | SMARD.de, CC BY 4.0.",
+  "smard_week_2025-09-29.json": "https://www.smard.de/app/chart_data/4169/DE-LU/4169_DE-LU_quarterhour_1759096800000.json (Woche ab 29.09.2025: bis 30.09. Stundenpreise je viermal, ab 01.10. Viertelstunden), abgerufen 2026-10-26, unverändert. Bundesnetzagentur | SMARD.de, CC BY 4.0."
+}

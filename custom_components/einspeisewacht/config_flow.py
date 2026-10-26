@@ -21,6 +21,7 @@ from homeassistant.helpers.translation import async_get_translations
 from homeassistant.util import dt as dt_util
 
 from .const import (
+    CONF_BACKFILL,
     CONF_COMMISSIONED,
     CONF_FEED_IN_TYPE,
     CONF_METER,
@@ -295,6 +296,7 @@ class EinspeisewachtConfigFlow(ConfigFlow, domain=DOMAIN):
                 self._data[CONF_OVERRIDE_DATE] = (
                     override_date if override == OVERRIDE_FROM_DATE else None
                 )
+                self._data[CONF_BACKFILL] = user_input.get(CONF_BACKFILL, False)
                 return await self._async_finish()
 
         auto = derived_from_config({**self._data, CONF_OVERRIDE: OVERRIDE_AUTO})
@@ -304,6 +306,7 @@ class EinspeisewachtConfigFlow(ConfigFlow, domain=DOMAIN):
                     [OVERRIDE_AUTO, OVERRIDE_FROM_DATE, OVERRIDE_NEVER], CONF_OVERRIDE
                 ),
                 vol.Optional(CONF_OVERRIDE_DATE): selector.DateSelector(),
+                vol.Required(CONF_BACKFILL, default=False): selector.BooleanSelector(),
             }
         )
         return self.async_show_form(

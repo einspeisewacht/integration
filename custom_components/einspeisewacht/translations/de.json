@@ -80,10 +80,12 @@
         "description": "Abgeleitete Regel: **{rule}**\nGilt ab: {applies_from}\nVergütung: {rate} ct/kWh\n\n{note}\n\nRechnet dein Netzbetreiber anders ab, kannst du die Regel hier übersteuern.",
         "data": {
           "override": "Regel",
-          "override_date": "Jede negative Viertelstunde ab"
+          "override_date": "Jede negative Viertelstunde ab",
+          "backfill_smard": "Frühere negative Viertelstunden von SMARD.de nachzählen"
         },
         "data_description": {
-          "override_date": "Nur für „Ab einem Datum“."
+          "override_date": "Nur für „Ab einem Datum“.",
+          "backfill_smard": "Einmalig, über das Internet: Day-Ahead-Preise seit der Inbetriebnahme von SMARD.de (Bundesnetzagentur, CC BY 4.0), damit die Nachholung (§ 51a EEG) auch die Zeit vor der Einrichtung erfasst. Ohne diese Option beginnt die Zählung jetzt."
         }
       }
     },
@@ -190,7 +192,25 @@
           "manual_from_date": "Manuell: ab einem Datum",
           "manual_never": "Manuell: nicht betroffen"
         }
+      },
+      "catch_up": {
+        "name": "Nachholung",
+        "unit_of_measurement": "Volllast-Viertelstunden"
+      },
+      "remunerated_until": {
+        "name": "Vergütung bis"
       }
+    },
+    "calendar": {
+      "unpaid_windows": {
+        "name": "Negative Preise"
+      }
+    }
+  },
+  "issues": {
+    "smard_failed": {
+      "title": "SMARD.de nicht erreichbar ({name})",
+      "description": "Einspeisewacht konnte frühere Day-Ahead-Preise nicht von SMARD.de laden, um die Viertelstunden vor der Einrichtung nachzuzählen. Die laufende Zählung und Buchung sind nicht betroffen. Beim nächsten Start von Home Assistant wird es erneut versucht.\n\nFehler: {error}"
     }
   }
 }

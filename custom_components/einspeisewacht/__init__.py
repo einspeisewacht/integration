@@ -8,7 +8,11 @@ from homeassistant.core import Event, HomeAssistant
 
 from .runtime import PlantRuntime
 
-PLATFORMS: list[Platform] = [Platform.BINARY_SENSOR, Platform.SENSOR]
+PLATFORMS: list[Platform] = [
+    Platform.BINARY_SENSOR,
+    Platform.CALENDAR,
+    Platform.SENSOR,
+]
 
 type EinspeisewachtConfigEntry = ConfigEntry[PlantRuntime]
 
@@ -29,6 +33,10 @@ async def async_setup_entry(
         hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, _async_on_stop)
     )
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    # Opt-in history from SMARD.de; never delays setup.
+    entry.async_create_background_task(
+        hass, runtime.async_backfill(), f"einspeisewacht backfill {entry.entry_id}"
+    )
     return True
 
 

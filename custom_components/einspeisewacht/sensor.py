@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
+from datetime import date
 from typing import Any
 
 from homeassistant.components.sensor import (
@@ -18,6 +19,7 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.util import dt as dt_util
 
 from . import EinspeisewachtConfigEntry
+from .catchup import Extension, extension
 from .const import BERLIN
 from .entity import PlantEntity
 from .regime import Regime, shadow_needed
@@ -75,6 +77,10 @@ async def async_setup_entry(
         )
     )
     entities.append(ActiveRuleSensor(entry, "active_rule"))
+    if runtime.derived.applies:
+        # § 51a: only where negative prices can cost remuneration.
+        entities.append(CatchUpSensor(entry, "catch_up"))
+        entities.append(RemuneratedUntilSensor(entry, "remunerated_until"))
     if shadow_needed(runtime.derived, dt_util.now(BERLIN).date()):
         entities.extend(TotalSensor(entry, d) for d in SHADOW_TOTALS)
         entities.append(
@@ -145,3 +151,46 @@ class ActiveRuleSensor(PlantEntity, SensorEntity):
             "applies_from": applies_from.isoformat() if applies_from else None,
             "rate_ct_per_kwh": round(self.runtime.rate_ct, 4),
         }
+
+
+def _extension(runtime: PlantRuntime) -> Extension:
+    return extension(runtime.commissioned, runtime.engine.quarters.counts)
+
+
+class CatchUpSensor(PlantEntity, SensorEntity):
+    """Full-load quarter hours added after the regular period (§ 51a Abs. 2)."""
+
+    @property
+    def native_value(self) -> int:
+        return _extension(self.runtime).full_load_quarter_hours
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        result = _extension(self.runtime)
+        quarters = self.runtime.engine.quarters
+        counting_since = (
+            self.runtime.commissioned.isoformat()
+            if quarters.backfilled
+            else quarters.started.isoformat()
+            if quarters.started
+            else None
+        )
+        return {
+            "negative_quarter_hours": result.negative_quarter_hours,
+            "regular_end": result.regular_end.isoformat(),
+            "months": [
+                {"month": month.strftime("%Y-%m"), "quarter_hours": used}
+                for month, used in result.months
+            ],
+            "counting_since": counting_since,
+        }
+
+
+class RemuneratedUntilSensor(PlantEntity, SensorEntity):
+    """Last day of remuneration including the extension."""
+
+    _attr_device_class = SensorDeviceClass.DATE
+
+    @property
+    def native_value(self) -> date:
+        return _extension(self.runtime).extended_end

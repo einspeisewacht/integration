@@ -7,6 +7,9 @@ from zoneinfo import ZoneInfo
 
 DOMAIN: Final = "einspeisewacht"
 VERSION: Final = "0.1.0b2"
+USER_AGENT: Final = (
+    f"Einspeisewacht/{VERSION} (+https://github.com/einspeisewacht/integration)"
+)
 
 # Calendar years (rule start, § 51a counting) follow German local time.
 BERLIN: Final = ZoneInfo("Europe/Berlin")
@@ -23,6 +26,9 @@ CONF_METER: Final = "meter_entity"
 CONF_PRICE: Final = "price_entity"
 CONF_OVERRIDE: Final = "override"
 CONF_OVERRIDE_DATE: Final = "override_date"
+CONF_BACKFILL: Final = (
+    "backfill_smard"  # opt-in: count earlier quarter hours from SMARD.de
+)
 
 RATE_SINGLE: Final = "single"
 RATE_TIERED: Final = "tiered"

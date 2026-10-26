@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from collections.abc import Callable, Mapping
 from datetime import date, datetime
 from typing import Any
 
+import aiohttp
 from homeassistant.const import (
     ATTR_UNIT_OF_MEASUREMENT,
     STATE_UNAVAILABLE,
@@ -20,6 +22,8 @@ from homeassistant.core import (
     State,
     callback,
 )
+from homeassistant.helpers import issue_registry as ir
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.event import (
     async_track_state_change_event,
     async_track_utc_time_change,
@@ -28,9 +32,12 @@ from homeassistant.helpers.storage import Store
 from homeassistant.util import dt as dt_util
 
 from .const import (
+    BERLIN,
+    CONF_BACKFILL,
     CONF_COMMISSIONED,
     CONF_FEED_IN_TYPE,
     CONF_METER,
+    CONF_NAME,
     CONF_OVERRIDE,
     CONF_OVERRIDE_DATE,
     CONF_POWER,
@@ -42,13 +49,16 @@ from .const import (
     FEED_IN_FULL,
     OVERRIDE_FROM_DATE,
     OVERRIDE_NEVER,
+    USER_AGENT,
 )
 from .engine import Engine
 from .ledger import FeedInValuation
 from .meter import MeterTracker, to_kwh
 from .prices import ParsedPrices, parse_interval_prices
-from .regime import Derived, Plant, derive, manual, rule_for
+from .quarters import count_range
+from .regime import Derived, Plant, derive, local_midnight, manual, rule_for
 from .rules import NegativeQuarterHour
+from .smard import INDEX_URL, parse_index, parse_week, week_url, weeks_covering
 from .tariff import blended_rate
 from .timeslots import slot_start
 
@@ -61,6 +71,16 @@ SAVE_DELAY = 60
 # Price sensors without a forecast attribute: the state is the current price.
 # Only its sign matters for the rule, so the unit is not converted.
 FORECAST_ATTRIBUTE = "data"
+
+# SMARD.de: one request per week of history; be gentle with the website.
+SMARD_PAUSE = 0.5
+SMARD_TIMEOUT = aiohttp.ClientTimeout(total=30)
+
+
+def rule_key(derived: Derived) -> str:
+    """Identifies a rule; counts made with another rule are discarded."""
+    applies_from = derived.applies_from.isoformat() if derived.applies_from else ""
+    return f"{derived.regime.value}:{applies_from}"
 
 
 def plant_from_config(config: Mapping[str, Any]) -> Plant:
@@ -110,8 +130,12 @@ class PlantRuntime:
         self, hass: HomeAssistant, entry_id: str, config: Mapping[str, Any]
     ) -> None:
         self.hass = hass
+        self.entry_id = entry_id
+        self.name: str = config[CONF_NAME]
         self.meter_entity: str = config[CONF_METER]
         self.price_entity: str = config[CONF_PRICE]
+        self.commissioned = date.fromisoformat(config[CONF_COMMISSIONED])
+        self.backfill_enabled = bool(config.get(CONF_BACKFILL))
         self.derived = derived_from_config(config)
         self.rate_ct = rate_from_config(config)
         self.engine = Engine(
@@ -121,8 +145,11 @@ class PlantRuntime:
                 rule=rule_for(self.derived),
                 shadow_rule=NegativeQuarterHour(),
             ),
+            rule_key=rule_key(self.derived),
         )
         self.unknown_unit: str | None = None
+        self.backfill_error: str | None = None
+        self.backfill_missing: int | None = None
         self._store: Store[dict[str, Any]] = Store(
             hass, STORAGE_VERSION, f"{DOMAIN}.{entry_id}"
         )
@@ -157,6 +184,78 @@ class PlantRuntime:
 
     async def async_remove(self) -> None:
         await self._store.async_remove()
+        ir.async_delete_issue(self.hass, DOMAIN, self.issue_id)
+
+    @property
+    def issue_id(self) -> str:
+        return f"smard_failed_{self.entry_id}"
+
+    async def async_backfill(self) -> None:
+        """Count quarter hours from commissioning until live counting began.
+
+        Opt-in, once per rule. Failures are reported as a repair issue and
+        retried on the next start; they never affect live booking.
+        """
+        quarters = self.engine.quarters
+        if not self.backfill_enabled or quarters.backfilled or quarters.started is None:
+            return
+        start = local_midnight(self.commissioned)
+        end = quarters.started
+        try:
+            prices = await self._async_fetch_smard(start, end) if start < end else {}
+        except (
+            aiohttp.ClientError,
+            TimeoutError,
+            KeyError,
+            TypeError,
+            ValueError,
+        ) as err:
+            self.backfill_error = f"{type(err).__name__}: {err}"
+            _LOGGER.warning(
+                "%s: SMARD.de backfill failed: %s", self.name, self.backfill_error
+            )
+            ir.async_create_issue(
+                self.hass,
+                DOMAIN,
+                self.issue_id,
+                is_fixable=False,
+                severity=ir.IssueSeverity.WARNING,
+                translation_key="smard_failed",
+                translation_placeholders={
+                    "name": self.name,
+                    "error": self.backfill_error,
+                },
+            )
+            return
+        result = count_range(
+            prices, start, end, self.engine.rule, self.engine.shadow_rule, BERLIN
+        )
+        self.backfill_error = None
+        self.backfill_missing = result.missing_prices
+        quarters.add_backfill(result)
+        ir.async_delete_issue(self.hass, DOMAIN, self.issue_id)
+        self._changed()
+
+    async def _async_fetch_smard(
+        self, start: datetime, end: datetime
+    ) -> dict[datetime, float]:
+        session = async_get_clientsession(self.hass)
+        index = parse_index(await self._async_get_json(session, INDEX_URL))
+        prices: dict[datetime, float] = {}
+        for week in weeks_covering(index, start, end):
+            prices.update(
+                parse_week(await self._async_get_json(session, week_url(week)))
+            )
+            await asyncio.sleep(SMARD_PAUSE)
+        return prices
+
+    @staticmethod
+    async def _async_get_json(session: aiohttp.ClientSession, url: str) -> Any:
+        async with session.get(
+            url, headers={"User-Agent": USER_AGENT}, timeout=SMARD_TIMEOUT
+        ) as response:
+            response.raise_for_status()
+            return await response.json(content_type=None)
 
     @callback
     def add_listener(self, listener: Callable[[], None]) -> CALLBACK_TYPE:

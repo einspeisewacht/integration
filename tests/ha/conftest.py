@@ -12,6 +12,7 @@ from typing import Any
 import pytest
 
 from custom_components.einspeisewacht.const import (
+    CONF_BACKFILL,
     CONF_COMMISSIONED,
     CONF_FEED_IN_TYPE,
     CONF_METER,
@@ -63,6 +64,7 @@ def entry_data(**changes: Any) -> dict[str, Any]:
         CONF_PRICE: PRICE,
         CONF_OVERRIDE: OVERRIDE_AUTO,
         CONF_OVERRIDE_DATE: None,
+        CONF_BACKFILL: False,
         **changes,
     }
 

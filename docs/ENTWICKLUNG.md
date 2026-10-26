@@ -52,7 +52,7 @@ Nur für Anlagen, deren Wert bei negativen Preisen bisher **gar nicht** sinkt. E
 ### Nachholung (§ 51a)
 
 - Gilt für Anlagen unter dem geltenden § 51 (ab 25.02.2025 oder gewechselt). Gezählt werden die Viertelstunden mit Nullstellung im Inbetriebnahmejahr und den 19 Folgejahren – **unabhängig von der eigenen Einspeisung** (auch nachts), aber nicht vor Greifen der iMSys-Ausnahme.
-- PV (§ 51a Abs. 2): Anzahl × 0,5, auf volle Viertelstunde aufgerundet = Volllastviertelstunden. Verbrauch gegen Monatskontingente ab dem 1.1. nach Ende des regulären Zeitraums (§ 25 Abs. 1 Satz 2: 31.12. des 20. Zahlungsjahres); Verlängerung bis zum Ende des Monats, in den die letzte Volllastviertelstunde fällt (Satz 6). Untermonatliches Ende: anteilig (Satz 4).
+- PV (§ 51a Abs. 2): Anzahl × 0,5, auf volle Viertelstunde aufgerundet = Volllastviertelstunden. Verbrauch gegen Monatskontingente ab dem 1.1. nach Ende des regulären Zeitraums (§ 25 Abs. 1 Satz 2: 31.12. des 20. Zahlungsjahres; das Inbetriebnahmejahr ist ein Rumpfjahr davor – Inbetriebnahme 2025 → Ende 31.12.2045, gezählt wird 2025–2044); Verlängerung bis zum Ende des Monats, in den die letzte Volllastviertelstunde fällt (Satz 6). Untermonatliches Ende: anteilig (Satz 4).
 - Monatskontingente (§ 51a Abs. 2 Satz 3): Jan 87, Feb 189, Mär 340, Apr 442, Mai 490, Jun 508, Jul 498, Aug 453, Sep 371, Okt 231, Nov 118, Dez 73 (Summe 3.800).
 - Beispiel: 600 negative Viertelstunden → 300 Volllastviertelstunden → Jan + Feb = 276, Rest 24 im März → Verlängerung bis 31. März.
 
@@ -77,6 +77,15 @@ Nicht verabschiedet (2./3. Lesung voraussichtlich 9.–13.11.2026, Bundesrat 20.
 - **Der Recorder speichert das Attribut `data` nicht** (nur `price_per_kwh` usw.). Vergangene Prognosen sind also nicht aus der Historie abrufbar; Preise vergangener Viertelstunden aber aus dem Zustandsverlauf (Schrittfunktion, ~10 Tage) bzw. der Langzeitstatistik (`measurement` → nur Stundenmittel!).
 - Fixture: `tests/fixtures/epex_spot_2026-10-25.json` (Attribut wörtlich, 25.10. 00:00–01:00 aus dem Zustandsverlauf ergänzt; alle 138 Viertelstunden gegen den Verlauf geprüft).
 
+### SMARD.de (optional, geprüft 2026-10-26)
+
+- Index: `https://www.smard.de/app/chart_data/4169/DE-LU/index_quarterhour.json` → `{"timestamps": [ms, …]}`, je ein Wochenbeginn (Montag 00:00 Ortszeit), seit Oktober 2018.
+- Woche: `…/4169_DE-LU_quarterhour_<ms>.json` → `{"meta_data": …, "series": [[ms, €/MWh], …]}`; Zeitumstellungswoche 676 Werte. Fehlende Werte wären `null`.
+- **Vor dem 01.10.2025 wiederholt die Viertelstundenreihe jeden Stundenpreis viermal** (Woche 29.09.2025: bis 30.09. stündlich, ab 01.10. echte Viertelstunden). Eine negative Stunde zählt damit als vier Viertelstunden.
+- Der 25.10.2026 stimmt in allen 100 Viertelstunden mit dem EPEX-Spot-Fixture überein.
+- Lizenz: Marktdaten CC BY 4.0, Quellenangabe „Bundesnetzagentur | SMARD.de“ mit Lizenzlink ([Datennutzung](https://www.smard.de/en/datennutzung)). Die `chart_data`-Endpunkte sind **nicht als API dokumentiert** – Risiko: Format oder Pfade können sich ändern.
+- Fixtures: `tests/fixtures/smard_*.json`, Herkunft in `tests/fixtures/_index.json`.
+
 ### Einspeisezähler
 
 - Fronius Smart Meter TS 65A-3 (Plattform `fronius`): Wh, `total_increasing`, ganze Wh. Neuer Zustand nur bei Wertänderung – bei wenig Einspeisung vergehen Minuten zwischen zwei Werten. Ein Delta kann also über eine Viertelstundengrenze reichen und muss anteilig verteilt werden.
@@ -89,6 +98,9 @@ Nicht verabschiedet (2./3. Lesung voraussichtlich 9.–13.11.2026, Bundesrat 20.
 - **Buchung sofort und anteilig** (`ledger.py`): Jedes Zählerdelta wird zeitlinear auf die berührten Viertelstunden verteilt und jedes Teilstück sofort mit dem Preis seiner Viertelstunde gebucht. Keine Wartezeit an der Grenze; spätere Energie für eine Viertelstunde wird mit deren Preis nachgebucht.
 - **Preis fehlt:** Teilstück bis zu 24 h zurückhalten (Preis aus Prognose oder Zustandsverlauf nachholen), danach als vergütet buchen und in der Diagnose zählen.
 - **Zähler:** Rücksprung = Reset (neue Basis, nichts buchen); Sprung über 1,5 × Anlagenleistung × Zeit (+ 2 Wh Rundung) = unplausibel (neue Basis, nichts buchen, zählen).
+- **Viertelstundenzählung je Regel:** Die Zählung (§ 51a) gehört zu der Regel, mit der gezählt wurde (`rule_key`). Ändert sich die Regel, wird beim Start neu gezählt; mit SMARD-Opt-in ab Inbetriebnahme. Energie- und Erlössummen bleiben unverändert (frühere Zählerstände sind nicht mehr verfügbar).
+- **SMARD-Abruf (Opt-in):** einmal je Regel, im Hintergrund nach dem Setup, je Woche eine Anfrage mit 0,5 s Pause. Fehler → Hinweis unter *Reparaturen*, neuer Versuch beim nächsten Start.
+- Kalender zeigt negative Preisfenster aus der gespeicherten Preistabelle (~15 Tage zurück, Prognose voraus); Termintexte deutsch/englisch nach Instanzsprache (Kalendertermine haben keine Übersetzungsschlüssel).
 - Freiwilliger Wechsel (§ 100 Abs. 47, +0,6 ct) **vorerst nicht** anbieten – erst nach EU-Genehmigung bzw. EEG 2027 (§ 102).
 - Altregeln: alle Stunden-Regime 2016–2025 in Stufe 2 (gemeinsame Block-Logik; die Regel-Schnittstelle braucht dafür Zugriff auf die Preise benachbarter Viertelstunden).
 - Greift eine Regel rechtlich noch nicht, bleibt „unvergütet“ 0; ein Schattenwert zeigt, was bei greifender Regel entgangen wäre. Manuelle Übersteuerung im Config Flow.

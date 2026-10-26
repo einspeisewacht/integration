@@ -28,7 +28,7 @@ START = datetime(2026, 10, 25, 3, 0, 30, tzinfo=UTC)
 
 def entity_id(hass: HomeAssistant, entry: MockConfigEntry, key: str) -> str | None:
     registry = er.async_get(hass)
-    for platform in ("sensor", "binary_sensor"):
+    for platform in ("sensor", "binary_sensor", "calendar"):
         if found := registry.async_get_entity_id(
             platform, DOMAIN, f"{entry.entry_id}_{key}"
         ):
