@@ -49,10 +49,15 @@ async def test_report(hass: HomeAssistant, freezer: FrozenDateTimeFactory) -> No
     assert result["energy_paid_kwh"] == pytest.approx(23.5)
     assert result["negative_quarter_hours"] == 6
     assert [m["month"] for m in result["months"]] == ["2026-10"]
-    # Before setup (00:00-04:00 CET) prices are unknown without the SMARD option.
-    assert result["gaps"]["quarter_hours_without_price"] == 20
     assert datetime.fromisoformat(result["start"]) == DAY_START
     assert datetime.fromisoformat(result["end"]) == DAY_END
+    # Before setup (00:00 CEST - 04:00 CET) prices are unknown without the SMARD option.
+    quarters = entry.runtime_data.engine.quarters
+    assert result["gaps"]["quarter_hours_without_price"] == 20, (
+        result["gaps"],
+        quarters.started,
+        quarters.next_slot,
+    )
 
 
 @pytest.mark.freeze_time(START)
