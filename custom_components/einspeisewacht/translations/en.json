@@ -1,0 +1,190 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "PV plant",
+        "description": "Einspeisewacht tracks feed-in that is not remunerated because of negative day-ahead prices (§ 51 EEG). The values are a guide only – your grid operator's statement is what counts.",
+        "data": {
+          "name": "Name",
+          "commissioned": "Commissioning date",
+          "power_kw": "Installed capacity",
+          "smart_meter": "Smart metering system (iMSys) installed",
+          "smart_meter_date": "iMSys installed on"
+        },
+        "data_description": {
+          "name": "For example “Roof south”. Used in entity names.",
+          "commissioned": "Determines which version of the law applies.",
+          "power_kw": "Module capacity in kWp. Plants on the same building commissioned within 12 months count together (§ 24 EEG).",
+          "smart_meter": "A smart meter gateway from the metering point operator. A digital meter without gateway (modern metering device) does not count.",
+          "smart_meter_date": "Plants below 100 kW lose remuneration only from 1 January of the year after the installation."
+        }
+      },
+      "reconfigure": {
+        "title": "PV plant",
+        "description": "Einspeisewacht tracks feed-in that is not remunerated because of negative day-ahead prices (§ 51 EEG). The values are a guide only – your grid operator's statement is what counts.",
+        "data": {
+          "name": "Name",
+          "commissioned": "Commissioning date",
+          "power_kw": "Installed capacity",
+          "smart_meter": "Smart metering system (iMSys) installed",
+          "smart_meter_date": "iMSys installed on"
+        },
+        "data_description": {
+          "name": "For example “Roof south”. Used in entity names.",
+          "commissioned": "Determines which version of the law applies.",
+          "power_kw": "Module capacity in kWp. Plants on the same building commissioned within 12 months count together (§ 24 EEG).",
+          "smart_meter": "A smart meter gateway from the metering point operator. A digital meter without gateway (modern metering device) does not count.",
+          "smart_meter_date": "Plants below 100 kW lose remuneration only from 1 January of the year after the installation."
+        }
+      },
+      "rate": {
+        "title": "Remuneration",
+        "description": "Take the rate from your grid operator's statement (after the deduction of 0.4 ct/kWh).",
+        "data": {
+          "rate_mode": "Rate",
+          "feed_in_type": "Feed-in type",
+          "rate": "Remuneration rate"
+        },
+        "data_description": {
+          "rate_mode": "Plants above 10 kWp are paid a capacity-weighted mix of several rates (§ 23c EEG).",
+          "feed_in_type": "Only relevant for tiered rates: the capacity bands differ for full feed-in.",
+          "rate": "Only for a single rate."
+        }
+      },
+      "tier_rates": {
+        "title": "Rates per capacity band",
+        "description": "Enter the rate of each band. Einspeisewacht weights them by the share of capacity in each band.",
+        "data": {
+          "band_0_10": "Up to 10 kW",
+          "band_10_40": "Above 10 up to 40 kW",
+          "band_40_100": "Above 40 up to 100 kW",
+          "band_40_1000": "Above 40 kW",
+          "band_100_400": "Above 100 up to 400 kW",
+          "band_400_1000": "Above 400 kW"
+        }
+      },
+      "sources": {
+        "title": "Data sources",
+        "description": "Einspeisewacht only reads these entities.",
+        "data": {
+          "meter_entity": "Grid feed-in meter",
+          "price_entity": "Day-ahead price"
+        },
+        "data_description": {
+          "meter_entity": "Energy exported to the grid (Wh, kWh or MWh, cumulative). Best: the meter at the grid connection point.",
+          "price_entity": "A sensor with the day-ahead price forecast per quarter hour, e.g. from the EPEX Spot integration."
+        }
+      },
+      "summary": {
+        "title": "Rule",
+        "description": "Derived rule: **{rule}**\nApplies from: {applies_from}\nRemuneration: {rate} ct/kWh\n\nIf your grid operator settles differently, override the rule here.",
+        "data": {
+          "override": "Rule",
+          "override_date": "Every negative quarter hour from"
+        },
+        "data_description": {
+          "override_date": "Only for “From a date”."
+        }
+      }
+    },
+    "error": {
+      "name_required": "Please enter a name.",
+      "power_invalid": "The capacity must be greater than 0.",
+      "smart_meter_date_required": "Please enter when the iMSys was installed.",
+      "rate_required": "Please enter the remuneration rate.",
+      "meter_in_use": "This meter is already used by another plant.",
+      "entity_missing": "The entity does not exist or has no state yet.",
+      "meter_unit": "The meter must report Wh, kWh or MWh.",
+      "meter_state_class": "The meter must be cumulative (state class total or total_increasing).",
+      "price_invalid": "No price found: the sensor has neither a forecast attribute `data` nor a numeric state.",
+      "override_date_required": "Please enter a date."
+    },
+    "abort": {
+      "already_configured": "This meter is already set up.",
+      "reconfigure_successful": "The plant was changed."
+    }
+  },
+  "selector": {
+    "rate_mode": {
+      "options": {
+        "single": "Single rate",
+        "tiered": "Tiered by capacity band"
+      }
+    },
+    "feed_in_type": {
+      "options": {
+        "partial": "Partial feed-in (surplus)",
+        "full": "Full feed-in"
+      }
+    },
+    "override": {
+      "options": {
+        "auto": "Derived rule",
+        "from_date": "Every negative quarter hour from a date",
+        "never": "Not affected"
+      }
+    },
+    "regime": {
+      "options": {
+        "quarter_hour": "No remuneration in every quarter hour with a negative price",
+        "waiting_smart_meter": "Not affected until 1 January after an iMSys is installed",
+        "below_2_kw": "Not affected (below 2 kW)",
+        "block_2023": "Consecutive negative hours, plants from 400 kW (not supported yet)",
+        "block_2021": "4 consecutive negative hours, plants from 500 kW (not supported yet)",
+        "block_2016": "6 consecutive negative hours, plants from 500 kW (not supported yet)",
+        "not_affected": "Not affected",
+        "manual_from_date": "Every negative quarter hour from a date (manual)",
+        "manual_never": "Not affected (manual)"
+      }
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "remunerated": {
+        "name": "Remunerated"
+      }
+    },
+    "sensor": {
+      "energy_paid": {
+        "name": "Feed-in remunerated"
+      },
+      "energy_unpaid": {
+        "name": "Feed-in not remunerated"
+      },
+      "revenue": {
+        "name": "Revenue"
+      },
+      "revenue_lost": {
+        "name": "Lost revenue"
+      },
+      "negative_quarter_hours": {
+        "name": "Quarter hours without remuneration",
+        "unit_of_measurement": "quarter hours"
+      },
+      "shadow_energy_unpaid": {
+        "name": "Not remunerated if the rule applied"
+      },
+      "shadow_revenue_lost": {
+        "name": "Lost revenue if the rule applied"
+      },
+      "shadow_negative_quarter_hours": {
+        "name": "Quarter hours without remuneration if the rule applied",
+        "unit_of_measurement": "quarter hours"
+      },
+      "active_rule": {
+        "name": "Rule",
+        "state": {
+          "quarter_hour": "Every negative quarter hour",
+          "waiting_smart_meter": "Waiting for iMSys",
+          "below_2_kw": "Below 2 kW",
+          "block_2023": "Hour blocks from 400 kW",
+          "block_2021": "Hour blocks from 500 kW (4 h)",
+          "block_2016": "Hour blocks from 500 kW (6 h)",
+          "not_affected": "Not affected",
+          "manual_from_date": "Manual: from a date",
+          "manual_never": "Manual: not affected"
+        }
+      }
+    }
+  }
+}

@@ -16,7 +16,7 @@ Home-Assistant-Custom-Integration (HACS), Domain `einspeisewacht`. Berechnet fü
 - **Rechtsregeln als austauschbare Bausteine** je Inbetriebnahme-Zeitraum, jede mit Paragraphen-Verweis im Code. „Negativ“ heißt `< 0`; exakt 0 ist vergütet.
 - Intern UTC, Raster 15 Minuten (Umstellungstage: 92 bzw. 100 Viertelstunden).
 - Greift eine Regel rechtlich noch nicht (z. B. kein iMSys), bleibt „unvergütet“ bei 0; ein Schattenwert zeigt, was entgangen wäre.
-- Lizenz MIT. Repo (geplant, noch nicht angelegt): `github.com/einspeisewacht/integration`. `codeowners`: `@n42net`.
+- Lizenz MIT. Repo: `github.com/einspeisewacht/integration` (öffentlich seit 2026-10-26). `codeowners`: `@n42net`.
 
 ## Arbeitsregeln
 

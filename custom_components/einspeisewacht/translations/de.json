@@ -1,0 +1,190 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "PV-Anlage",
+        "description": "Einspeisewacht erfasst Einspeisung, die wegen negativer Day-Ahead-Preise nicht vergütet wird (§ 51 EEG). Die Werte sind eine Orientierung – maßgeblich ist die Abrechnung deines Netzbetreibers.",
+        "data": {
+          "name": "Name",
+          "commissioned": "Inbetriebnahme",
+          "power_kw": "Installierte Leistung",
+          "smart_meter": "Intelligentes Messsystem (iMSys) eingebaut",
+          "smart_meter_date": "iMSys eingebaut am"
+        },
+        "data_description": {
+          "name": "Zum Beispiel „Dach Süd“. Wird in den Entitätsnamen verwendet.",
+          "commissioned": "Bestimmt, welche Fassung des Gesetzes gilt.",
+          "power_kw": "Modulleistung in kWp. Anlagen auf demselben Gebäude, die innerhalb von 12 Monaten in Betrieb gingen, zählen zusammen (§ 24 EEG).",
+          "smart_meter": "Ein Smart Meter Gateway des Messstellenbetreibers. Ein digitaler Zähler ohne Gateway (moderne Messeinrichtung) zählt nicht.",
+          "smart_meter_date": "Anlagen unter 100 kW verlieren die Vergütung erst ab dem 1. Januar des Jahres nach dem Einbau."
+        }
+      },
+      "reconfigure": {
+        "title": "PV-Anlage",
+        "description": "Einspeisewacht erfasst Einspeisung, die wegen negativer Day-Ahead-Preise nicht vergütet wird (§ 51 EEG). Die Werte sind eine Orientierung – maßgeblich ist die Abrechnung deines Netzbetreibers.",
+        "data": {
+          "name": "Name",
+          "commissioned": "Inbetriebnahme",
+          "power_kw": "Installierte Leistung",
+          "smart_meter": "Intelligentes Messsystem (iMSys) eingebaut",
+          "smart_meter_date": "iMSys eingebaut am"
+        },
+        "data_description": {
+          "name": "Zum Beispiel „Dach Süd“. Wird in den Entitätsnamen verwendet.",
+          "commissioned": "Bestimmt, welche Fassung des Gesetzes gilt.",
+          "power_kw": "Modulleistung in kWp. Anlagen auf demselben Gebäude, die innerhalb von 12 Monaten in Betrieb gingen, zählen zusammen (§ 24 EEG).",
+          "smart_meter": "Ein Smart Meter Gateway des Messstellenbetreibers. Ein digitaler Zähler ohne Gateway (moderne Messeinrichtung) zählt nicht.",
+          "smart_meter_date": "Anlagen unter 100 kW verlieren die Vergütung erst ab dem 1. Januar des Jahres nach dem Einbau."
+        }
+      },
+      "rate": {
+        "title": "Vergütung",
+        "description": "Den Satz findest du in der Abrechnung deines Netzbetreibers (nach Abzug von 0,4 ct/kWh).",
+        "data": {
+          "rate_mode": "Vergütungssatz",
+          "feed_in_type": "Einspeiseart",
+          "rate": "Vergütungssatz"
+        },
+        "data_description": {
+          "rate_mode": "Anlagen über 10 kWp erhalten einen nach Leistung gewichteten Mischsatz aus mehreren Sätzen (§ 23c EEG).",
+          "feed_in_type": "Nur bei gestaffelter Vergütung: Bei Volleinspeisung gelten andere Leistungsstufen.",
+          "rate": "Nur bei einem einheitlichen Satz."
+        }
+      },
+      "tier_rates": {
+        "title": "Sätze je Leistungsstufe",
+        "description": "Trage den Satz jeder Stufe ein. Einspeisewacht gewichtet sie nach dem Leistungsanteil in der jeweiligen Stufe.",
+        "data": {
+          "band_0_10": "Bis 10 kW",
+          "band_10_40": "Über 10 bis 40 kW",
+          "band_40_100": "Über 40 bis 100 kW",
+          "band_40_1000": "Über 40 kW",
+          "band_100_400": "Über 100 bis 400 kW",
+          "band_400_1000": "Über 400 kW"
+        }
+      },
+      "sources": {
+        "title": "Datenquellen",
+        "description": "Einspeisewacht liest diese Entitäten nur.",
+        "data": {
+          "meter_entity": "Einspeisezähler",
+          "price_entity": "Day-Ahead-Preis"
+        },
+        "data_description": {
+          "meter_entity": "Ins Netz eingespeiste Energie (Wh, kWh oder MWh, fortlaufend). Am besten der Zähler am Netzanschlusspunkt.",
+          "price_entity": "Ein Sensor mit der Day-Ahead-Preisprognose je Viertelstunde, z. B. aus der Integration EPEX Spot."
+        }
+      },
+      "summary": {
+        "title": "Regel",
+        "description": "Abgeleitete Regel: **{rule}**\nGilt ab: {applies_from}\nVergütung: {rate} ct/kWh\n\nRechnet dein Netzbetreiber anders ab, kannst du die Regel hier übersteuern.",
+        "data": {
+          "override": "Regel",
+          "override_date": "Jede negative Viertelstunde ab"
+        },
+        "data_description": {
+          "override_date": "Nur für „Ab einem Datum“."
+        }
+      }
+    },
+    "error": {
+      "name_required": "Bitte einen Namen eingeben.",
+      "power_invalid": "Die Leistung muss größer als 0 sein.",
+      "smart_meter_date_required": "Bitte angeben, wann das iMSys eingebaut wurde.",
+      "rate_required": "Bitte den Vergütungssatz eingeben.",
+      "meter_in_use": "Dieser Zähler wird schon von einer anderen Anlage verwendet.",
+      "entity_missing": "Die Entität existiert nicht oder hat noch keinen Zustand.",
+      "meter_unit": "Der Zähler muss Wh, kWh oder MWh liefern.",
+      "meter_state_class": "Der Zähler muss fortlaufend zählen (state_class total oder total_increasing).",
+      "price_invalid": "Kein Preis gefunden: Der Sensor hat weder ein Prognose-Attribut `data` noch einen Zahlenwert.",
+      "override_date_required": "Bitte ein Datum eingeben."
+    },
+    "abort": {
+      "already_configured": "Dieser Zähler ist bereits eingerichtet.",
+      "reconfigure_successful": "Die Anlage wurde geändert."
+    }
+  },
+  "selector": {
+    "rate_mode": {
+      "options": {
+        "single": "Einheitlicher Satz",
+        "tiered": "Gestaffelt nach Leistungsstufen"
+      }
+    },
+    "feed_in_type": {
+      "options": {
+        "partial": "Teileinspeisung (Überschuss)",
+        "full": "Volleinspeisung"
+      }
+    },
+    "override": {
+      "options": {
+        "auto": "Abgeleitete Regel",
+        "from_date": "Jede negative Viertelstunde ab einem Datum",
+        "never": "Nicht betroffen"
+      }
+    },
+    "regime": {
+      "options": {
+        "quarter_hour": "Keine Vergütung in jeder Viertelstunde mit negativem Preis",
+        "waiting_smart_meter": "Nicht betroffen bis zum 1. Januar nach Einbau eines iMSys",
+        "below_2_kw": "Nicht betroffen (unter 2 kW)",
+        "block_2023": "Zusammenhängend negative Stunden, Anlagen ab 400 kW (noch nicht unterstützt)",
+        "block_2021": "4 zusammenhängend negative Stunden, Anlagen ab 500 kW (noch nicht unterstützt)",
+        "block_2016": "6 zusammenhängend negative Stunden, Anlagen ab 500 kW (noch nicht unterstützt)",
+        "not_affected": "Nicht betroffen",
+        "manual_from_date": "Jede negative Viertelstunde ab einem Datum (manuell)",
+        "manual_never": "Nicht betroffen (manuell)"
+      }
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "remunerated": {
+        "name": "Vergütung aktiv"
+      }
+    },
+    "sensor": {
+      "energy_paid": {
+        "name": "Einspeisung vergütet"
+      },
+      "energy_unpaid": {
+        "name": "Einspeisung unvergütet"
+      },
+      "revenue": {
+        "name": "Erlös"
+      },
+      "revenue_lost": {
+        "name": "Entgangener Erlös"
+      },
+      "negative_quarter_hours": {
+        "name": "Viertelstunden ohne Vergütung",
+        "unit_of_measurement": "Viertelstunden"
+      },
+      "shadow_energy_unpaid": {
+        "name": "Unvergütet bei greifender Regel"
+      },
+      "shadow_revenue_lost": {
+        "name": "Entgangener Erlös bei greifender Regel"
+      },
+      "shadow_negative_quarter_hours": {
+        "name": "Viertelstunden ohne Vergütung bei greifender Regel",
+        "unit_of_measurement": "Viertelstunden"
+      },
+      "active_rule": {
+        "name": "Regel",
+        "state": {
+          "quarter_hour": "Jede negative Viertelstunde",
+          "waiting_smart_meter": "Wartet auf iMSys",
+          "below_2_kw": "Unter 2 kW",
+          "block_2023": "Stundenblöcke ab 400 kW",
+          "block_2021": "Stundenblöcke ab 500 kW (4 h)",
+          "block_2016": "Stundenblöcke ab 500 kW (6 h)",
+          "not_affected": "Nicht betroffen",
+          "manual_from_date": "Manuell: ab einem Datum",
+          "manual_never": "Manuell: nicht betroffen"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "domain": "einspeisewacht",
+  "name": "Einspeisewacht",
+  "codeowners": [
+    "@n42net"
+  ],
+  "config_flow": true,
+  "documentation": "https://github.com/einspeisewacht/integration",
+  "integration_type": "helper",
+  "iot_class": "calculated",
+  "issue_tracker": "https://github.com/einspeisewacht/integration/issues",
+  "requirements": [],
+  "version": "0.1.0b1"
+}

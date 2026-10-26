@@ -96,7 +96,7 @@ Nicht verabschiedet (2./3. Lesung voraussichtlich 9.–13.11.2026, Bundesrat 20.
 
 ## 5. Arbeitsweise
 
-- Repository zunächst nur lokal (`main`/`dev`); GitHub-Organisation `einspeisewacht` (Name am 2026-10-26 frei) und Repo `integration` werden angelegt, wenn das MVP läuft.
+- GitHub: Organisation `einspeisewacht`, Repo `integration` (öffentlich seit 2026-10-26, damit die HA-Tests in CI laufen und HACS installieren kann). Brand-Bilder fehlen noch: der CI-Job `hacs` ignoriert `brands` bis dahin.
 
 ## 6. Offene Fragen
 
