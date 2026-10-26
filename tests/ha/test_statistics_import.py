@@ -40,7 +40,8 @@ def auto_enable_custom_integrations(
 
 
 def hourly(start: datetime, end: datetime) -> list[tuple[datetime, float]]:
-    hours, hour = [], start
+    # Step in UTC: local steps would skip the repeated hour on 25.10.
+    hours, hour = [], start.astimezone(UTC)
     while hour < end:
         hours.append((hour, 1.0))
         hour += timedelta(hours=1)
