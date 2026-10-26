@@ -153,5 +153,5 @@ Ziel Bronze. Für Custom-Integrationen vergibt Home Assistant keine Stufe; die L
 | test-before-setup | ➖ bewusst nicht: Zähler und Preissensor stammen aus anderen Integrationen und sind beim Start oft noch nicht da; Einspeisewacht wartet auf sie, statt das Setup scheitern zu lassen |
 | unique-config-entry | ✅ `unique_id` = Zähler-Entität |
 
-Darüber hinaus erfüllt (Silber/Gold): `action-exceptions`, `config-entry-unloading`, `diagnostics`, `entity-translations`, `exception-translations`, `icon-translations` (Aktion), `reconfiguration-flow`, `repair-issues`, `entity-category`, `entity-device-class`.
+Darüber hinaus erfüllt (Silber/Gold): `action-exceptions`, `config-entry-unloading`, `diagnostics`, `entity-translations`, `exception-translations`, `icon-translations`, `reconfiguration-flow`, `repair-issues`, `entity-category`, `entity-device-class`.
 

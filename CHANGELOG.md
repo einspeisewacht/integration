@@ -1,5 +1,9 @@
 # Changelog
 
+## Unveröffentlicht
+
+- Eigene Symbole für alle Entitäten (z. B. Uhr mit Minus für Viertelstunden ohne Vergütung, Kalender mit Plus für die Nachholung, Geldschein mit Haken/Kreuz für „Vergütung aktiv“).
+
 ## 0.1.0b6 – 2026-10-26
 
 - **Aktion „Statistik nachtragen“** (`einspeisewacht.import_statistics`): füllt die Langzeitstatistik der Summen-Sensoren für die Zeit vor der Einrichtung, ab einem wählbaren Tag – damit Statistik-Karten und Verlauf das ganze Jahr zeigen. Rechnet wie der Bericht, verschiebt die späteren Summen passend und schreibt nur, was noch fehlt. Setzt die SMARD-Option voraus.

@@ -73,3 +73,12 @@ def test_every_regime_translated() -> None:
 def test_reconfigure_step_matches_user_step() -> None:
     steps = load(INTEGRATION / "strings.json")["config"]["step"]
     assert steps["reconfigure"] == steps["user"]
+
+
+def test_every_entity_has_an_icon() -> None:
+    strings = load(INTEGRATION / "strings.json")["entity"]
+    icons = load(INTEGRATION / "icons.json")["entity"]
+    for platform, entities in strings.items():
+        assert set(icons[platform]) == set(entities), platform
+    services = load(INTEGRATION / "strings.json")["services"]
+    assert set(load(INTEGRATION / "icons.json")["services"]) == set(services)

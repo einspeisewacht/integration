@@ -1,4 +1,54 @@
 {
+  "entity": {
+    "binary_sensor": {
+      "remunerated": {
+        "default": "mdi:cash-check",
+        "state": {
+          "off": "mdi:cash-remove"
+        }
+      }
+    },
+    "calendar": {
+      "unpaid_windows": {
+        "default": "mdi:calendar-alert"
+      }
+    },
+    "sensor": {
+      "energy_paid": {
+        "default": "mdi:transmission-tower-export"
+      },
+      "energy_unpaid": {
+        "default": "mdi:transmission-tower-off"
+      },
+      "revenue": {
+        "default": "mdi:cash-plus"
+      },
+      "revenue_lost": {
+        "default": "mdi:cash-minus"
+      },
+      "negative_quarter_hours": {
+        "default": "mdi:timer-minus-outline"
+      },
+      "catch_up": {
+        "default": "mdi:calendar-plus"
+      },
+      "remunerated_until": {
+        "default": "mdi:calendar-end"
+      },
+      "active_rule": {
+        "default": "mdi:scale-balance"
+      },
+      "shadow_energy_unpaid": {
+        "default": "mdi:transmission-tower-off"
+      },
+      "shadow_revenue_lost": {
+        "default": "mdi:cash-minus"
+      },
+      "shadow_negative_quarter_hours": {
+        "default": "mdi:timer-minus-outline"
+      }
+    }
+  },
   "services": {
     "report": {
       "service": "mdi:file-chart-outline"
