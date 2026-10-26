@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 from dataclasses import dataclass
-from datetime import datetime, timedelta, tzinfo
+from datetime import UTC, datetime, timedelta, tzinfo
 from typing import Any
 
 from .quarters import QuarterCounter
@@ -56,6 +56,9 @@ def build_report(
     tz: tzinfo,
 ) -> dict[str, Any]:
     """Sums for [start, end): hourly energy in kWh, rate in EUR/kWh."""
+    # Step in UTC: adding 15 minutes to a local time would skip the repeated
+    # hour at the end of daylight saving time.
+    start, end = start.astimezone(UTC), end.astimezone(UTC)
     total = _Sums()
     months: dict[str, _Sums] = {}
 

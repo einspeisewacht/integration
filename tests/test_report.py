@@ -61,6 +61,24 @@ def test_report_of_dst_day() -> None:
     }
 
 
+def test_report_with_local_period_bounds() -> None:
+    """Bounds in local time (as the action passes them) must not skip the DST hour."""
+    start = datetime(2026, 10, 25, tzinfo=BERLIN)
+    end = datetime(2026, 10, 26, tzinfo=BERLIN)
+    report = build_report(
+        hours(DAY_START, DAY_END),
+        start,
+        end,
+        counter(DAY_START + 5 * HOUR),
+        NegativeQuarterHour(),
+        RATE,
+        BERLIN,
+    )
+    assert report["energy_paid_kwh"] + report["energy_unpaid_kwh"] == pytest.approx(25)
+    assert report["gaps"]["quarter_hours_without_price"] == 20
+    assert report["gaps"]["hours_without_energy"] == 0
+
+
 def test_report_while_rule_does_not_apply() -> None:
     report = build_report(
         hours(DAY_START, DAY_END),
