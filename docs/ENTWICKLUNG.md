@@ -109,12 +109,10 @@ Nicht verabschiedet (2./3. Lesung voraussichtlich 9.–13.11.2026, Bundesrat 20.
 
 ## 5. Arbeitsweise
 
-- GitHub: Organisation `einspeisewacht`, Repo `integration` (öffentlich seit 2026-10-26, damit die HA-Tests in CI laufen und HACS installieren kann). Brand-Bilder fehlen noch: der CI-Job `hacs` ignoriert `brands` bis dahin.
+- GitHub: Organisation `einspeisewacht`, Repo `integration` (öffentlich seit 2026-10-26, damit die HA-Tests in CI laufen und HACS installieren kann). Brand-Bilder seit 2026-10-26 (`docs/BRAND.md`).
 - **Releases, auch Betas, als reguläre GitHub-Releases** (nicht „Pre-release“): Ohne reguläres Release nimmt HACS den letzten Commit und sucht wegen `zip_release` eine ZIP unter `releases/download/<commit>/` – 404 (erlebt mit 0.1.0b2, 2026-10-26).
 
 ## 6. Offene Fragen
 
 - EEG 2027 nach Verabschiedung (voraussichtlich November 2026) prüfen.
 - Quelle für historische Viertelstundenpreise zur Nachberechnung (SMARD.de?) und deren Nutzungsbedingungen.
-- Brand-Bilder (danach `ignore: brands` im CI-Job `hacs` entfernen).
-- `categories` im Manifest (Hinweis von hassfest).

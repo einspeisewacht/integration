@@ -1,3 +1,10 @@
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/github/readme-header-dark@2x.png">
+    <img alt="Einspeisewacht – Jede Viertelstunde im Blick." src="assets/github/readme-header-light@2x.png" width="960">
+  </picture>
+</p>
+
 # Einspeisewacht
 
 **Wie viel deiner PV-Einspeisung wird wegen negativer Strompreise nicht vergütet?**

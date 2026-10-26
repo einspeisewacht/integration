@@ -37,6 +37,12 @@ def test_manifest_key_order() -> None:
     assert keys[2:] == sorted(keys[2:])
 
 
+def test_brand_images_present() -> None:
+    for name in ("icon", "logo", "dark_icon", "dark_logo"):
+        for suffix in (".png", "@2x.png"):
+            assert (INTEGRATION / "brand" / f"{name}{suffix}").is_file()
+
+
 def test_hacs_json() -> None:
     hacs = load(ROOT / "hacs.json")
     assert hacs["name"] == manifest()["name"]

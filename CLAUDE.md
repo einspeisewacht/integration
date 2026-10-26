@@ -6,6 +6,7 @@ Home-Assistant-Custom-Integration (HACS), Domain `einspeisewacht`. Berechnet fü
 
 - **`docs/ENTWICKLUNG.md`** – Umfang, Rechtsregeln mit Quellen, verifizierte Eigenheiten der Datenquellen, Entscheidungen, offene Fragen. Vor größeren Arbeiten lesen.
 - **`CHANGELOG.md`** – Projektstand und Versionsgeschichte. Hier stehen keine Statusberichte.
+- **`docs/BRAND.md`** – Farben, Schrift, Bilddateien, Regenerierung. Brand-Bilder nicht verändern oder neu erzeugen, außer auf ausdrücklichen Wunsch.
 - Konzept (Claude Docs): https://claude.ai/artifact/DLtTLdGpmePqYRZ1BT1GB7 – Stand 2026-10-22, bei Widersprüchen gilt `docs/ENTWICKLUNG.md`.
 
 ## Verbindliche Entscheidungen

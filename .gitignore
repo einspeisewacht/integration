@@ -30,3 +30,6 @@ raw/
 
 # Browser automation logs (Playwright MCP)
 .playwright-mcp/
+
+# Node (nur für tools/brand)
+node_modules/
