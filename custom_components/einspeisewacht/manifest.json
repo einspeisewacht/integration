@@ -5,8 +5,7 @@
     "recorder"
   ],
   "categories": [
-    "energy.solar_batteries",
-    "energy.energy_prices"
+    "energy"
   ],
   "codeowners": [
     "@n42net"
