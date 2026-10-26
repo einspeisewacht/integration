@@ -103,7 +103,7 @@ Nicht verabschiedet (2./3. Lesung voraussichtlich 9.–13.11.2026, Bundesrat 20.
 - **SMARD-Abruf (Opt-in):** einmal je Regel, im Hintergrund nach dem Setup, je Woche eine Anfrage mit 0,5 s Pause. Fehler → Hinweis unter *Reparaturen*, neuer Versuch beim nächsten Start.
 - Kalender zeigt negative Preisfenster aus der gespeicherten Preistabelle (~15 Tage zurück, Prognose voraus); Termintexte deutsch/englisch nach Instanzsprache (Kalendertermine haben keine Übersetzungsschlüssel).
 - Freiwilliger Wechsel (§ 100 Abs. 47, +0,6 ct) **vorerst nicht** anbieten – erst nach EU-Genehmigung bzw. EEG 2027 (§ 102).
-- Altregeln: alle Stunden-Regime 2016–2025 in Stufe 2 (gemeinsame Block-Logik; die Regel-Schnittstelle braucht dafür Zugriff auf die Preise benachbarter Viertelstunden).
+- **Altregeln (Stunden-Regime 2016–2025) werden nicht umgesetzt** (Entscheidung 2026-10-26): Feste Einspeisevergütung gibt es nur bis 100 kW (§ 21 Abs. 1 Nr. 1 EEG: „Strom aus Anlagen mit einer installierten Leistung von bis zu 100 Kilowatt, deren anzulegender Wert gesetzlich bestimmt worden ist“); die Altregeln greifen erst ab 400/500 kW, also nur in der Direktvermarktung, wo die Marktprämie entfällt. Sie bleiben als „nicht unterstützt“ erkannt. Über 100 kW zeigt die Einrichtung einen Hinweis (Erlöse nur grober Anhaltspunkt).
 - Greift eine Regel rechtlich noch nicht, bleibt „unvergütet“ 0; ein Schattenwert zeigt, was bei greifender Regel entgangen wäre. Manuelle Übersteuerung im Config Flow.
 - Zeiträume (Tag/Monat/Jahr) über die Langzeitstatistik, nicht über eigene Sensoren.
 

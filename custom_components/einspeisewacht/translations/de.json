@@ -142,7 +142,8 @@
     },
     "notice": {
       "options": {
-        "future_start": "⚠️ Die Regel greift erst in einem künftigen Jahr. Stimmen Inbetriebnahme und iMSys-Einbaudatum?"
+        "future_start": "⚠️ Die Regel greift erst in einem künftigen Jahr. Stimmen Inbetriebnahme und iMSys-Einbaudatum?",
+        "direct_marketing": "ℹ️ Über 100 kW gibt es keine feste Einspeisevergütung (§ 21 EEG): Die Anlage vermarktet direkt, und negative Preise kosten die Marktprämie, nicht den hier eingetragenen Satz. Energie und Viertelstunden werden richtig gezählt; Erlös und entgangener Erlös sind nur ein grober Anhaltspunkt."
       }
     }
   },

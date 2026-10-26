@@ -49,6 +49,9 @@ from .runtime import derived_from_config, parse_price_state, rate_from_config
 from .tariff import bands
 
 CONF_RATE = "rate"
+# § 21 Abs. 1 Nr. 1 EEG: the fixed feed-in tariff exists up to 100 kW; larger
+# plants sell directly, and negative prices cost them the market premium.
+FEED_IN_TARIFF_LIMIT_KW = 100
 
 
 def band_key(lower: float, upper: float) -> str:
@@ -333,11 +336,15 @@ class EinspeisewachtConfigFlow(ConfigFlow, domain=DOMAIN):
         # A rule that starts in a later year is usually a mistyped year. The
         # warning text lives with the selector translations, the only place a
         # flow can look up a translated string for a placeholder.
-        note = ""
+        notices = []
         if derived.applies_from and derived.applies_from > dt_util.now().date():
-            note = translations.get(
-                f"component.{DOMAIN}.selector.notice.options.future_start", ""
-            )
+            notices.append("future_start")
+        if self._data[CONF_POWER] > FEED_IN_TARIFF_LIMIT_KW:
+            notices.append("direct_marketing")
+        note = "\n\n".join(
+            translations.get(f"component.{DOMAIN}.selector.notice.options.{key}", "")
+            for key in notices
+        )
         return {
             "rule": rule,
             "applies_from": _format_date(derived.applies_from, language),

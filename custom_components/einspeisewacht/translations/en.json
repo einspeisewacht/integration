@@ -142,7 +142,8 @@
     },
     "notice": {
       "options": {
-        "future_start": "⚠️ The rule starts in a future year. Are the commissioning date and the iMSys installation date correct?"
+        "future_start": "⚠️ The rule starts in a future year. Are the commissioning date and the iMSys installation date correct?",
+        "direct_marketing": "ℹ️ Above 100 kW there is no fixed feed-in tariff (§ 21 EEG): the plant sells directly, and negative prices cost it the market premium, not the rate entered here. Energy and quarter hours are counted correctly; revenue and lost revenue are only a rough guide."
       }
     }
   },

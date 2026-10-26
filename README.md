@@ -25,8 +25,10 @@ Einspeisewacht ist eine Home-Assistant-Integration für PV-Anlagen mit fester Ei
 | ab 25.02.2025 | ab 100 kW | jede Viertelstunde mit negativem Preis |
 | ab 25.02.2025 | 2 bis unter 100 kW | wie oben, aber erst ab dem 1. Januar des Jahres **nach** dem Einbau eines intelligenten Messsystems (iMSys) |
 | ab 25.02.2025 | unter 2 kW | nicht betroffen |
-| 2016 bis 24.02.2025 | ab 400 bzw. 500 kW | zusammenhängend negative Stunden – **noch nicht unterstützt** |
+| 2016 bis 24.02.2025 | ab 400 bzw. 500 kW | zusammenhängend negative Stunden – nicht unterstützt (siehe unten) |
 | sonst | | nicht betroffen |
+
+**Einspeisewacht ist für die feste Einspeisevergütung gebaut – die gibt es nur bis 100 kW** (§ 21 EEG). Größere Anlagen vermarkten direkt; bei negativen Preisen entfällt dort die Marktprämie, nicht ein fester Satz. Einspeisewacht zählt für sie Energie und Viertelstunden richtig, Erlös und entgangener Erlös sind dann nur ein grober Anhaltspunkt. Die Stunden-Regeln älterer Großanlagen betreffen deshalb nie eine Anlage mit fester Vergütung und sind nicht umgesetzt.
 
 Greift die Regel für deine Anlage noch nicht (z. B. ohne iMSys), zeigt Einspeisewacht zusätzlich, was dann entgangen wäre. Details und Fundstellen: [docs/ENTWICKLUNG.md](docs/ENTWICKLUNG.md).
 

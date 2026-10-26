@@ -208,3 +208,24 @@ async def test_reconfigure(hass: HomeAssistant) -> None:
     assert result["reason"] == "reconfigure_successful"
     assert entry.title == "Dach Süd"
     assert entry.data[CONF_RATES] == [8.0]
+
+
+async def test_note_above_100_kw(hass: HomeAssistant) -> None:
+    """No fixed feed-in tariff above 100 kW (§ 21 EEG): say so."""
+    result = await configure(hass, await start(hass), {**PLANT, "power_kw": 150})
+    result = await configure(
+        hass, result, {"rate_mode": "single", "feed_in_type": "partial", "rate": 7.94}
+    )
+    result = await configure(
+        hass, result, {"meter_entity": METER, "price_entity": PRICE}
+    )
+    assert result["description_placeholders"]["note"].startswith("ℹ️")
+    # Exactly 100 kW still has the fixed tariff.
+    result = await configure(hass, await start(hass), {**PLANT, "power_kw": 100})
+    result = await configure(
+        hass, result, {"rate_mode": "single", "feed_in_type": "partial", "rate": 7.94}
+    )
+    result = await configure(
+        hass, result, {"meter_entity": METER, "price_entity": PRICE}
+    )
+    assert result["description_placeholders"]["note"] == ""
