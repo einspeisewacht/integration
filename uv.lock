@@ -942,7 +942,7 @@ wheels = [
 
 [[package]]
 name = "einspeisewacht"
-version = "0.1.0b8"
+version = "0.1.0b9"
 source = { virtual = "." }
 
 [package.dev-dependencies]

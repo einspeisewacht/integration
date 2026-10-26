@@ -1,6 +1,6 @@
 # Changelog
 
-## Unveröffentlicht
+## 0.1.0b9 – 2026-10-26
 
 - **Fehler behoben:** Ein Preissensor ohne Prognose-Attribut lieferte nur für die Viertelstunde einen Preis, in der sich sein Wert änderte. Hielt er einen Wert eine Stunde lang, fehlten drei Viertelstunden: negative Stunden wurden zu wenig gezählt, „Vergütung aktiv“ war zeitweise unbekannt, und der Hinweis „Kein Preis“ erschien fälschlich. Jetzt gilt der aktuelle Wert für jede Viertelstunde, bis er sich ändert. EPEX Spot (mit Prognose) war nicht betroffen.
 - README mit Screenshots (Geräteseite, Einrichtung, Kalender, Integration) und einer Beispielantwort des Berichts.
