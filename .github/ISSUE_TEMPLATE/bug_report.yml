@@ -1,0 +1,65 @@
+name: Fehler melden
+description: Etwas funktioniert nicht wie erwartet.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Danke fürs Melden! Mit Diagnose-Datei und Versionen lässt sich das meist schnell eingrenzen.
+        Hinweis: Einspeisewacht ist eine Orientierung – maßgeblich ist die Abrechnung deines Netzbetreibers.
+  - type: textarea
+    id: description
+    attributes:
+      label: Was ist passiert?
+      description: Was hast du erwartet, was ist stattdessen passiert?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Wie lässt es sich nachvollziehen?
+      placeholder: |
+        1. Anlage mit Inbetriebnahme 03/2025, 9 kWp, Smart Meter seit 2025 eingerichtet
+        2. …
+  - type: input
+    id: ha_version
+    attributes:
+      label: Home-Assistant-Version
+      description: Einstellungen → Info
+      placeholder: "2026.10.4"
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Einspeisewacht-Version
+      description: HACS → Einspeisewacht, oder Geräte & Dienste → Einspeisewacht
+      placeholder: "0.1.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Betroffen
+      multiple: true
+      options:
+        - Einspeisung vergütet/unvergütet
+        - Erlös
+        - Regel (Inbetriebnahme, Smart Meter)
+        - Preisquelle
+        - Einrichtung
+        - weiß nicht
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Diagnose-Datei
+      description: >-
+        Geräte & Dienste → Einspeisewacht → ⋮ → „Diagnose herunterladen“ und die Datei
+        hier hineinziehen.
+  - type: textarea
+    id: logs
+    attributes:
+      label: Protokoll
+      description: >-
+        Einstellungen → System → Protokolle, nach „einspeisewacht“ filtern.
+      render: text
