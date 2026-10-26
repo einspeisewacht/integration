@@ -45,6 +45,7 @@ from .const import (
     CONF_OVERRIDE_DATE,
     CONF_POWER,
     CONF_PRICE,
+    CONF_RATE_MODE,
     CONF_RATES,
     CONF_SMART_METER,
     CONF_SMART_METER_DATE,
@@ -52,6 +53,7 @@ from .const import (
     FEED_IN_FULL,
     OVERRIDE_FROM_DATE,
     OVERRIDE_NEVER,
+    RATE_TIERED,
     USER_AGENT,
 )
 from .engine import Engine
@@ -100,10 +102,13 @@ def derived_from_config(config: Mapping[str, Any]) -> Derived:
 
 
 def rate_from_config(config: Mapping[str, Any]) -> float:
-    """Remuneration in ct/kWh (blended over capacity bands)."""
+    """Remuneration in ct/kWh: the single rate, or blended over capacity bands."""
+    rates = [float(r) for r in config[CONF_RATES]]
+    if config.get(CONF_RATE_MODE) != RATE_TIERED:
+        return rates[0]
     return blended_rate(
         float(config[CONF_POWER]),
-        [float(r) for r in config[CONF_RATES]],
+        rates,
         config.get(CONF_FEED_IN_TYPE) == FEED_IN_FULL,
     )
 
