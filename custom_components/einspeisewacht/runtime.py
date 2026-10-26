@@ -122,8 +122,13 @@ def rate_from_config(config: Mapping[str, Any]) -> float:
     )
 
 
-def parse_price_state(state: State) -> ParsedPrices | None:
-    """Prices from a price sensor: forecast attribute, else the current state."""
+def parse_price_state(state: State, now: datetime | None = None) -> ParsedPrices | None:
+    """Prices from a price sensor: forecast attribute, else the current state.
+
+    Without a forecast the state is the price of the running quarter hour
+    (`now`, else the moment it last changed). It is read again at every
+    quarter hour, so a value held for an hour covers all four of them.
+    """
     forecast = state.attributes.get(FORECAST_ATTRIBUTE)
     if isinstance(forecast, list) and forecast:
         return parse_interval_prices(forecast)
@@ -131,7 +136,7 @@ def parse_price_state(state: State) -> ParsedPrices | None:
         price = float(state.state)
     except ValueError:
         return None
-    return ParsedPrices(prices={slot_start(state.last_updated): price})
+    return ParsedPrices(prices={slot_start(now or state.last_updated): price})
 
 
 class PlantRuntime:
@@ -376,6 +381,9 @@ class PlantRuntime:
 
     @callback
     def _on_tick(self, now: datetime) -> None:
+        # A price sensor without forecast keeps its value into the new quarter hour.
+        if state := self.hass.states.get(self.price_entity):
+            self._handle_price(state, now)
         self.engine.tick(now)
         self._changed()
 
@@ -402,7 +410,7 @@ class PlantRuntime:
     def _handle_price(self, state: State, now: datetime) -> None:
         if state.state in (STATE_UNKNOWN, STATE_UNAVAILABLE):
             return
-        if (parsed := parse_price_state(state)) is not None:
+        if (parsed := parse_price_state(state, now)) is not None:
             self.engine.on_prices(parsed, now)
 
     def _changed(self) -> None:

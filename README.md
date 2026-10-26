@@ -50,7 +50,7 @@ Fundstellen und Details: [docs/ENTWICKLUNG.md](docs/ENTWICKLUNG.md), Abschnitt 2
 
 - Home Assistant 2026.3 oder neuer.
 - Ein **Einspeisezähler**: fortlaufender Energiesensor (Wh, kWh oder MWh, `state_class` `total` oder `total_increasing`) – am besten der Zähler am Netzanschlusspunkt, z. B. ein Smart Meter des Wechselrichterherstellers.
-- Ein **Preissensor** mit Day-Ahead-Prognose je Viertelstunde, z. B. aus der Integration [EPEX Spot](https://github.com/mampfes/ha_epex_spot) (Quelle SMARD.de, Markt DE-LU). Getestet ist das Attribut `data` von EPEX Spot; ohne Prognose-Attribut nutzt Einspeisewacht den aktuellen Zustand.
+- Ein **Preissensor** mit Day-Ahead-Prognose je Viertelstunde, z. B. aus der Integration [EPEX Spot](https://github.com/mampfes/ha_epex_spot) (Quelle SMARD.de, Markt DE-LU). Getestet ist das Attribut `data` von EPEX Spot. Ohne Prognose-Attribut gilt der aktuelle Zustand als Preis der laufenden Viertelstunde – dann fehlen Preise für Zeiten, in denen Home Assistant aus war, und aktualisiert sich der Sensor erst einige Minuten nach der Viertelstundengrenze, gilt so lange noch der alte Wert.
 
 <img src="https://raw.githubusercontent.com/einspeisewacht/integration/main/assets/screenshots/integration.png" alt="Einspeisewacht mit zwei Einträgen" width="620">
 

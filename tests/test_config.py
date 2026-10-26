@@ -53,3 +53,23 @@ def test_override_and_derivation() -> None:
         derived_from_config({**BASE, "override": "from_date"}).regime
         is Regime.QUARTER_HOUR
     )
+
+
+def test_price_without_forecast_counts_for_the_running_quarter_hour() -> None:
+    from datetime import UTC, datetime
+
+    from homeassistant.core import State
+
+    from custom_components.einspeisewacht.runtime import parse_price_state
+
+    changed = datetime(2026, 10, 25, 3, 2, tzinfo=UTC)
+    state = State(
+        "sensor.price", "-0.05", {}, last_changed=changed, last_updated=changed
+    )
+    assert parse_price_state(state).prices == {
+        datetime(2026, 10, 25, 3, 0, tzinfo=UTC): -0.05
+    }
+    later = datetime(2026, 10, 25, 3, 15, 1, tzinfo=UTC)
+    assert parse_price_state(state, later).prices == {
+        datetime(2026, 10, 25, 3, 15, tzinfo=UTC): -0.05
+    }
