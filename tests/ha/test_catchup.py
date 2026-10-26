@@ -65,14 +65,15 @@ async def test_extension_and_calendar(
         return_response=True,
     )
     events = response[calendar]["events"]
-    assert [e["start"] for e in events] == [
-        "2026-10-25T04:00:00+01:00",
-        "2026-10-25T04:30:00+01:00",
-        "2026-10-25T06:00:00+01:00",
-        "2026-10-25T14:00:00+01:00",
-        "2026-10-25T15:00:00+01:00",
+    # The test instance runs in another time zone: compare moments, not strings.
+    starts = [datetime.fromisoformat(e["start"]) for e in events]
+    assert starts == [
+        datetime.fromisoformat(f"2026-10-25T{t}:00+01:00")
+        for t in ("04:00", "04:30", "06:00", "14:00", "15:00")
     ]
-    assert events[3]["end"] == "2026-10-25T14:30:00+01:00"
+    assert datetime.fromisoformat(events[3]["end"]) == datetime.fromisoformat(
+        "2026-10-25T14:30:00+01:00"
+    )
     assert {e["summary"] for e in events} == {"No feed-in remuneration"}
 
 
