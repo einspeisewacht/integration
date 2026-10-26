@@ -1,6 +1,6 @@
 # Changelog
 
-## Unveröffentlicht
+## 0.1.0b7 – 2026-10-26
 
 - Eigene Symbole für alle Entitäten (z. B. Uhr mit Minus für Viertelstunden ohne Vergütung, Kalender mit Plus für die Nachholung, Geldschein mit Haken/Kreuz für „Vergütung aktiv“).
 
