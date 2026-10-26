@@ -1,5 +1,9 @@
 # Changelog
 
+## Unveröffentlicht
+
+- README mit Screenshots (Geräteseite, Einrichtung, Kalender, Integration) und einer Beispielantwort des Berichts.
+
 ## 0.1.0b8 – 2026-10-26
 
 (0.1.0b7 wurde versehentlich auf dem Stand von 0.1.0b6 und ohne ZIP veröffentlicht und zurückgezogen.)

@@ -28,6 +28,8 @@ The integration's UI is available in German and English and follows your Home As
 - **Exact at quarter-hour boundaries:** each meter delta is split over the quarter hours by time, each with its own price. A price of exactly 0 is not negative.
 - **Robust:** ignores meter resets and implausible jumps, survives restarts, handles daylight saving changes (92 or 100 quarter hours).
 
+<img src="https://raw.githubusercontent.com/einspeisewacht/integration/main/assets/screenshots/geraet.png" alt="Device page of a plant with all sensors (German UI)" width="720">
+
 ## Which rule applies (§ 51 EEG)
 
 | Commissioned | Installed capacity | No remuneration when … |
@@ -66,6 +68,8 @@ Or by hand:
 2. **Remuneration:** the rate from your grid operator's statement in ct/kWh (after the 0.4 ct deduction) – single or tiered by capacity band; for tiered rates Einspeisewacht forms the blended rate (§ 23c EEG).
 3. **Data sources:** feed-in meter and price sensor.
 4. **Rule:** shows the derived rule, when it starts and the rate; override it if your grid operator settles differently. Optional: **count earlier negative quarter hours from SMARD.de**, so the extension covers the time before setup too (a one-time download of public price data, see [Privacy](#privacy)).
+
+<img src="https://raw.githubusercontent.com/einspeisewacht/integration/main/assets/screenshots/einrichtung_regel.png" alt="Last setup step with the derived rule (German UI)" width="420">
 
 Several plants or meters: one entry each. To change: *Einspeisewacht → entry → ⋮ → Reconfigure*.
 
@@ -114,6 +118,11 @@ data:
 It computes like the report and writes the hours **before** the first existing statistic into the long-term statistics of the four total sensors; later sums are shifted to match. Requires the SMARD option (its download finished) and at least one hour of statistics for the sensors. **This changes the statistics database – make a backup first.** A second call finds nothing left to import.
 
 ## Examples
+
+The calendar "Negative prices" shows the windows without remuneration – here the day of the 2026 clock change (German UI):
+
+<img src="https://raw.githubusercontent.com/einspeisewacht/integration/main/assets/screenshots/kalender.png" alt="Calendar with five windows without remuneration on 25 Oct 2026" width="620">
+
 
 **Blueprint "switch on negative prices":** runs your own actions when remuneration stops (charge the battery, switch on the wallbox, curtail) and others when it resumes. [![Import blueprint](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Feinspeisewacht%2Fintegration%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Feinspeisewacht%2Fvergutung_aus_an.yaml)
 

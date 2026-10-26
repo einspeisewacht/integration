@@ -28,6 +28,8 @@ Die Oberfläche gibt es auf Deutsch und Englisch; sie folgt der Sprache deines H
 - **Genau an den Viertelstundengrenzen:** Jedes Zählerdelta wird zeitanteilig auf die Viertelstunden verteilt, jede mit ihrem eigenen Preis. Ein Preis von genau 0 gilt nicht als negativ.
 - **Robust:** erkennt Zähler-Resets und unplausible Sprünge und bucht sie nicht; der Stand übersteht Neustarts; die Zeitumstellung (92 bzw. 100 Viertelstunden) ist berücksichtigt.
 
+<img src="https://raw.githubusercontent.com/einspeisewacht/integration/main/assets/screenshots/geraet.png" alt="Geräteseite einer Anlage mit allen Sensoren" width="720">
+
 ## Welche Regel gilt (§ 51 EEG)
 
 | Inbetriebnahme | Installierte Leistung | Keine Vergütung, wenn … |
@@ -50,6 +52,8 @@ Fundstellen und Details: [docs/ENTWICKLUNG.md](docs/ENTWICKLUNG.md), Abschnitt 2
 - Ein **Einspeisezähler**: fortlaufender Energiesensor (Wh, kWh oder MWh, `state_class` `total` oder `total_increasing`) – am besten der Zähler am Netzanschlusspunkt, z. B. ein Smart Meter des Wechselrichterherstellers.
 - Ein **Preissensor** mit Day-Ahead-Prognose je Viertelstunde, z. B. aus der Integration [EPEX Spot](https://github.com/mampfes/ha_epex_spot) (Quelle SMARD.de, Markt DE-LU). Getestet ist das Attribut `data` von EPEX Spot; ohne Prognose-Attribut nutzt Einspeisewacht den aktuellen Zustand.
 
+<img src="https://raw.githubusercontent.com/einspeisewacht/integration/main/assets/screenshots/integration.png" alt="Einspeisewacht mit zwei Einträgen" width="620">
+
 ## Installation (HACS)
 
 **Mit einem Klick:** [![In HACS öffnen](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=einspeisewacht&repository=integration&category=integration) → herunterladen, Home Assistant neu starten → [![Integration hinzufügen](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=einspeisewacht)
@@ -66,6 +70,8 @@ Oder von Hand:
 2. **Vergütung:** der Satz aus der Abrechnung deines Netzbetreibers in ct/kWh (nach Abzug der 0,4 ct) – einheitlich oder gestaffelt nach Leistungsstufen. Bei gestaffelter Vergütung bildet Einspeisewacht den Mischsatz nach § 23c EEG.
 3. **Datenquellen:** Einspeisezähler und Preissensor.
 4. **Regel:** zeigt die abgeleitete Regel, ab wann sie gilt, und den Vergütungssatz. Rechnet dein Netzbetreiber anders ab, kannst du sie übersteuern („jede negative Viertelstunde ab …“ oder „nicht betroffen“). Optional: **frühere negative Viertelstunden von SMARD.de nachzählen** – dann enthält die Nachholung auch die Zeit vor der Einrichtung (einmaliger Abruf öffentlicher Preisdaten, siehe [Datenschutz](#datenschutz)).
+
+<img src="https://raw.githubusercontent.com/einspeisewacht/integration/main/assets/screenshots/einrichtung_regel.png" alt="Letzter Einrichtungsschritt mit der abgeleiteten Regel" width="420">
 
 Mehrere Anlagen oder Zähler: je einen Eintrag anlegen. Ändern: *Einspeisewacht → Eintrag → ⋮ → Neu konfigurieren*.
 
@@ -100,6 +106,26 @@ data:
   end: "2026-12-31"
 ```
 
+Beispielantwort (gekürzt, Werte erfunden):
+
+```yaml
+plant: Dach
+rule: quarter_hour
+rate_ct_per_kwh: 7.94
+energy_paid_kwh: 1800.0
+energy_unpaid_kwh: 900.0
+revenue_eur: 142.92
+revenue_lost_eur: 71.46
+negative_quarter_hours: 1860
+months:
+  - month: 2026-04
+    energy_paid_kwh: 120.0
+    energy_unpaid_kwh: 210.0
+    ...
+gaps:
+  quarter_hours_without_price: 0
+```
+
 Die Antwort enthält kWh vergütet und unvergütet, Erlös, entgangenen Erlös und die negativen Viertelstunden – gesamt und je Monat. Grundlage ist die Langzeitstatistik deines Einspeisezählers (Stundenwerte, gleichmäßig auf die vier Viertelstunden verteilt – exakt, wenn alle vier gleich ausgehen, sonst eine gute Näherung). Viertelstunden ohne bekannten Preis zählen als vergütet und stehen unter `gaps`; mit der SMARD-Option reichen die Preise bis zur Inbetriebnahme zurück.
 
 ## Statistik nachtragen
@@ -116,6 +142,10 @@ data:
 Sie rechnet wie der Bericht (Stundenwerte des Zählers gegen die negativen Viertelstunden) und schreibt die Stunden **vor** dem ersten vorhandenen Statistikwert in die Langzeitstatistik von „Einspeisung vergütet/unvergütet“, „Erlös“ und „Entgangener Erlös“; die späteren Summen werden passend verschoben. Voraussetzungen: die SMARD-Option ist an und ihr Abruf fertig (sonst fehlen Preise), und die Sensoren haben schon mindestens eine Stunde Statistik. **Das greift in die Statistik-Datenbank ein – vorher ein Backup anlegen.** Ein zweiter Aufruf findet nichts mehr nachzutragen.
 
 ## Was du damit bauen kannst
+
+Der Kalender „Negative Preise“ zeigt die Zeitfenster ohne Vergütung – hier der Tag der Zeitumstellung 2026:
+
+<img src="https://raw.githubusercontent.com/einspeisewacht/integration/main/assets/screenshots/kalender.png" alt="Kalender mit fünf Zeitfenstern ohne Vergütung am 25.10.2026" width="620">
 
 ### Fertiger Blueprint
 
