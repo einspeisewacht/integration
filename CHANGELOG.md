@@ -1,6 +1,6 @@
 # Changelog
 
-## Unveröffentlicht
+## 0.1.0b4 – 2026-10-26
 
 - **Eigenes Icon und Logo** (Viertelstunden in Verkehrsgrün), sichtbar in Home Assistant und HACS.
 - Ausführliches README auf Deutsch und Englisch, mit Beispielen, Datenschutz, Grenzen, Fehlerbehebung und Entfernen.
