@@ -73,8 +73,11 @@ class PriceTable:
 
     prices: dict[datetime, float] = field(default_factory=dict)
 
-    def merge(self, prices: Mapping[datetime, float]) -> None:
+    def merge(self, prices: Mapping[datetime, float]) -> bool:
+        """Add prices; True if anything changed."""
+        changed = any(self.prices.get(slot) != price for slot, price in prices.items())
         self.prices.update(prices)
+        return changed
 
     def get(self, slot: datetime) -> float | None:
         return self.prices.get(slot)

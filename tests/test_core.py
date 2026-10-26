@@ -14,6 +14,7 @@ from custom_components.einspeisewacht.ledger import (
 from custom_components.einspeisewacht.meter import MeterEvent, MeterTracker, to_kwh
 from custom_components.einspeisewacht.prices import PriceTable, parse_interval_prices
 from custom_components.einspeisewacht.rules import AlwaysPaid, NegativeQuarterHour
+from custom_components.einspeisewacht.solar import daylight_weight
 from custom_components.einspeisewacht.timeslots import (
     QUARTER,
     slot_start,
@@ -279,3 +280,33 @@ def test_ledger_round_trip() -> None:
     restored = Ledger()
     restored.restore(ledger.as_dict())
     assert restored == ledger
+
+
+# --- gaps -----------------------------------------------------------------------
+
+
+def test_split_interval_by_weight() -> None:
+    start, end = utc(2026, 1, 1, 9, 0), utc(2026, 1, 1, 9, 30)
+    # All weight in the second quarter hour.
+    pieces = split_interval(start, end, 1.0, lambda m: 1.0 if m.minute >= 15 else 0.0)
+    assert pieces == [(start, 0.0), (utc(2026, 1, 1, 9, 15), 1.0)]
+    # No weight anywhere: linear.
+    assert split_interval(start, end, 1.0, lambda m: 0.0) == split_interval(
+        start, end, 1.0
+    )
+
+
+def test_long_gap_is_spread_by_daylight() -> None:
+    weight = daylight_weight(48.78, 9.18)  # Stuttgart
+    assert weight(utc(2026, 6, 21, 0)) == 0
+    assert weight(utc(2026, 6, 21, 11)) > 0.85
+    meter = MeterTracker(max_power_kw=9)
+    meter.update(100.0, utc(2026, 6, 20, 18), weight)
+    update = meter.update(130.0, utc(2026, 6, 21, 12), weight)  # HA off overnight
+    assert update.event is MeterEvent.GAP
+    by_slot = dict(update.pieces)
+    assert sum(by_slot.values()) == pytest.approx(30.0)
+    assert by_slot[utc(2026, 6, 21, 0)] == 0  # 02:00 CEST, dark
+    assert by_slot[utc(2026, 6, 21, 10)] > by_slot[utc(2026, 6, 21, 5)]
+    # Short gaps stay linear and are no event.
+    assert meter.update(130.5, utc(2026, 6, 21, 12, 30), weight).event is None

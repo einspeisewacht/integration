@@ -29,6 +29,7 @@ from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.event import (
     async_track_state_change_event,
+    async_track_time_interval,
     async_track_utc_time_change,
 )
 from homeassistant.helpers.storage import Store
@@ -64,14 +65,22 @@ from .regime import Derived, Plant, derive, local_midnight, manual, rule_for
 from .report import build_report
 from .rules import NegativeQuarterHour
 from .smard import INDEX_URL, parse_index, parse_week, week_url, weeks_covering
+from .solar import daylight_weight
 from .tariff import blended_rate
 from .timeslots import slot_start
 
 _LOGGER = logging.getLogger(__name__)
 
 STORAGE_VERSION = 1
-# Bookings are written at most this often (and on unload).
-SAVE_DELAY = 60
+# The live state (meter, bookings) is small and written at most this often, and
+# on unload. After a crash the next meter reading books what is missing.
+LIVE_SAVE_INTERVAL = timedelta(minutes=10)
+# Newly recorded negative quarter hours are written soon (they are rare).
+NEGATIVES_SAVE_DELAY = 10
+# A failed SMARD.de download is tried again this often (and at every start).
+SMARD_RETRY_INTERVAL = timedelta(hours=24)
+# Raise a repair issue once the running quarter hour has had no price this long.
+PRICE_MISSING_ISSUE_AFTER = timedelta(hours=1)
 
 # Price sensors without a forecast attribute: the state is the current price.
 # Only its sign matters for the rule, so the unit is not converted.
@@ -148,6 +157,7 @@ class PlantRuntime:
                 shadow_rule=NegativeQuarterHour(),
             ),
             since=local_midnight(self.commissioned),
+            weight=daylight_weight(hass.config.latitude, hass.config.longitude),
         )
         self.unknown_unit: str | None = None
         self.backfill_error: str | None = None
@@ -155,13 +165,21 @@ class PlantRuntime:
         self._store: Store[dict[str, Any]] = Store(
             hass, STORAGE_VERSION, f"{DOMAIN}.{entry_id}"
         )
+        self._history: Store[dict[str, Any]] = Store(
+            hass, STORAGE_VERSION, f"{DOMAIN}.{entry_id}.history"
+        )
+        self._live_dirty = False
+        self._saved_history = 0
+        self._saved_negatives = 0
+        self._price_missing_since: datetime | None = None
+        self._backfill_running = False
         self._listeners: list[Callable[[], None]] = []
         self._unsubscribe: list[CALLBACK_TYPE] = []
 
     async def async_start(self) -> None:
         """Restore the stored state, read current values, start listening."""
-        if data := await self._store.async_load():
-            self.engine.restore(data)
+        if live := await self._store.async_load():
+            self.engine.restore(live, await self._history.async_load())
         now = dt_util.utcnow()
         if state := self.hass.states.get(self.price_entity):
             self._handle_price(state, now)
@@ -175,6 +193,10 @@ class PlantRuntime:
             async_track_utc_time_change(
                 self.hass, self._on_tick, minute=[0, 15, 30, 45], second=1
             ),
+            async_track_time_interval(self.hass, self._async_save, LIVE_SAVE_INTERVAL),
+            async_track_time_interval(
+                self.hass, self._async_retry_backfill, SMARD_RETRY_INTERVAL
+            ),
         ]
 
     async def async_stop(self) -> None:
@@ -182,11 +204,33 @@ class PlantRuntime:
         for unsubscribe in self._unsubscribe:
             unsubscribe()
         self._unsubscribe = []
-        await self._store.async_save(self.engine.as_dict())
+        await self._store.async_save(self.engine.as_live_dict())
+        await self._history.async_save(self.engine.as_history_dict())
 
     async def async_remove(self) -> None:
         await self._store.async_remove()
-        ir.async_delete_issue(self.hass, DOMAIN, self.issue_id)
+        await self._history.async_remove()
+        for issue in (
+            self.issue_id,
+            self._issue("price_missing"),
+            self._issue("meter_unit"),
+        ):
+            ir.async_delete_issue(self.hass, DOMAIN, issue)
+
+    def _issue(self, key: str) -> str:
+        return f"{key}_{self.entry_id}"
+
+    async def _async_save(self, now: datetime | None = None) -> None:
+        """Write what changed: the live state, and the history if it changed."""
+        if self._live_dirty:
+            self._live_dirty = False
+            await self._store.async_save(self.engine.as_live_dict())
+        if self.engine.history_version != self._saved_history:
+            self._saved_history = self.engine.history_version
+            await self._history.async_save(self.engine.as_history_dict())
+
+    async def _async_retry_backfill(self, now: datetime | None = None) -> None:
+        await self.async_backfill()
 
     @property
     def issue_id(self) -> str:
@@ -200,11 +244,16 @@ class PlantRuntime:
         """
         quarters = self.engine.quarters
         start = local_midnight(self.commissioned)
-        if not self.backfill_enabled or quarters.started is None:
+        if (
+            not self.backfill_enabled
+            or quarters.started is None
+            or self._backfill_running
+        ):
             return
         if quarters.backfilled and quarters.backfill_from == start:
             return  # done, for this commissioning date
         end = quarters.started
+        self._backfill_running = True
         try:
             prices = await self._async_fetch_smard(start, end) if start < end else {}
         except (
@@ -214,6 +263,7 @@ class PlantRuntime:
             TypeError,
             ValueError,
         ) as err:
+            self._backfill_running = False
             self.backfill_error = f"{type(err).__name__}: {err}"
             _LOGGER.warning(
                 "%s: SMARD.de backfill failed: %s", self.name, self.backfill_error
@@ -231,8 +281,9 @@ class PlantRuntime:
                 },
             )
             return
+        self._backfill_running = False
         self.backfill_error = None
-        self.backfill_missing = quarters.add_backfill(prices, start, end)
+        self.backfill_missing = self.engine.add_backfill(prices, start, end)
         ir.async_delete_issue(self.hass, DOMAIN, self.issue_id)
         self._changed()
 
@@ -355,6 +406,50 @@ class PlantRuntime:
             self.engine.on_prices(parsed, now)
 
     def _changed(self) -> None:
-        self._store.async_delay_save(self.engine.as_dict, SAVE_DELAY)
+        self._live_dirty = True
+        if self.engine.negatives_version != self._saved_negatives:
+            self._saved_negatives = self.engine.negatives_version
+            self._saved_history = self.engine.history_version
+            self._history.async_delay_save(
+                self.engine.as_history_dict, NEGATIVES_SAVE_DELAY
+            )
+        self._update_issues(dt_util.utcnow())
         for listener in list(self._listeners):
             listener()
+
+    def _update_issues(self, now: datetime) -> None:
+        """Never book wrongly in silence: say when prices or the meter unit are missing."""
+        if self.engine.prices.get(slot_start(now)) is None:
+            self._price_missing_since = self._price_missing_since or now
+            if now - self._price_missing_since >= PRICE_MISSING_ISSUE_AFTER:
+                ir.async_create_issue(
+                    self.hass,
+                    DOMAIN,
+                    self._issue("price_missing"),
+                    is_fixable=False,
+                    severity=ir.IssueSeverity.WARNING,
+                    translation_key="price_missing",
+                    translation_placeholders={
+                        "name": self.name,
+                        "entity": self.price_entity,
+                    },
+                )
+        else:
+            self._price_missing_since = None
+            ir.async_delete_issue(self.hass, DOMAIN, self._issue("price_missing"))
+        if self.unknown_unit is not None:
+            ir.async_create_issue(
+                self.hass,
+                DOMAIN,
+                self._issue("meter_unit"),
+                is_fixable=False,
+                severity=ir.IssueSeverity.ERROR,
+                translation_key="meter_unit",
+                translation_placeholders={
+                    "name": self.name,
+                    "entity": self.meter_entity,
+                    "unit": str(self.unknown_unit),
+                },
+            )
+        else:
+            ir.async_delete_issue(self.hass, DOMAIN, self._issue("meter_unit"))

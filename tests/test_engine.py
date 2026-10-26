@@ -103,11 +103,14 @@ def test_counter_round_trip_and_legacy_data() -> None:
     counter.advance(DAY_END, fixture_prices())
     counter.missing.add(DAY_END)
     restored = QuarterCounter()
-    restored.restore(json.loads(json.dumps(counter.as_dict())))
+    restored.restore(
+        json.loads(json.dumps(counter.as_dict())),
+        json.loads(json.dumps(counter.negatives_dict())),
+    )
     assert restored == counter
     # 0.1.0b3 stored counts only: start afresh.
     legacy = QuarterCounter()
-    legacy.restore({"next_slot": DAY_START.isoformat(), "counts": {"2026": 3}})
+    legacy.restore({"next_slot": DAY_START.isoformat(), "counts": {"2026": 3}}, None)
     assert legacy == QuarterCounter()
 
 
@@ -161,15 +164,53 @@ def test_engine_round_trip_is_json() -> None:
     engine.on_meter(
         1.5, DAY_START + timedelta(minutes=20), DAY_START + timedelta(minutes=20)
     )
-    data = json.loads(json.dumps(engine.as_dict()))
+    engine.tick(DAY_END)
+    live = json.loads(json.dumps(engine.as_live_dict()))
+    history = json.loads(json.dumps(engine.as_history_dict()))
+    assert "prices" not in live and "negatives" in history
     restored = make_engine()
-    restored.restore(data)
-    assert restored.as_dict() == engine.as_dict()
+    restored.restore(live, history)
+    assert restored.as_live_dict() == engine.as_live_dict()
+    assert restored.as_history_dict() == engine.as_history_dict()
 
 
-def test_engine_prunes_old_prices() -> None:
+def test_engine_restores_single_file_of_0_1_0b4() -> None:
     engine = make_engine()
     for parsed in fixture_parsed():
         engine.on_prices(parsed, DAY_START)
+    engine.tick(DAY_END)
+    old = {**engine.as_live_dict(), "prices": engine.prices.as_dict()}
+    old["quarters"] = {**old["quarters"], "negatives": engine.quarters.negatives_dict()}
+    restored = make_engine()
+    restored.restore(json.loads(json.dumps(old)))
+    assert restored.counts() == {2026: 6}
+    assert restored.prices == engine.prices
+
+
+def test_engine_tracks_history_changes() -> None:
+    engine = make_engine()
+    for parsed in fixture_parsed():
+        engine.on_prices(parsed, DAY_START)
+    version = engine.history_version
+    assert version >= 1
+    engine.on_prices(parsed, DAY_START)  # same forecast again: nothing to write
+    assert engine.history_version == version
+    negatives = engine.negatives_version
+    # 25.10. has 25 hours: 04:00-04:15 CET (negative) ends 5 h 15 min after midnight.
+    engine.tick(DAY_START + timedelta(hours=5, minutes=15))
+    assert engine.negatives_version == negatives + 1
+    # Ticks without new negatives or pruning change nothing.
+    version = engine.history_version
+    engine.tick(DAY_START + timedelta(hours=5, minutes=30))
+    assert engine.history_version == version
+
+
+def test_engine_prunes_old_prices_about_daily() -> None:
+    engine = make_engine()
+    for parsed in fixture_parsed():
+        engine.on_prices(parsed, DAY_START)
+    # Oldest price only half a day beyond the retention: not yet.
+    engine.tick(DAY_START + timedelta(days=15, hours=12))
+    assert DAY_START in engine.prices.prices
     engine.tick(DAY_START + timedelta(days=20))
     assert engine.prices.prices == {}

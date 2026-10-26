@@ -212,6 +212,14 @@
     "smard_failed": {
       "title": "SMARD.de nicht erreichbar ({name})",
       "description": "Einspeisewacht konnte frühere Day-Ahead-Preise nicht von SMARD.de laden, um die Viertelstunden vor der Einrichtung nachzuzählen. Die laufende Zählung und Buchung sind nicht betroffen. Beim nächsten Start von Home Assistant wird es erneut versucht.\n\nFehler: {error}"
+    },
+    "price_missing": {
+      "title": "Kein Preis für die laufende Viertelstunde ({name})",
+      "description": "Der Preissensor {entity} liefert seit über einer Stunde keinen Preis für die laufende Viertelstunde. Einspeisewacht hält die Einspeisung bis zu 24 Stunden zurück und bucht sie, sobald der Preis kommt; danach zählt sie als vergütet. Bitte die Preis-Integration prüfen. Der Hinweis verschwindet von selbst, sobald wieder Preise kommen."
+    },
+    "meter_unit": {
+      "title": "Einheit des Zählers nicht unterstützt ({name})",
+      "description": "Der Einspeisezähler {entity} meldet „{unit}“. Einspeisewacht braucht Wh, kWh oder MWh und bucht bis dahin nichts. Unter „Neu konfigurieren“ einen anderen Zähler wählen oder die Einheit des Sensors korrigieren."
     }
   },
   "services": {

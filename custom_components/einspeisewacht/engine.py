@@ -1,12 +1,16 @@
 """One plant's accounting: meter, prices, ledger and quarter-hour counter.
 
 Pure Python; the Home Assistant side (runtime.py) feeds it readings, price
-forecasts and clock ticks, and stores `as_dict()`.
+forecasts and clock ticks. It stores the small, often changing live state
+(`as_live_dict()`) apart from the history (`as_history_dict()`: prices and
+negative quarter hours), which changes rarely: `history_version` and
+`negatives_version` tell when it needs writing.
 """
 
 from __future__ import annotations
 
 from collections import Counter
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 from typing import Any
@@ -39,6 +43,10 @@ class Engine:
     # Quarter hours before commissioning never count (§ 51a counts from the
     # year of commissioning; nothing is paid before it anyway).
     since: datetime = EPOCH
+    # Spreads the energy of long gaps between readings (the sun's height).
+    weight: Callable[[datetime], float] | None = None
+    history_version: int = 0
+    negatives_version: int = 0
 
     @property
     def rule(self) -> Rule:
@@ -58,7 +66,7 @@ class Engine:
 
     def on_meter(self, value_kwh: float, at: datetime, now: datetime) -> MeterUpdate:
         """A new meter reading in kWh."""
-        update = self.meter.update(value_kwh, at)
+        update = self.meter.update(value_kwh, at, self.weight)
         if update.event is not None:
             self.meter_events[update.event] += 1
         self.ledger.book(update.pieces, self.prices, self.valuation, now)
@@ -67,14 +75,30 @@ class Engine:
     def on_prices(self, parsed: ParsedPrices, now: datetime) -> None:
         """A new price forecast from the price sensor."""
         self.last_parse = parsed
-        self.prices.merge(parsed.prices)
+        if self.prices.merge(parsed.prices):
+            self.history_version += 1
         self.tick(now)
 
     def tick(self, now: datetime) -> None:
         """Clock tick (every quarter hour) or after new prices."""
         self.ledger.retry_pending(self.prices, self.valuation, now)
-        self.quarters.advance(now, self.prices)
-        self.prices.prune(slot_start(now) - PRICE_RETENTION)
+        if self.quarters.advance(now, self.prices):
+            self.history_version += 1
+            self.negatives_version += 1
+        # Prune about once a day, not every quarter hour (each prune is a write).
+        cutoff = slot_start(now) - PRICE_RETENTION
+        if self.prices.prices and min(self.prices.prices) < cutoff - timedelta(days=1):
+            self.prices.prune(cutoff)
+            self.history_version += 1
+
+    def add_backfill(
+        self, prices: dict[datetime, float], start: datetime, end: datetime
+    ) -> int:
+        """Historical prices before live counting; returns missing quarter hours."""
+        missing = self.quarters.add_backfill(prices, start, end)
+        self.history_version += 1
+        self.negatives_version += 1
+        return missing
 
     def paid_now(self, now: datetime) -> bool | None:
         """Whether feed-in is remunerated right now; None if the price is unknown."""
@@ -82,18 +106,31 @@ class Engine:
         price = self.prices.get(slot)
         return None if price is None else self.rule.is_paid(slot, price)
 
-    def as_dict(self) -> dict[str, Any]:
+    def as_live_dict(self) -> dict[str, Any]:
         return {
             "meter": self.meter.as_dict(),
-            "prices": self.prices.as_dict(),
             "ledger": self.ledger.as_dict(),
             "quarters": self.quarters.as_dict(),
             "meter_events": dict(self.meter_events),
         }
 
-    def restore(self, data: dict[str, Any]) -> None:
-        self.meter.restore(data.get("meter", {}))
-        self.prices.restore(data.get("prices", {}))
-        self.ledger.restore(data.get("ledger", {}))
-        self.quarters.restore(data.get("quarters", {}))
-        self.meter_events = Counter(data.get("meter_events", {}))
+    def as_history_dict(self) -> dict[str, Any]:
+        return {
+            "prices": self.prices.as_dict(),
+            "negatives": self.quarters.negatives_dict(),
+        }
+
+    def restore(
+        self, live: dict[str, Any], history: dict[str, Any] | None = None
+    ) -> None:
+        if history is None:
+            # Up to 0.1.0b4 everything was stored in one file.
+            history = {
+                "prices": live.get("prices", {}),
+                "negatives": live.get("quarters", {}).get("negatives"),
+            }
+        self.meter.restore(live.get("meter", {}))
+        self.prices.restore(history.get("prices", {}))
+        self.ledger.restore(live.get("ledger", {}))
+        self.quarters.restore(live.get("quarters", {}), history.get("negatives"))
+        self.meter_events = Counter(live.get("meter_events", {}))

@@ -6,6 +6,7 @@ boundaries as local time, also on DST changeover days (92 or 100 slots).
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
 
 QUARTER = timedelta(minutes=15)
@@ -21,24 +22,33 @@ def slot_start(moment: datetime) -> datetime:
 
 
 def split_interval(
-    start: datetime, end: datetime, energy: float
+    start: datetime,
+    end: datetime,
+    energy: float,
+    weight: Callable[[datetime], float] | None = None,
 ) -> list[tuple[datetime, float]]:
-    """Distribute `energy` linearly over the quarter hours between start and end.
+    """Distribute `energy` over the quarter hours between start and end.
 
+    Linearly by time, or by time x `weight(middle of the piece)` (e.g. the sun's
+    height) when given; a weight of zero everywhere falls back to linear.
     Returns (slot start in UTC, energy) pairs in chronological order. An empty or
     negative interval puts everything into the slot of `end`.
     """
     if end <= start:
         return [(slot_start(end), energy)]
-    total = (end - start).total_seconds()
-    pieces: list[tuple[datetime, float]] = []
+    spans: list[tuple[datetime, float]] = []
     cursor = start
     slot = slot_start(start)
     while cursor < end:
         slot_end = slot + QUARTER
         piece_end = min(slot_end, end)
-        share = (piece_end - cursor).total_seconds() / total
-        pieces.append((slot, energy * share))
+        spans.append((slot, (piece_end - cursor).total_seconds()))
+        if weight is not None:
+            middle = cursor + (piece_end - cursor) / 2
+            spans[-1] = (slot, spans[-1][1] * max(weight(middle), 0.0))
         cursor = piece_end
         slot = slot_end
-    return pieces
+    total = sum(share for _, share in spans)
+    if total <= 0:
+        return split_interval(start, end, energy)
+    return [(slot, energy * share / total) for slot, share in spans]

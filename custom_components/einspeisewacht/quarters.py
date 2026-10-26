@@ -49,25 +49,28 @@ class QuarterCounter:
     negatives: dict[datetime, float] = field(default_factory=dict)
     missing: set[datetime] = field(default_factory=set)
 
-    def advance(self, now: datetime, prices: PriceTable) -> None:
-        """Record every quarter hour that ended by `now`."""
+    def advance(self, now: datetime, prices: PriceTable) -> bool:
+        """Record every quarter hour that ended by `now`; True if a negative one was added."""
+        found = False
         current = slot_start(now)
         if self.next_slot is None or current - self.next_slot > MAX_CATCH_UP:
             # First start (or a long gap): begin with the running quarter hour.
             self.next_slot = current
             if self.started is None:
                 self.started = current
-            return
+            return False
         while self.next_slot < current:
             slot = self.next_slot
             price = prices.get(slot)
             if price is None:
                 if now - (slot + QUARTER) < PRICE_WAIT:
-                    return  # wait for the price
+                    return found  # wait for the price
                 self.missing.add(slot)
             elif price < 0:
                 self.negatives[slot] = price
+                found = True
             self.next_slot = slot + QUARTER
+        return found
 
     def add_backfill(
         self, prices: Mapping[datetime, float], start: datetime, end: datetime
@@ -114,18 +117,23 @@ class QuarterCounter:
             "started": _iso(self.started),
             "backfill_from": _iso(self.backfill_from),
             "backfilled": self.backfilled,
-            "negatives": {s.isoformat(): p for s, p in sorted(self.negatives.items())},
             "missing": sorted(s.isoformat() for s in self.missing),
         }
 
-    def restore(self, data: dict[str, Any]) -> None:
-        if "negatives" not in data:
-            return  # stored by 0.1.0b3 or older: count afresh
+    def negatives_dict(self) -> dict[str, float]:
+        return {s.isoformat(): p for s, p in sorted(self.negatives.items())}
+
+    def restore(self, data: dict[str, Any], negatives: dict[str, float] | None) -> None:
+        """Pointers from the live state, negative quarter hours from the history.
+
+        Without both (0.1.0b3 kept counts only, or the history is lost) the
+        counter starts afresh.
+        """
+        if not data or negatives is None:
+            return
         self.next_slot = _moment(data.get("next_slot"))
         self.started = _moment(data.get("started"))
         self.backfill_from = _moment(data.get("backfill_from"))
         self.backfilled = data.get("backfilled", False)
-        self.negatives = {
-            datetime.fromisoformat(s): p for s, p in data["negatives"].items()
-        }
+        self.negatives = {datetime.fromisoformat(s): p for s, p in negatives.items()}
         self.missing = {datetime.fromisoformat(s) for s in data.get("missing", [])}

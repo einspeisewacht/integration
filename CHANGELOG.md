@@ -1,5 +1,12 @@
 # Changelog
 
+## Unveröffentlicht
+
+- **Weniger Schreibzugriffe** (wichtig auf SD-Karten): Der laufende Stand (~1 KB) wird höchstens alle 10 Minuten gespeichert, Preise und negative Viertelstunden nur, wenn sie sich ändern. Bisher wurde der ganze Stand nach jeder Ruhepause neu geschrieben – und tagsüber bei laufender Einspeisung gar nicht. Ältere Speicherstände werden übernommen.
+- **Lücken nach Sonnenstand:** War Home Assistant länger als eine Stunde aus, wird die Einspeisung der Lücke nach der Sonnenhöhe am Standort verteilt (nachts nichts) statt gleichmäßig. Die Diagnose zählt solche Lücken.
+- **Hinweise unter Reparaturen**, wenn der Preissensor länger als eine Stunde keinen Preis für die laufende Viertelstunde liefert oder der Zähler eine nicht unterstützte Einheit meldet – statt still als vergütet zu buchen. Sie verschwinden von selbst.
+- Ein fehlgeschlagener SMARD-Abruf wird jetzt auch ohne Neustart täglich wiederholt.
+
 ## 0.1.0b4 – 2026-10-26
 
 - **Eigenes Icon und Logo** (Viertelstunden in Verkehrsgrün), sichtbar in Home Assistant und HACS.

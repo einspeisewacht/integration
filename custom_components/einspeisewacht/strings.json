@@ -212,6 +212,14 @@
     "smard_failed": {
       "title": "SMARD.de unreachable ({name})",
       "description": "Einspeisewacht could not load earlier day-ahead prices from SMARD.de to count the quarter hours before setup. Live counting and booking are not affected. The next start of Home Assistant tries again.\n\nError: {error}"
+    },
+    "price_missing": {
+      "title": "No price for the current quarter hour ({name})",
+      "description": "The price sensor {entity} has not delivered a price for the running quarter hour for more than an hour. Einspeisewacht holds the feed-in back for up to 24 hours and books it as soon as the price arrives; after that it counts as remunerated. Check the price integration. This message disappears by itself once prices arrive again."
+    },
+    "meter_unit": {
+      "title": "Meter unit not supported ({name})",
+      "description": "The feed-in meter {entity} reports “{unit}”. Einspeisewacht needs Wh, kWh or MWh and does not book anything until then. Choose another meter under Reconfigure, or fix the unit of the sensor."
     }
   },
   "services": {
