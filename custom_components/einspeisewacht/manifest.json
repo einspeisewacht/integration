@@ -4,9 +4,6 @@
   "after_dependencies": [
     "recorder"
   ],
-  "categories": [
-    "energy"
-  ],
   "codeowners": [
     "@n42net"
   ],

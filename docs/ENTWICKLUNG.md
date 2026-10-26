@@ -117,6 +117,8 @@ Nicht verabschiedet (2./3. Lesung voraussichtlich 9.–13.11.2026, Bundesrat 20.
 - EEG 2027 nach Verabschiedung (voraussichtlich November 2026) prüfen.
 - Quelle für historische Viertelstundenpreise zur Nachberechnung (SMARD.de?) und deren Nutzungsbedingungen.
 
+Kein `categories` im Manifest: hassfest lehnt das Feld für Custom-Integrationen ab („not a valid option“, geprüft 2026-10-26 mit `energy` und Unterkategorien).
+
 ## 7. Integration Quality Scale (Stand 2026-10-26)
 
 Ziel Bronze. Für Custom-Integrationen vergibt Home Assistant keine Stufe; die Liste dient als Selbstprüfung.
