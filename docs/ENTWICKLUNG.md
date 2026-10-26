@@ -112,6 +112,11 @@ Nicht verabschiedet (2./3. Lesung voraussichtlich 9.–13.11.2026, Bundesrat 20.
 - GitHub: Organisation `einspeisewacht`, Repo `integration` (öffentlich seit 2026-10-26, damit die HA-Tests in CI laufen und HACS installieren kann). Brand-Bilder seit 2026-10-26 (`docs/BRAND.md`).
 - **Releases, auch Betas, als reguläre GitHub-Releases** (nicht „Pre-release“): Ohne reguläres Release nimmt HACS den letzten Commit und sucht wegen `zip_release` eine ZIP unter `releases/download/<commit>/` – 404 (erlebt mit 0.1.0b2, 2026-10-26).
 
+### GitHub-Einstellungen (Stand 2026-10-26, wie Eilwacht)
+
+- **Organisation:** Zwei-Faktor-Pflicht für alle Mitglieder; Profilbild, Beschreibung und Website gesetzt. Actions: alle erlaubt (Einschränkung im Repo), Token standardmäßig nur lesend, Freigabe für Erst-Mitwirkende, Actions dürfen keine Pull-Requests erstellen. „Nur sichere 2FA-Methoden“ ist nicht gesetzt (würde SMS-2FA aussperren).
+- **Repo:** Rulesets „main schützen“ (kein Löschen, kein Force-Push, CI `test`/`hassfest`/`compat` muss grün sein) und „Release-Tags schützen“ (`v*` unveränderlich); Secret Scanning mit Push-Schutz; Dependabot-Alerts und -Sicherheitsupdates; vertrauliches Melden von Sicherheitslücken (SECURITY.md); Actions nur GitHub-eigene plus `astral-sh/setup-uv@*`, `home-assistant/actions/*`, `hacs/action@*` – neue Actions vorher dort freigeben; Branches nach Merge löschen; kein Wiki, keine Projekte; Social Preview gesetzt. **„Release immutability“ bewusst aus:** der Release-Workflow hängt die ZIP erst nach der Veröffentlichung an.
+
 ## 6. Offene Fragen
 
 - EEG 2027 nach Verabschiedung (voraussichtlich November 2026) prüfen.
