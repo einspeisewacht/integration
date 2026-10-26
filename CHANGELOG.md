@@ -1,6 +1,8 @@
 # Changelog
 
-## 0.1.0b7 – 2026-10-26
+## 0.1.0b8 – 2026-10-26
+
+(0.1.0b7 wurde versehentlich auf dem Stand von 0.1.0b6 und ohne ZIP veröffentlicht und zurückgezogen.)
 
 - Eigene Symbole für alle Entitäten (z. B. Uhr mit Minus für Viertelstunden ohne Vergütung, Kalender mit Plus für die Nachholung, Geldschein mit Haken/Kreuz für „Vergütung aktiv“).
 
