@@ -52,6 +52,10 @@ Fundstellen und Details: [docs/ENTWICKLUNG.md](docs/ENTWICKLUNG.md), Abschnitt 2
 
 ## Installation (HACS)
 
+**Mit einem Klick:** [![In HACS öffnen](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=einspeisewacht&repository=integration&category=integration) → herunterladen, Home Assistant neu starten → [![Integration hinzufügen](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=einspeisewacht)
+
+Oder von Hand:
+
 1. HACS → ⋮ → *Benutzerdefinierte Repositories* → `https://github.com/einspeisewacht/integration`, Typ *Integration*.
 2. Einspeisewacht suchen und herunterladen. Home Assistant neu starten.
 3. *Einstellungen → Geräte & Dienste → Integration hinzufügen → Einspeisewacht*.
@@ -100,7 +104,13 @@ Die Antwort enthält kWh vergütet und unvergütet, Erlös, entgangenen Erlös u
 
 ## Was du damit bauen kannst
 
-### Speicher laden, solange es keine Vergütung gibt
+### Fertiger Blueprint
+
+| Blueprint | Was er tut | |
+|---|---|---|
+| **Bei negativem Preis umschalten** | führt eigene Aktionen aus, sobald die Vergütung entfällt (z. B. Speicher laden, Wallbox an, abregeln), und andere, sobald sie wieder gezahlt wird | [![Blueprint importieren](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Feinspeisewacht%2Fintegration%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Feinspeisewacht%2Fvergutung_aus_an.yaml) |
+
+### Speicher laden, solange es keine Vergütung gibt (als eigene Automation)
 
 ```yaml
 alias: Speicher bei negativem Preis laden

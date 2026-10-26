@@ -1,0 +1,61 @@
+blueprint:
+  name: Einspeisewacht – bei negativem Preis umschalten
+  description: >-
+    Führt eigene Aktionen aus, sobald die Einspeisevergütung wegen eines
+    negativen Strompreises entfällt – zum Beispiel den Speicher laden, die
+    Wallbox einschalten oder die Einspeisung abregeln – und weitere, sobald sie
+    wieder gezahlt wird. Auslöser ist der Binärsensor „Vergütung aktiv“ von
+    Einspeisewacht; ein Neustart (unbekannt oder nicht verfügbar) löst nichts aus.
+  domain: automation
+  author: Einspeisewacht
+  homeassistant:
+    min_version: "2026.3.0"
+  source_url: https://github.com/einspeisewacht/integration/blob/main/blueprints/automation/einspeisewacht/vergutung_aus_an.yaml
+  input:
+    remunerated:
+      name: Vergütung aktiv
+      description: Der Binärsensor „Vergütung aktiv“ deiner Anlage.
+      selector:
+        entity:
+          filter:
+            integration: einspeisewacht
+            domain: binary_sensor
+    unpaid_actions:
+      name: Wenn die Vergütung entfällt
+      description: Zum Beispiel Speichermodus „Laden“ wählen oder die Wallbox einschalten.
+      default: []
+      selector:
+        action: {}
+    paid_actions:
+      name: Wenn die Vergütung wieder gezahlt wird
+      description: Zum Beispiel den Speichermodus zurückstellen.
+      default: []
+      selector:
+        action: {}
+
+# Each change runs its own actions, in order.
+mode: queued
+max: 5
+
+triggers:
+  - trigger: state
+    entity_id: !input remunerated
+    from: "on"
+    to: "off"
+    id: unpaid
+  - trigger: state
+    entity_id: !input remunerated
+    from: "off"
+    to: "on"
+    id: paid
+
+actions:
+  - choose:
+      - conditions:
+          - condition: trigger
+            id: unpaid
+        sequence: !input unpaid_actions
+      - conditions:
+          - condition: trigger
+            id: paid
+        sequence: !input paid_actions

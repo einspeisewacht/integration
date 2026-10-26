@@ -52,6 +52,10 @@ Sources and details (German): [docs/ENTWICKLUNG.md](docs/ENTWICKLUNG.md), sectio
 
 ## Installation (HACS)
 
+**One click:** [![Open in HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=einspeisewacht&repository=integration&category=integration) → download, restart Home Assistant → [![Add integration](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=einspeisewacht)
+
+Or by hand:
+
 1. HACS → ⋮ → *Custom repositories* → `https://github.com/einspeisewacht/integration`, type *Integration*.
 2. Search for Einspeisewacht and download it. Restart Home Assistant.
 3. *Settings → Devices & services → Add integration → Einspeisewacht*.
@@ -97,6 +101,8 @@ data:
 The response holds kWh remunerated and not, revenue, lost revenue and the negative quarter hours – in total and by month. It is based on your feed-in meter's long-term statistics (hourly values spread evenly over the four quarter hours – exact when all four end the same way, a close estimate otherwise). Quarter hours without a known price count as remunerated and are listed under `gaps`; with the SMARD option, prices reach back to commissioning.
 
 ## Examples
+
+**Blueprint "switch on negative prices":** runs your own actions when remuneration stops (charge the battery, switch on the wallbox, curtail) and others when it resumes. [![Import blueprint](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Feinspeisewacht%2Fintegration%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Feinspeisewacht%2Fvergutung_aus_an.yaml)
 
 ```yaml
 alias: Charge the battery while there is no remuneration
