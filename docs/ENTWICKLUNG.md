@@ -116,6 +116,8 @@ Nicht verabschiedet (2./3. Lesung voraussichtlich 9.–13.11.2026, Bundesrat 20.
 - GitHub: Organisation `einspeisewacht`, Repo `integration` (öffentlich seit 2026-10-26, damit die HA-Tests in CI laufen und HACS installieren kann). Brand-Bilder seit 2026-10-26 (`docs/BRAND.md`).
 - **Releases, auch Betas, als reguläre GitHub-Releases** (nicht „Pre-release“): Ohne reguläres Release nimmt HACS den letzten Commit und sucht wegen `zip_release` eine ZIP unter `releases/download/<commit>/` – 404 (erlebt mit 0.1.0b2, 2026-10-26).
 
+- **Bekanntmachen:** simon42 Community ([Thema 94942](https://community.simon42.com/t/einspeisewacht-was-dich-negative-strompreise-bei-der-pv-einspeisung-kosten-hacs-integration/94942), 2026-10-26). Offen: HA Community (englisch), Hinweis im evcc-PR #33635, Antrag HACS-Standardliste.
+
 ### GitHub-Einstellungen (Stand 2026-10-26, wie Eilwacht)
 
 - **Organisation:** Zwei-Faktor-Pflicht für alle Mitglieder; Profilbild, Beschreibung und Website gesetzt. Actions: alle erlaubt (Einschränkung im Repo), Token standardmäßig nur lesend, Freigabe für Erst-Mitwirkende, Actions dürfen keine Pull-Requests erstellen. „Nur sichere 2FA-Methoden“ ist nicht gesetzt (würde SMS-2FA aussperren).
