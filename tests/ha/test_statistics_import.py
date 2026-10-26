@@ -113,7 +113,10 @@ async def test_import_statistics(recorder_mock: Recorder, hass: HomeAssistant) -
 
     hours = int((LIVE_START - start).total_seconds() // 3600)  # 29
     paid_id, unpaid_id = ids["energy_paid"], ids["energy_unpaid"]
-    assert result["sensors"][paid_id]["hours"] == hours
+    assert result["sensors"][paid_id]["hours"] == hours, (
+        result,
+        await sums(hass, paid_id),
+    )
 
     paid, unpaid = await sums(hass, paid_id), await sums(hass, unpaid_id)
     added = paid[-2][1] + unpaid[-2][1]
