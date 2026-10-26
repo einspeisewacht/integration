@@ -240,6 +240,20 @@
           "description": "Last day of the period (included). Default: today."
         }
       }
+    },
+    "import_statistics": {
+      "name": "Import statistics",
+      "description": "Fills the long-term statistics of the four total sensors (feed-in remunerated/not remunerated, revenue, lost revenue) for the time before setup, from the given day on – computed like the report from the meter's hourly statistics. Later sums are shifted so the series stays continuous. Changes the statistics database: make a backup first. Only hours before each sensor's first statistic are written; a second call finds nothing left.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Plant",
+          "description": "The Einspeisewacht entry (plant and meter)."
+        },
+        "start": {
+          "name": "From",
+          "description": "First day to fill in, e.g. 1 January or the commissioning date."
+        }
+      }
     }
   },
   "exceptions": {
@@ -254,6 +268,18 @@
     },
     "empty_period": {
       "message": "The period contains no complete hour since commissioning."
+    },
+    "import_entities_missing": {
+      "message": "The total sensors of this plant were not found."
+    },
+    "import_no_statistics_yet": {
+      "message": "The total sensors have no statistics yet. Home Assistant compiles them every hour – try again in an hour."
+    },
+    "import_nothing_to_import": {
+      "message": "Nothing to fill in: the statistics already reach back to this day."
+    },
+    "import_prices_missing": {
+      "message": "Prices are unknown for {count} quarter hours of this period. Turn on “Count earlier negative quarter hours from SMARD.de” under Reconfigure, wait for it to finish and try again."
     }
   }
 }

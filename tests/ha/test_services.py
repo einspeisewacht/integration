@@ -38,7 +38,7 @@ async def test_report(hass: HomeAssistant, freezer: FrozenDateTimeFactory) -> No
     hass.states.async_set(PRICE, "0.0257", price_attributes())
     await hass.async_block_till_done()
 
-    with patch.object(PlantRuntime, "_async_hourly_energy", return_value=hourly()):
+    with patch.object(PlantRuntime, "async_hourly_energy", return_value=hourly()):
         result = await report(
             hass, config_entry_id=entry.entry_id, start="2026-10-25", end="2026-10-25"
         )

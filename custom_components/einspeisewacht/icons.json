@@ -2,6 +2,9 @@
   "services": {
     "report": {
       "service": "mdi:file-chart-outline"
+    },
+    "import_statistics": {
+      "service": "mdi:database-import-outline"
     }
   }
 }

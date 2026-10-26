@@ -297,7 +297,7 @@ class PlantRuntime:
         end = min(local_midnight(last_day + timedelta(days=1)), now)
         if end <= start:
             raise ValueError("empty period")
-        hourly = await self._async_hourly_energy(start, end)
+        hourly = await self.async_hourly_energy(start, end)
         result = build_report(
             hourly,
             start,
@@ -316,7 +316,7 @@ class PlantRuntime:
             **result,
         }
 
-    async def _async_hourly_energy(
+    async def async_hourly_energy(
         self, start: datetime, end: datetime
     ) -> list[tuple[datetime, float]]:
         """Energy per hour (kWh) of the meter from Home Assistant's long-term statistics."""

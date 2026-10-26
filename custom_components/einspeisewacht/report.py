@@ -46,6 +46,35 @@ def _ranges(slots: list[datetime]) -> list[tuple[datetime, datetime]]:
     return ranges
 
 
+def split_hour(
+    hour: datetime, energy: float, counter: QuarterCounter, rule: Rule
+) -> tuple[float, float]:
+    """(remunerated, not remunerated) kWh of one hour, spread over its quarter hours."""
+    paid = unpaid = 0.0
+    for i in range(4):
+        slot = hour + i * QUARTER
+        price = counter.negatives.get(slot)
+        if price is not None and not rule.is_paid(slot, price):
+            unpaid += energy / 4
+        else:
+            paid += energy / 4
+    return paid, unpaid
+
+
+def unknown_slots(
+    start: datetime, end: datetime, counter: QuarterCounter
+) -> list[datetime]:
+    """Quarter hours in [start, end) whose price was never seen."""
+    slots = []
+    slot = start.astimezone(UTC)
+    end = end.astimezone(UTC)
+    while slot < end:
+        if not counter.known(slot):
+            slots.append(slot)
+        slot += QUARTER
+    return slots
+
+
 def build_report(
     hourly: Iterable[tuple[datetime, float]],
     start: datetime,
@@ -70,31 +99,23 @@ def build_report(
         if not start <= hour < end:
             continue
         hours_with_energy.add(hour)
-        for i in range(4):
-            slot = hour + i * QUARTER
-            share = energy / 4
-            price = counter.negatives.get(slot)
-            unpaid = price is not None and not rule.is_paid(slot, price)
-            for sums in (total, month(slot)):
-                if unpaid:
-                    sums.energy_unpaid += share
-                else:
-                    sums.energy_paid += share
+        paid, unpaid = split_hour(hour, energy, counter, rule)
+        for sums in (total, month(hour)):
+            sums.energy_paid += paid
+            sums.energy_unpaid += unpaid
 
     for slot, price in counter.negatives.items():
         if start <= slot < end and not rule.is_paid(slot, price):
             total.negative_quarter_hours += 1
             month(slot).negative_quarter_hours += 1
 
-    unknown: list[datetime] = []
+    unknown = unknown_slots(start, end, counter)
     missing_hours = 0
-    slot = start
-    while slot < end:
-        if not counter.known(slot):
-            unknown.append(slot)
-        if slot.minute == 0 and slot not in hours_with_energy:
+    hour = start
+    while hour < end:
+        if hour not in hours_with_energy:
             missing_hours += 1
-        slot += QUARTER
+        hour += HOUR
 
     return {
         **total.as_dict(rate),

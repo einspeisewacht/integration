@@ -240,6 +240,20 @@
           "description": "Letzter Tag des Zeitraums (einschließlich). Standard: heute."
         }
       }
+    },
+    "import_statistics": {
+      "name": "Statistik nachtragen",
+      "description": "Füllt die Langzeitstatistik der vier Summen-Sensoren (Einspeisung vergütet/unvergütet, Erlös, entgangener Erlös) für die Zeit vor der Einrichtung, ab dem angegebenen Tag – berechnet wie der Bericht aus den Stundenwerten des Zählers. Spätere Summen werden verschoben, damit die Reihe durchgehend bleibt. Greift in die Statistik-Datenbank ein: vorher ein Backup anlegen. Es werden nur Stunden vor dem ersten vorhandenen Wert geschrieben; ein zweiter Aufruf findet nichts mehr.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Anlage",
+          "description": "Der Einspeisewacht-Eintrag (Anlage und Zähler)."
+        },
+        "start": {
+          "name": "Ab",
+          "description": "Erster nachzutragender Tag, z. B. der 1. Januar oder die Inbetriebnahme."
+        }
+      }
     }
   },
   "exceptions": {
@@ -254,6 +268,18 @@
     },
     "empty_period": {
       "message": "Der Zeitraum enthält keine vollständige Stunde seit der Inbetriebnahme."
+    },
+    "import_entities_missing": {
+      "message": "Die Summen-Sensoren dieser Anlage wurden nicht gefunden."
+    },
+    "import_no_statistics_yet": {
+      "message": "Die Summen-Sensoren haben noch keine Statistik. Home Assistant legt sie stündlich an – bitte in einer Stunde erneut versuchen."
+    },
+    "import_nothing_to_import": {
+      "message": "Nichts nachzutragen: Die Statistik reicht bereits bis zu diesem Tag zurück."
+    },
+    "import_prices_missing": {
+      "message": "Für {count} Viertelstunden dieses Zeitraums sind die Preise unbekannt. Bitte unter „Neu konfigurieren“ „Frühere negative Viertelstunden von SMARD.de nachzählen“ einschalten, den Abruf abwarten und es erneut versuchen."
     }
   }
 }
