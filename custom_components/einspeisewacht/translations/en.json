@@ -77,7 +77,7 @@
       },
       "summary": {
         "title": "Rule",
-        "description": "Derived rule: **{rule}**\nApplies from: {applies_from}\nRemuneration: {rate} ct/kWh\n\nIf your grid operator settles differently, override the rule here.",
+        "description": "Derived rule: **{rule}**\nApplies from: {applies_from}\nRemuneration: {rate} ct/kWh\n\n{note}\n\nIf your grid operator settles differently, override the rule here.",
         "data": {
           "override": "Rule",
           "override_date": "Every negative quarter hour from"
@@ -97,7 +97,8 @@
       "meter_unit": "The meter must report Wh, kWh or MWh.",
       "meter_state_class": "The meter must be cumulative (state class total or total_increasing).",
       "price_invalid": "No price found: the sensor has neither a forecast attribute `data` nor a numeric state.",
-      "override_date_required": "Please enter a date."
+      "override_date_required": "Please enter a date.",
+      "date_in_future": "The date must not be in the future."
     },
     "abort": {
       "already_configured": "This meter is already set up.",
@@ -135,6 +136,11 @@
         "not_affected": "Not affected",
         "manual_from_date": "Every negative quarter hour from a date (manual)",
         "manual_never": "Not affected (manual)"
+      }
+    },
+    "notice": {
+      "options": {
+        "future_start": "⚠️ The rule starts in a future year. Are the commissioning date and the iMSys installation date correct?"
       }
     }
   },

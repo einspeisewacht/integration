@@ -18,6 +18,7 @@ from homeassistant.config_entries import (
 from homeassistant.const import ATTR_UNIT_OF_MEASUREMENT
 from homeassistant.helpers import selector
 from homeassistant.helpers.translation import async_get_translations
+from homeassistant.util import dt as dt_util
 
 from .const import (
     CONF_COMMISSIONED,
@@ -111,12 +112,18 @@ class EinspeisewachtConfigFlow(ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             name = user_input[CONF_NAME].strip()
             smart_meter = user_input.get(CONF_SMART_METER, False)
+            smart_meter_date = user_input.get(CONF_SMART_METER_DATE)
+            today = dt_util.now().date()
             if not name:
                 errors[CONF_NAME] = "name_required"
             elif user_input[CONF_POWER] <= 0:
                 errors[CONF_POWER] = "power_invalid"
-            elif smart_meter and not user_input.get(CONF_SMART_METER_DATE):
+            elif date.fromisoformat(user_input[CONF_COMMISSIONED]) > today:
+                errors[CONF_COMMISSIONED] = "date_in_future"
+            elif smart_meter and not smart_meter_date:
                 errors[CONF_SMART_METER_DATE] = "smart_meter_date_required"
+            elif smart_meter and date.fromisoformat(smart_meter_date) > today:
+                errors[CONF_SMART_METER_DATE] = "date_in_future"
             else:
                 self._data.update(
                     {
@@ -320,10 +327,19 @@ class EinspeisewachtConfigFlow(ConfigFlow, domain=DOMAIN):
         rate = f"{rate_from_config(self._data):.3f}".rstrip("0").rstrip(".")
         if language.startswith("de"):
             rate = rate.replace(".", ",")
+        # A rule that starts in a later year is usually a mistyped year. The
+        # warning text lives with the selector translations, the only place a
+        # flow can look up a translated string for a placeholder.
+        note = ""
+        if derived.applies_from and derived.applies_from > dt_util.now().date():
+            note = translations.get(
+                f"component.{DOMAIN}.selector.notice.options.future_start", ""
+            )
         return {
             "rule": rule,
             "applies_from": _format_date(derived.applies_from, language),
             "rate": rate,
+            "note": note,
         }
 
     async def _async_finish(self) -> ConfigFlowResult:

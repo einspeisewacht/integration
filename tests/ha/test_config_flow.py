@@ -71,6 +71,7 @@ async def test_full_flow_single_rate(hass: HomeAssistant) -> None:
     assert result["step_id"] == "summary"
     assert result["description_placeholders"]["applies_from"] == "2026-01-01"
     assert result["description_placeholders"]["rate"] == "7.94"
+    assert result["description_placeholders"]["note"] == ""
     result = await configure(hass, result, {CONF_OVERRIDE: OVERRIDE_AUTO})
     assert result["type"] is FlowResultType.CREATE_ENTRY
     assert result["title"] == "Dach"
@@ -105,6 +106,31 @@ async def test_plant_errors(hass: HomeAssistant) -> None:
     assert result["errors"] == {"smart_meter_date": "smart_meter_date_required"}
     result = await configure(hass, result, {**PLANT, "name": "  "})
     assert result["errors"] == {"name": "name_required"}
+
+
+@pytest.mark.freeze_time("2026-10-26 12:00:00+00:00")
+async def test_dates_in_future(hass: HomeAssistant) -> None:
+    result = await configure(
+        hass, await start(hass), {**PLANT, "commissioned": "2026-10-27"}
+    )
+    assert result["errors"] == {"commissioned": "date_in_future"}
+    result = await configure(hass, result, {**PLANT, "smart_meter_date": "2026-10-27"})
+    assert result["errors"] == {"smart_meter_date": "date_in_future"}
+
+
+@pytest.mark.freeze_time("2026-10-26 12:00:00+00:00")
+async def test_note_when_rule_starts_in_future_year(hass: HomeAssistant) -> None:
+    """iMSys this year: the rule starts next year, which is worth a second look."""
+    plant = {**PLANT, "commissioned": "2026-03-01", "smart_meter_date": "2026-03-10"}
+    result = await configure(hass, await start(hass), plant)
+    result = await configure(
+        hass, result, {"rate_mode": "single", "feed_in_type": "partial", "rate": 7.94}
+    )
+    result = await configure(
+        hass, result, {"meter_entity": METER, "price_entity": PRICE}
+    )
+    assert result["description_placeholders"]["applies_from"] == "2027-01-01"
+    assert result["description_placeholders"]["note"].startswith("⚠️")
 
 
 async def test_rate_required(hass: HomeAssistant) -> None:

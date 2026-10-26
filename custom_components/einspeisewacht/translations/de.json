@@ -77,7 +77,7 @@
       },
       "summary": {
         "title": "Regel",
-        "description": "Abgeleitete Regel: **{rule}**\nGilt ab: {applies_from}\nVergütung: {rate} ct/kWh\n\nRechnet dein Netzbetreiber anders ab, kannst du die Regel hier übersteuern.",
+        "description": "Abgeleitete Regel: **{rule}**\nGilt ab: {applies_from}\nVergütung: {rate} ct/kWh\n\n{note}\n\nRechnet dein Netzbetreiber anders ab, kannst du die Regel hier übersteuern.",
         "data": {
           "override": "Regel",
           "override_date": "Jede negative Viertelstunde ab"
@@ -97,7 +97,8 @@
       "meter_unit": "Der Zähler muss Wh, kWh oder MWh liefern.",
       "meter_state_class": "Der Zähler muss fortlaufend zählen (state_class total oder total_increasing).",
       "price_invalid": "Kein Preis gefunden: Der Sensor hat weder ein Prognose-Attribut `data` noch einen Zahlenwert.",
-      "override_date_required": "Bitte ein Datum eingeben."
+      "override_date_required": "Bitte ein Datum eingeben.",
+      "date_in_future": "Das Datum darf nicht in der Zukunft liegen."
     },
     "abort": {
       "already_configured": "Dieser Zähler ist bereits eingerichtet.",
@@ -135,6 +136,11 @@
         "not_affected": "Nicht betroffen",
         "manual_from_date": "Jede negative Viertelstunde ab einem Datum (manuell)",
         "manual_never": "Nicht betroffen (manuell)"
+      }
+    },
+    "notice": {
+      "options": {
+        "future_start": "⚠️ Die Regel greift erst in einem künftigen Jahr. Stimmen Inbetriebnahme und iMSys-Einbaudatum?"
       }
     }
   },
