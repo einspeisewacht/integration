@@ -116,3 +116,31 @@ Nicht verabschiedet (2./3. Lesung voraussichtlich 9.–13.11.2026, Bundesrat 20.
 
 - EEG 2027 nach Verabschiedung (voraussichtlich November 2026) prüfen.
 - Quelle für historische Viertelstundenpreise zur Nachberechnung (SMARD.de?) und deren Nutzungsbedingungen.
+
+## 7. Integration Quality Scale (Stand 2026-10-26)
+
+Ziel Bronze. Für Custom-Integrationen vergibt Home Assistant keine Stufe; die Liste dient als Selbstprüfung.
+
+| Bronze-Regel | Stand |
+|---|---|
+| action-setup | ✅ Aktion `report` in `async_setup` (`services.py`) |
+| appropriate-polling | ➖ kein Polling – reagiert auf Zustandsänderungen und Viertelstundentakt |
+| brands | ✅ `custom_components/einspeisewacht/brand/` |
+| common-modules | ✅ `entity.py`, `runtime.py` |
+| config-flow-test-coverage | ✅ `tests/ha/test_config_flow.py` (alle Schritte, Fehler, Abbruch, Neu konfigurieren) |
+| config-flow | ✅ mit `data_description` |
+| dependency-transparency | ✅ keine `requirements` |
+| docs-actions | ✅ README „Bericht für einen Zeitraum“ |
+| docs-high-level-description | ✅ README |
+| docs-installation-instructions | ✅ README |
+| docs-removal-instructions | ✅ README „Entfernen“ |
+| entity-event-setup | ✅ Abo in `async_added_to_hass`, Abmeldung über `async_on_remove` |
+| entity-unique-id | ✅ `<entry_id>_<key>` |
+| has-entity-name | ✅ |
+| runtime-data | ✅ `entry.runtime_data` |
+| test-before-configure | ✅ Einrichtung prüft Zähler (Einheit, `state_class`) und Preissensor |
+| test-before-setup | ➖ bewusst nicht: Zähler und Preissensor stammen aus anderen Integrationen und sind beim Start oft noch nicht da; Einspeisewacht wartet auf sie, statt das Setup scheitern zu lassen |
+| unique-config-entry | ✅ `unique_id` = Zähler-Entität |
+
+Darüber hinaus erfüllt (Silber/Gold): `action-exceptions`, `config-entry-unloading`, `diagnostics`, `entity-translations`, `exception-translations`, `icon-translations` (Aktion), `reconfiguration-flow`, `repair-issues`, `entity-category`, `entity-device-class`.
+

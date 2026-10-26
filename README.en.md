@@ -1,0 +1,151 @@
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/einspeisewacht/integration/main/assets/github/readme-header-dark@2x.png">
+  <img alt="Einspeisewacht – every quarter hour in view." src="https://raw.githubusercontent.com/einspeisewacht/integration/main/assets/github/readme-header-light@2x.png" width="640">
+</picture>
+
+[![Release](https://img.shields.io/github/v/release/einspeisewacht/integration?color=008351)](https://github.com/einspeisewacht/integration/releases)
+[![CI](https://github.com/einspeisewacht/integration/actions/workflows/ci.yml/badge.svg)](https://github.com/einspeisewacht/integration/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-F5A623.svg)](LICENSE)
+
+🇩🇪 [Deutsch](https://github.com/einspeisewacht/integration/blob/main/README.md) · 🇬🇧 **English**
+
+> ℹ️ **Beta.** Einspeisewacht ("feed-in watch") is new and being tried on real plants. Feedback is very welcome – see [Reporting issues](#reporting-issues).
+
+**How much of your PV feed-in goes unpaid because of negative electricity prices?** Under Germany's Solarspitzengesetz, new PV plants lose their feed-in tariff in every quarter hour with a negative day-ahead price. Einspeisewacht tracks this in Home Assistant, quarter hour by quarter hour, with the price of exactly that quarter hour – and shows what it costs you and how much remuneration time is added at the end in return.
+
+> **Not legal or billing advice.** The values are a guide. What counts is your grid operator's statement – it uses its meter's readings, Home Assistant usually inverter or optical-reader values.
+
+The integration's UI is available in German and English and follows your Home Assistant language. It is built for German law (EEG) and the German-Luxembourg bidding zone.
+
+## What Einspeisewacht does
+
+- **Feed-in remunerated / not remunerated** (kWh) and **revenue / lost revenue** (€), with long-term statistics for day, month and year.
+- **Quarter hours without remuneration** in the current year and the resulting **extension** under § 51a EEG: full-load quarter hours and the date your remuneration then runs until.
+- **Remunerated**: binary sensor for automations – charge the battery, the car, or curtail.
+- **Calendar "Negative prices"** with the windows without remuneration – today and, once the day-ahead forecast is out (usually around 1 pm), tomorrow.
+- **Action "Report"** for any period, by month – also for the time before setup, as far back as your meter's statistics reach.
+- Derives the **applicable rule** from commissioning date, capacity and smart meter, with a manual override if your grid operator settles differently.
+- **Exact at quarter-hour boundaries:** each meter delta is split over the quarter hours by time, each with its own price. A price of exactly 0 is not negative.
+- **Robust:** ignores meter resets and implausible jumps, survives restarts, handles daylight saving changes (92 or 100 quarter hours).
+
+## Which rule applies (§ 51 EEG)
+
+| Commissioned | Installed capacity | No remuneration when … |
+|---|---|---|
+| from 25 Feb 2025 | 100 kW and more | every quarter hour with a negative day-ahead price |
+| from 25 Feb 2025 | 2 to below 100 kW | as above, but only from 1 January of the year **after** a smart metering system (iMSys) was installed |
+| from 25 Feb 2025 | below 2 kW | not affected |
+| 2016 to 24 Feb 2025 | 400 or 500 kW and more | consecutive negative hours – not implemented (see below) |
+| otherwise | | not affected |
+
+An iMSys is a smart meter **gateway** installed by the metering point operator; a digital meter without gateway does not count. While the rule does not apply to your plant yet, Einspeisewacht adds sensors showing what you would have lost.
+
+**A fixed feed-in tariff only exists up to 100 kW** (§ 21 EEG). Larger plants sell directly; negative prices cost them the market premium, not a fixed rate. Einspeisewacht counts energy and quarter hours correctly for them, but revenue and lost revenue are only a rough guide. The hour-block rules of older large plants therefore never affect a plant with a fixed tariff and are not implemented.
+
+Sources and details (German): [docs/ENTWICKLUNG.md](docs/ENTWICKLUNG.md), section 2.
+
+## Requirements
+
+- Home Assistant 2026.3 or newer.
+- A **feed-in meter**: cumulative energy sensor (Wh, kWh or MWh, `state_class` `total` or `total_increasing`) – ideally the meter at the grid connection point.
+- A **price sensor** with a day-ahead forecast per quarter hour, e.g. from the [EPEX Spot](https://github.com/mampfes/ha_epex_spot) integration (source SMARD.de, market DE-LU). The `data` attribute of EPEX Spot is tested; without a forecast attribute Einspeisewacht uses the current state.
+
+## Installation (HACS)
+
+1. HACS → ⋮ → *Custom repositories* → `https://github.com/einspeisewacht/integration`, type *Integration*.
+2. Search for Einspeisewacht and download it. Restart Home Assistant.
+3. *Settings → Devices & services → Add integration → Einspeisewacht*.
+
+## Setup
+
+1. **Plant:** name, commissioning date, installed capacity (kWp), iMSys and its installation date.
+2. **Remuneration:** the rate from your grid operator's statement in ct/kWh (after the 0.4 ct deduction) – single or tiered by capacity band; for tiered rates Einspeisewacht forms the blended rate (§ 23c EEG).
+3. **Data sources:** feed-in meter and price sensor.
+4. **Rule:** shows the derived rule, when it starts and the rate; override it if your grid operator settles differently. Optional: **count earlier negative quarter hours from SMARD.de**, so the extension covers the time before setup too (a one-time download of public price data, see [Privacy](#privacy)).
+
+Several plants or meters: one entry each. To change: *Einspeisewacht → entry → ⋮ → Reconfigure*.
+
+## Entities
+
+| Entity | Type | Meaning |
+|---|---|---|
+| Feed-in remunerated | kWh | grid feed-in in remunerated quarter hours, since setup |
+| Feed-in not remunerated | kWh | grid feed-in in quarter hours without remuneration |
+| Revenue | € | remunerated feed-in × rate |
+| Lost revenue | € | unremunerated feed-in × rate |
+| Quarter hours without remuneration | count | current calendar year, with or without feed-in (counts for § 51a); attribute `years` |
+| Extension | full-load quarter hours | quarter hours × 0.5, rounded up; attribute `months` with the extension months |
+| Remunerated until | date | end of remuneration including the extension |
+| Remunerated | on/off | whether the running quarter hour is remunerated; unknown without a price |
+| Negative prices | calendar | windows with a negative price |
+| Rule | diagnostic | the rule applied, attributes `applies_from` and `rate_ct_per_kwh` |
+
+While the rule does not apply yet (e.g. no iMSys), "… if the rule applied" sensors are added and the extension sensors are left out.
+
+## Report for a period
+
+*Developer tools → Actions →* **Einspeisewacht: Report**, choose plant and period, "Show response":
+
+```yaml
+action: einspeisewacht.report
+data:
+  config_entry_id: <choose entry>
+  start: "2026-01-01"
+  end: "2026-12-31"
+```
+
+The response holds kWh remunerated and not, revenue, lost revenue and the negative quarter hours – in total and by month. It is based on your feed-in meter's long-term statistics (hourly values spread evenly over the four quarter hours – exact when all four end the same way, a close estimate otherwise). Quarter hours without a known price count as remunerated and are listed under `gaps`; with the SMARD option, prices reach back to commissioning.
+
+## Examples
+
+```yaml
+alias: Charge the battery while there is no remuneration
+triggers:
+  - trigger: state
+    entity_id: binary_sensor.roof_remunerated
+    to: "off"
+actions:
+  - action: select.select_option
+    target:
+      entity_id: select.inverter_battery_mode   # your entity
+    data:
+      option: "Charge from PV"
+mode: single
+```
+
+Entity IDs depend on your plant's name and Home Assistant language.
+
+## Privacy
+
+Einspeisewacht computes locally and reads only the entities you choose. The single exception, only if you turn it on: the SMARD option downloads public day-ahead prices from smard.de (German Federal Network Agency) once. Nothing about you or your plant is sent – only requests for the price files, identified as `Einspeisewacht/<version>`. The diagnostics file contains neither the plant's name nor meter readings, energy or revenue totals.
+
+## What Einspeisewacht does not do
+
+- **No billing:** differences to your grid operator's statement are normal.
+- **No direct marketing:** market premium and fallback remuneration are not modelled (above 100 kW).
+- **No old rules** for large plants (hour blocks, 2016 to 24 Feb 2025).
+- **Voluntary switch to the new rules** (§ 100 (47) EEG, +0.6 ct/kWh) is not offered while EU state-aid approval is missing.
+- **The meter must measure grid feed-in.** A production meter also counts self-consumption and battery charging, which the rule does not affect.
+- The total sensors start at setup; for earlier periods use the Report action.
+
+## Troubleshooting
+
+- **Values stay at 0:** check that the feed-in meter reports values and whether the rule applies yet (sensor "Rule", attribute `applies_from`).
+- **"Remunerated" is unknown:** the price sensor has no price for the running quarter hour.
+- **Repair "SMARD.de unreachable":** downloading earlier prices failed; it is retried at the next Home Assistant start. Live booking is not affected.
+- **Diagnostics:** *Einspeisewacht → entry → ⋮ → Download diagnostics*. **Debug log:** *Einspeisewacht → ⋮ → Enable debug logging*.
+
+## Removal
+
+1. *Settings → Devices & services → Einspeisewacht* → ⋮ on each entry → *Delete*. The entry's stored bookings are deleted with it.
+2. Optional: HACS → Einspeisewacht → ⋮ → *Remove*, then restart Home Assistant.
+
+Long-term statistics of the deleted sensors stay until you remove them under *Developer tools → Statistics*.
+
+## Reporting issues
+
+Please open an [issue](https://github.com/einspeisewacht/integration/issues), ideally with the diagnostics file and your Home Assistant and Einspeisewacht versions. Security issues privately, see [SECURITY.md](SECURITY.md).
+
+## License and sources
+
+MIT. Historical day-ahead prices (optional): Bundesnetzagentur | [SMARD.de](https://www.smard.de), [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/); Einspeisewacht only counts the negative quarter hours from them.
