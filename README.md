@@ -38,7 +38,7 @@ Greift die Regel für deine Anlage noch nicht (z. B. ohne iMSys), zeigt Einspeis
 ## Installation
 
 1. HACS → ⋮ → *Benutzerdefinierte Repositories* → `https://github.com/einspeisewacht/integration`, Typ *Integration*.
-2. Einspeisewacht suchen und herunterladen (für Vorab-Versionen „Beta-Versionen anzeigen“ aktivieren). Home Assistant neu starten.
+2. Einspeisewacht suchen und herunterladen. Home Assistant neu starten.
 3. *Einstellungen → Geräte & Dienste → Integration hinzufügen → Einspeisewacht*.
 
 ## Einrichtung
