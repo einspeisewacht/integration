@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.0b6 – 2026-10-26
+
+- **Aktion „Statistik nachtragen“** (`einspeisewacht.import_statistics`): füllt die Langzeitstatistik der Summen-Sensoren für die Zeit vor der Einrichtung, ab einem wählbaren Tag – damit Statistik-Karten und Verlauf das ganze Jahr zeigen. Rechnet wie der Bericht, verschiebt die späteren Summen passend und schreibt nur, was noch fehlt. Setzt die SMARD-Option voraus.
+
 ## 0.1.0b5 – 2026-10-26
 
 - **Blueprint „Bei negativem Preis umschalten“:** eigene Aktionen, wenn die Vergütung entfällt (Speicher laden, Wallbox, Abregeln), und andere, wenn sie wieder gezahlt wird – mit Import-Knopf im README.

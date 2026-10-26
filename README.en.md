@@ -100,6 +100,19 @@ data:
 
 The response holds kWh remunerated and not, revenue, lost revenue and the negative quarter hours – in total and by month. It is based on your feed-in meter's long-term statistics (hourly values spread evenly over the four quarter hours – exact when all four end the same way, a close estimate otherwise). Quarter hours without a known price count as remunerated and are listed under `gaps`; with the SMARD option, prices reach back to commissioning.
 
+## Import statistics
+
+The total sensors start at setup. To make statistics cards and history cover the time before, use the action **Einspeisewacht: Import statistics** (*Developer tools → Actions*), e.g. from 1 January or from commissioning:
+
+```yaml
+action: einspeisewacht.import_statistics
+data:
+  config_entry_id: <choose entry>
+  start: "2026-01-01"
+```
+
+It computes like the report and writes the hours **before** the first existing statistic into the long-term statistics of the four total sensors; later sums are shifted to match. Requires the SMARD option (its download finished) and at least one hour of statistics for the sensors. **This changes the statistics database – make a backup first.** A second call finds nothing left to import.
+
 ## Examples
 
 **Blueprint "switch on negative prices":** runs your own actions when remuneration stops (charge the battery, switch on the wallbox, curtail) and others when it resumes. [![Import blueprint](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Feinspeisewacht%2Fintegration%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Feinspeisewacht%2Fvergutung_aus_an.yaml)
@@ -132,7 +145,7 @@ Einspeisewacht computes locally and reads only the entities you choose. The sing
 - **No old rules** for large plants (hour blocks, 2016 to 24 Feb 2025).
 - **Voluntary switch to the new rules** (§ 100 (47) EEG, +0.6 ct/kWh) is not offered while EU state-aid approval is missing.
 - **The meter must measure grid feed-in.** A production meter also counts self-consumption and battery charging, which the rule does not affect.
-- The total sensors start at setup; for earlier periods use the Report action.
+- The total sensors start at setup; for earlier periods use the Report and Import statistics actions.
 
 ## Troubleshooting
 

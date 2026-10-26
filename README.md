@@ -102,6 +102,19 @@ data:
 
 Die Antwort enthält kWh vergütet und unvergütet, Erlös, entgangenen Erlös und die negativen Viertelstunden – gesamt und je Monat. Grundlage ist die Langzeitstatistik deines Einspeisezählers (Stundenwerte, gleichmäßig auf die vier Viertelstunden verteilt – exakt, wenn alle vier gleich ausgehen, sonst eine gute Näherung). Viertelstunden ohne bekannten Preis zählen als vergütet und stehen unter `gaps`; mit der SMARD-Option reichen die Preise bis zur Inbetriebnahme zurück.
 
+## Statistik nachtragen
+
+Die Summen-Sensoren beginnen mit der Einrichtung. Damit Statistik-Karten und Verlauf auch die Zeit davor zeigen, gibt es die Aktion **Einspeisewacht: Statistik nachtragen** (*Entwicklerwerkzeuge → Aktionen*), z. B. ab dem 1. Januar oder ab der Inbetriebnahme:
+
+```yaml
+action: einspeisewacht.import_statistics
+data:
+  config_entry_id: <Eintrag auswählen>
+  start: "2026-01-01"
+```
+
+Sie rechnet wie der Bericht (Stundenwerte des Zählers gegen die negativen Viertelstunden) und schreibt die Stunden **vor** dem ersten vorhandenen Statistikwert in die Langzeitstatistik von „Einspeisung vergütet/unvergütet“, „Erlös“ und „Entgangener Erlös“; die späteren Summen werden passend verschoben. Voraussetzungen: die SMARD-Option ist an und ihr Abruf fertig (sonst fehlen Preise), und die Sensoren haben schon mindestens eine Stunde Statistik. **Das greift in die Statistik-Datenbank ein – vorher ein Backup anlegen.** Ein zweiter Aufruf findet nichts mehr nachzutragen.
+
 ## Was du damit bauen kannst
 
 ### Fertiger Blueprint
@@ -162,7 +175,7 @@ Einspeisewacht rechnet lokal und liest nur die Entitäten, die du auswählst. Ei
 - **Keine Altregeln** für Großanlagen (Stunden-Blöcke 2016 bis 24.02.2025).
 - **Freiwilliger Wechsel ins neue Regime** (§ 100 Abs. 47 EEG, +0,6 ct/kWh) wird nicht angeboten, solange die beihilferechtliche Genehmigung der EU fehlt.
 - **Der Zähler muss die Netzeinspeisung messen.** Ein Erzeugungszähler (PV-Ertrag) zählt auch Eigenverbrauch und Speicherladung mit – die sind von der Regel nicht betroffen.
-- Die Summen-Sensoren beginnen bei der Einrichtung; für die Zeit davor gibt es die Aktion „Bericht“.
+- Die Summen-Sensoren beginnen bei der Einrichtung; für die Zeit davor gibt es die Aktionen „Bericht“ und „Statistik nachtragen“.
 
 ## Fehlerbehebung
 
