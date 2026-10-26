@@ -32,6 +32,13 @@ RATE = 0.0794
 KEYS = ("energy_paid", "energy_unpaid", "revenue", "revenue_lost")
 
 
+@pytest.fixture(autouse=True)
+def auto_enable_custom_integrations(
+    recorder_mock: Recorder, enable_custom_integrations: None
+) -> None:
+    """The recorder must be prepared before hass (overrides the conftest fixture)."""
+
+
 def hourly(start: datetime, end: datetime) -> list[tuple[datetime, float]]:
     hours, hour = [], start
     while hour < end:
