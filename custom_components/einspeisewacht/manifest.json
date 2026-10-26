@@ -1,6 +1,9 @@
 {
   "domain": "einspeisewacht",
   "name": "Einspeisewacht",
+  "after_dependencies": [
+    "recorder"
+  ],
   "codeowners": [
     "@n42net"
   ],

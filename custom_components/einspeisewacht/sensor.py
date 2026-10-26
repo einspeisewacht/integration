@@ -73,7 +73,7 @@ async def async_setup_entry(
     entities: list[SensorEntity] = [TotalSensor(entry, d) for d in TOTALS]
     entities.append(
         NegativeQuarterHoursSensor(
-            entry, "negative_quarter_hours", lambda r: r.engine.quarters.counts
+            entry, "negative_quarter_hours", lambda r: r.engine.counts()
         )
     )
     entities.append(ActiveRuleSensor(entry, "active_rule"))
@@ -87,7 +87,7 @@ async def async_setup_entry(
             NegativeQuarterHoursSensor(
                 entry,
                 "shadow_negative_quarter_hours",
-                lambda r: r.engine.quarters.shadow_counts,
+                lambda r: r.engine.shadow_counts(),
             )
         )
     async_add_entities(entities)
@@ -154,7 +154,7 @@ class ActiveRuleSensor(PlantEntity, SensorEntity):
 
 
 def _extension(runtime: PlantRuntime) -> Extension:
-    return extension(runtime.commissioned, runtime.engine.quarters.counts)
+    return extension(runtime.commissioned, runtime.engine.counts())
 
 
 class CatchUpSensor(PlantEntity, SensorEntity):

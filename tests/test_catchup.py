@@ -13,7 +13,7 @@ from custom_components.einspeisewacht.catchup import (
 )
 from custom_components.einspeisewacht.const import BERLIN
 from custom_components.einspeisewacht.prices import parse_interval_prices
-from custom_components.einspeisewacht.quarters import QuarterCounter, count_range
+from custom_components.einspeisewacht.quarters import QuarterCounter
 from custom_components.einspeisewacht.rules import AlwaysPaid, NegativeQuarterHour
 from custom_components.einspeisewacht.smard import (
     parse_index,
@@ -107,44 +107,36 @@ def test_smard_hourly_before_october_2025() -> None:
     assert len(prices) == 672
 
 
-def test_count_range_matches_live_counting() -> None:
+def test_backfill_matches_live_counting() -> None:
     prices = parse_week(load_fixture("smard_week_2026-10-19.json"))
     rule = NegativeQuarterHour()
-    result = count_range(prices, DAY_START, DAY_END, rule, rule, BERLIN)
-    assert result.counts == {2026: 6}
-    assert result.missing_prices == 0
-    live = QuarterCounter(next_slot=DAY_START)
+    since = datetime(2020, 1, 1, tzinfo=UTC)
+    backfilled = QuarterCounter(started=DAY_END, next_slot=DAY_END)
+    assert backfilled.add_backfill(prices, DAY_START, DAY_END) == 0
     from custom_components.einspeisewacht.prices import PriceTable
 
-    live.advance(DAY_END, PriceTable(prices), rule, rule, BERLIN)
-    assert live.counts == result.counts
+    live = QuarterCounter(next_slot=DAY_START, started=DAY_START)
+    live.advance(DAY_END, PriceTable(prices))
+    assert backfilled.negatives == live.negatives
+    assert backfilled.counts(rule, since, BERLIN) == {2026: 6}
+    assert backfilled.known(DAY_START) and backfilled.known(DAY_END - QUARTER)
 
 
-def test_count_range_reports_missing_prices() -> None:
-    result = count_range(
-        {},
-        DAY_START,
-        DAY_START + timedelta(hours=1),
-        AlwaysPaid(),
-        AlwaysPaid(),
-        BERLIN,
-    )
-    assert result.missing_prices == 4
+def test_backfill_reports_missing_prices() -> None:
+    counter = QuarterCounter(started=DAY_START + timedelta(hours=1))
+    counter.next_slot = counter.started
+    assert counter.add_backfill({}, DAY_START, DAY_START + timedelta(hours=1)) == 4
+    assert not counter.known(DAY_START)
 
 
-def test_backfill_is_added_once() -> None:
-    counter = QuarterCounter(started=DAY_END, counts={2026: 2})
-    result = count_range(
-        parse_week(load_fixture("smard_week_2026-10-19.json")),
-        DAY_START,
-        DAY_END,
-        NegativeQuarterHour(),
-        NegativeQuarterHour(),
-        BERLIN,
-    )
-    counter.add_backfill(result)
-    assert counter.counts == {2026: 8}
-    assert counter.backfilled
+def test_backfill_replaces_earlier_backfill_but_keeps_live_values() -> None:
+    week = parse_week(load_fixture("smard_week_2026-10-19.json"))
+    counter = QuarterCounter(started=DAY_END, next_slot=DAY_END + QUARTER)
+    counter.negatives[DAY_END] = -0.5  # live
+    counter.add_backfill(week, DAY_START, DAY_END)
+    counter.add_backfill(week, DAY_START + timedelta(hours=12), DAY_END)
+    assert len(counter.negatives) == 1 + 3  # live + 14:00, 14:15, 15:00 CET
+    assert counter.backfill_from == DAY_START + timedelta(hours=12)
 
 
 # --- calendar windows ----------------------------------------------------------
@@ -180,28 +172,3 @@ def test_negative_windows_while_rule_does_not_apply() -> None:
     assert window.paid
     assert window.lowest_price == -0.02
     assert window.end == DAY_START + 2 * QUARTER
-
-
-def test_engine_discards_counts_of_another_rule() -> None:
-    from custom_components.einspeisewacht.engine import Engine
-    from custom_components.einspeisewacht.ledger import FeedInValuation
-    from custom_components.einspeisewacht.meter import MeterTracker
-
-    def engine(key: str) -> Engine:
-        rule = NegativeQuarterHour()
-        return Engine(
-            meter=MeterTracker(max_power_kw=9),
-            valuation=FeedInValuation(rate=0.08, rule=rule, shadow_rule=rule),
-            rule_key=key,
-        )
-
-    old = engine("quarter_hour:2027-01-01")
-    old.quarters = QuarterCounter(
-        next_slot=DAY_START, started=DAY_START, counts={2026: 3}
-    )
-    new = engine("quarter_hour:2026-01-01")
-    new.restore(old.as_dict())
-    assert new.quarters == QuarterCounter()
-    same = engine("quarter_hour:2027-01-01")
-    same.restore(old.as_dict())
-    assert same.quarters.counts == {2026: 3}

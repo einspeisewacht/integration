@@ -212,5 +212,39 @@
       "title": "SMARD.de nicht erreichbar ({name})",
       "description": "Einspeisewacht konnte frühere Day-Ahead-Preise nicht von SMARD.de laden, um die Viertelstunden vor der Einrichtung nachzuzählen. Die laufende Zählung und Buchung sind nicht betroffen. Beim nächsten Start von Home Assistant wird es erneut versucht.\n\nFehler: {error}"
     }
+  },
+  "services": {
+    "report": {
+      "name": "Bericht",
+      "description": "Einspeisung, Erlös und entgangener Erlös für einen Zeitraum – berechnet aus der Langzeitstatistik des Zählers (Stundenwerte, gleichmäßig auf die Viertelstunden verteilt) und den Einspeisewacht bekannten negativen Viertelstunden. Erfasst auch die Zeit vor der Einrichtung, soweit die Statistik des Zählers zurückreicht.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Anlage",
+          "description": "Der Einspeisewacht-Eintrag (Anlage und Zähler)."
+        },
+        "start": {
+          "name": "Von",
+          "description": "Erster Tag des Zeitraums."
+        },
+        "end": {
+          "name": "Bis",
+          "description": "Letzter Tag des Zeitraums (einschließlich). Standard: heute."
+        }
+      }
+    }
+  },
+  "exceptions": {
+    "entry_not_found": {
+      "message": "Dieser Eintrag gehört nicht zu Einspeisewacht."
+    },
+    "entry_not_loaded": {
+      "message": "Die Anlage ist nicht geladen. Bitte unter Einstellungen → Geräte & Dienste prüfen."
+    },
+    "end_before_start": {
+      "message": "Das Ende des Zeitraums liegt vor dem Anfang."
+    },
+    "empty_period": {
+      "message": "Der Zeitraum enthält keine vollständige Stunde seit der Inbetriebnahme."
+    }
   }
 }

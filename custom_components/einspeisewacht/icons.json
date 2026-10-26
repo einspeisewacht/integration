@@ -1,0 +1,7 @@
+{
+  "services": {
+    "report": {
+      "service": "mdi:file-chart-outline"
+    }
+  }
+}

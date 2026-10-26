@@ -11,7 +11,6 @@ from homeassistant.helpers import issue_registry as ir
 from pytest_homeassistant_custom_component.test_util.aiohttp import AiohttpClientMocker
 
 from custom_components.einspeisewacht.const import (
-    BERLIN,
     CONF_BACKFILL,
     CONF_COMMISSIONED,
     CONF_OVERRIDE,
@@ -22,9 +21,7 @@ from custom_components.einspeisewacht.const import (
 from custom_components.einspeisewacht.diagnostics import (
     async_get_config_entry_diagnostics,
 )
-from custom_components.einspeisewacht.quarters import count_range
 from custom_components.einspeisewacht.regime import local_midnight
-from custom_components.einspeisewacht.rules import NegativeQuarterHour
 from custom_components.einspeisewacht.smard import INDEX_URL, parse_week, week_url
 from tests.conftest import load_fixture
 
@@ -97,18 +94,17 @@ async def test_backfill_from_smard(
     entry = await setup(hass, **changes)
     await hass.async_block_till_done(wait_background_tasks=True)
 
-    rule = NegativeQuarterHour(applies_from=local_midnight(date(2026, 10, 1)))
-    expected = count_range(
-        parse_week(week),
+    # Commissioning until live counting began; the rule applies throughout.
+    first, live_start = (
         local_midnight(date(2026, 10, 20)),
-        datetime(2026, 10, 25, 3, tzinfo=UTC),  # live counting began here
-        rule,
-        rule,
-        BERLIN,
+        datetime(2026, 10, 25, 3, tzinfo=UTC),
     )
-    assert value(hass, entry, "negative_quarter_hours") == str(
-        expected.counts.get(2026, 0)
+    expected = sum(
+        1
+        for slot, price in parse_week(week).items()
+        if first <= slot < live_start and price < 0
     )
+    assert value(hass, entry, "negative_quarter_hours") == str(expected)
     assert aioclient_mock.call_count == 2
     headers = aioclient_mock.mock_calls[0][3]
     assert headers["User-Agent"].startswith("Einspeisewacht/")

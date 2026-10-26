@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from collections import Counter
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from .const import BERLIN
@@ -22,6 +22,7 @@ from .timeslots import slot_start
 # Prices older than this are dropped from storage (pending pieces give up
 # after a day, the counter catches up for at most two weeks).
 PRICE_RETENTION = timedelta(days=15)
+EPOCH = datetime(1970, 1, 1, tzinfo=UTC)
 
 
 @dataclass
@@ -35,9 +36,9 @@ class Engine:
     quarters: QuarterCounter = field(default_factory=QuarterCounter)
     meter_events: Counter[str] = field(default_factory=Counter)
     last_parse: ParsedPrices | None = None
-    # Identifies the rule the quarter-hour counts were made with; counts made
-    # with another rule (after a reconfiguration) are discarded on restore.
-    rule_key: str = ""
+    # Quarter hours before commissioning never count (§ 51a counts from the
+    # year of commissioning; nothing is paid before it anyway).
+    since: datetime = EPOCH
 
     @property
     def rule(self) -> Rule:
@@ -46,6 +47,14 @@ class Engine:
     @property
     def shadow_rule(self) -> Rule:
         return self.valuation.shadow_rule
+
+    def counts(self) -> dict[int, int]:
+        """Quarter hours without remuneration per local calendar year."""
+        return self.quarters.counts(self.rule, self.since, BERLIN)
+
+    def shadow_counts(self) -> dict[int, int]:
+        """The same if the quarter-hour rule applied already."""
+        return self.quarters.counts(self.shadow_rule, self.since, BERLIN)
 
     def on_meter(self, value_kwh: float, at: datetime, now: datetime) -> MeterUpdate:
         """A new meter reading in kWh."""
@@ -64,7 +73,7 @@ class Engine:
     def tick(self, now: datetime) -> None:
         """Clock tick (every quarter hour) or after new prices."""
         self.ledger.retry_pending(self.prices, self.valuation, now)
-        self.quarters.advance(now, self.prices, self.rule, self.shadow_rule, BERLIN)
+        self.quarters.advance(now, self.prices)
         self.prices.prune(slot_start(now) - PRICE_RETENTION)
 
     def paid_now(self, now: datetime) -> bool | None:
@@ -80,13 +89,11 @@ class Engine:
             "ledger": self.ledger.as_dict(),
             "quarters": self.quarters.as_dict(),
             "meter_events": dict(self.meter_events),
-            "rule_key": self.rule_key,
         }
 
     def restore(self, data: dict[str, Any]) -> None:
         self.meter.restore(data.get("meter", {}))
         self.prices.restore(data.get("prices", {}))
         self.ledger.restore(data.get("ledger", {}))
-        if data.get("rule_key") == self.rule_key:
-            self.quarters.restore(data.get("quarters", {}))
+        self.quarters.restore(data.get("quarters", {}))
         self.meter_events = Counter(data.get("meter_events", {}))

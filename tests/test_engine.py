@@ -38,72 +38,77 @@ def fixture_prices() -> PriceTable:
 
 # --- counter ------------------------------------------------------------------
 
+EPOCH = datetime(2020, 1, 1, tzinfo=UTC)
+RULE = NegativeQuarterHour()
 
-def test_counter_counts_negative_quarter_hours_of_dst_day() -> None:
-    counter = QuarterCounter(next_slot=DAY_START)
-    counter.advance(
-        DAY_END, fixture_prices(), NegativeQuarterHour(), NegativeQuarterHour(), BERLIN
-    )
-    assert counter.counts == {2026: 6}
-    assert counter.shadow_counts == {2026: 6}
+
+def test_counter_records_negative_quarter_hours_of_dst_day() -> None:
+    counter = QuarterCounter(next_slot=DAY_START, started=DAY_START)
+    counter.advance(DAY_END, fixture_prices())
+    assert len(counter.negatives) == 6
+    assert counter.counts(RULE, EPOCH, BERLIN) == {2026: 6}
+    assert counter.counts(AlwaysPaid(), EPOCH, BERLIN) == {}
     assert counter.next_slot == DAY_END
+    assert counter.known(DAY_START) and not counter.known(DAY_END)
 
 
-def test_counter_shadow_only_while_rule_does_not_apply() -> None:
-    counter = QuarterCounter(next_slot=DAY_START)
-    counter.advance(
-        DAY_END, fixture_prices(), AlwaysPaid(), NegativeQuarterHour(), BERLIN
-    )
-    assert counter.counts == {}
-    assert counter.shadow_counts == {2026: 6}
+def test_counter_counts_follow_the_rule_without_recounting() -> None:
+    counter = QuarterCounter(next_slot=DAY_START, started=DAY_START)
+    counter.advance(DAY_END, fixture_prices())
+    # 14:00 CET = 13:00 UTC: a rule starting then counts only the last three.
+    later = NegativeQuarterHour(applies_from=datetime(2026, 10, 25, 13, tzinfo=UTC))
+    assert counter.counts(later, EPOCH, BERLIN) == {2026: 3}
+    assert counter.counts(RULE, datetime(2026, 10, 25, 13, tzinfo=UTC), BERLIN) == {
+        2026: 3
+    }
 
 
 def test_counter_starts_with_running_quarter_hour() -> None:
     counter = QuarterCounter()
-    counter.advance(
-        DAY_END + timedelta(minutes=7), PriceTable(), AlwaysPaid(), AlwaysPaid(), BERLIN
-    )
-    assert counter.next_slot == DAY_END
-    assert counter.counts == {}
+    counter.advance(DAY_END + timedelta(minutes=7), PriceTable())
+    assert counter.next_slot == counter.started == DAY_END
+    assert counter.negatives == {}
 
 
 def test_counter_waits_for_missing_price_then_skips() -> None:
-    counter = QuarterCounter(next_slot=DAY_START)
+    counter = QuarterCounter(next_slot=DAY_START, started=DAY_START)
     prices = PriceTable()
-    rule = NegativeQuarterHour()
-    counter.advance(DAY_START + timedelta(hours=1), prices, rule, rule, BERLIN)
+    counter.advance(DAY_START + timedelta(hours=1), prices)
     assert counter.next_slot == DAY_START
-    counter.advance(
-        DAY_START + timedelta(hours=24, minutes=15), prices, rule, rule, BERLIN
-    )
+    counter.advance(DAY_START + timedelta(hours=24, minutes=15), prices)
     assert counter.next_slot == DAY_START + timedelta(minutes=15)
-    assert counter.skipped_without_price == 1
+    assert counter.missing == {DAY_START}
+    assert not counter.known(DAY_START)
 
 
 def test_counter_does_not_catch_up_long_gaps() -> None:
-    counter = QuarterCounter(next_slot=DAY_START)
+    counter = QuarterCounter(next_slot=DAY_START, started=DAY_START)
     later = DAY_START + MAX_CATCH_UP + timedelta(hours=1)
-    counter.advance(later, PriceTable(), AlwaysPaid(), AlwaysPaid(), BERLIN)
+    counter.advance(later, PriceTable())
     assert counter.next_slot == later.replace(minute=0)
+    assert counter.started == DAY_START
 
 
 def test_counter_years_follow_local_time() -> None:
     # 01.01.2026 00:00 local is 31.12.2025 23:00 UTC.
     first = datetime(2025, 12, 31, 22, 45, tzinfo=UTC)
     prices = PriceTable({first: -0.01, first + timedelta(minutes=15): -0.01})
-    counter = QuarterCounter(next_slot=first)
-    rule = NegativeQuarterHour()
-    counter.advance(first + timedelta(minutes=30), prices, rule, rule, BERLIN)
-    assert counter.counts == {2025: 1, 2026: 1}
+    counter = QuarterCounter(next_slot=first, started=first)
+    counter.advance(first + timedelta(minutes=30), prices)
+    assert counter.counts(RULE, EPOCH, BERLIN) == {2025: 1, 2026: 1}
 
 
-def test_counter_round_trip() -> None:
-    counter = QuarterCounter(
-        next_slot=DAY_START, counts={2026: 3}, shadow_counts={2026: 4}
-    )
+def test_counter_round_trip_and_legacy_data() -> None:
+    counter = QuarterCounter(next_slot=DAY_START, started=DAY_START)
+    counter.advance(DAY_END, fixture_prices())
+    counter.missing.add(DAY_END)
     restored = QuarterCounter()
     restored.restore(json.loads(json.dumps(counter.as_dict())))
     assert restored == counter
+    # 0.1.0b3 stored counts only: start afresh.
+    legacy = QuarterCounter()
+    legacy.restore({"next_slot": DAY_START.isoformat(), "counts": {"2026": 3}})
+    assert legacy == QuarterCounter()
 
 
 # --- engine -------------------------------------------------------------------
@@ -132,7 +137,8 @@ def test_engine_day() -> None:
     totals = engine.ledger.totals
     assert totals["energy_unpaid"] == pytest.approx(1.5)
     assert totals["energy_paid"] == pytest.approx(25 - 1.5)
-    assert engine.quarters.counts == {2026: 6}
+    assert engine.counts() == {2026: 6}
+    assert engine.shadow_counts() == {2026: 6}
     assert engine.meter_events == {"first": 1}
 
 

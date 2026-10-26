@@ -56,11 +56,10 @@ async def async_get_config_entry_diagnostics(
             "next_slot": engine.quarters.next_slot.isoformat()
             if engine.quarters.next_slot
             else None,
-            "counts": {str(y): c for y, c in engine.quarters.counts.items()},
-            "shadow_counts": {
-                str(y): c for y, c in engine.quarters.shadow_counts.items()
-            },
-            "skipped_without_price": engine.quarters.skipped_without_price,
+            "counts": {str(y): c for y, c in engine.counts().items()},
+            "shadow_counts": {str(y): c for y, c in engine.shadow_counts().items()},
+            "negative_quarter_hours_known": len(engine.quarters.negatives),
+            "missing_prices": len(engine.quarters.missing),
             "started": engine.quarters.started.isoformat()
             if engine.quarters.started
             else None,

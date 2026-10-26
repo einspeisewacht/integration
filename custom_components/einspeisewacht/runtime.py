@@ -5,14 +5,17 @@ from __future__ import annotations
 import asyncio
 import logging
 from collections.abc import Callable, Mapping
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from typing import Any
 
 import aiohttp
+from homeassistant.components.recorder import get_instance
+from homeassistant.components.recorder.statistics import statistics_during_period
 from homeassistant.const import (
     ATTR_UNIT_OF_MEASUREMENT,
     STATE_UNAVAILABLE,
     STATE_UNKNOWN,
+    UnitOfEnergy,
 )
 from homeassistant.core import (
     CALLBACK_TYPE,
@@ -55,8 +58,8 @@ from .engine import Engine
 from .ledger import FeedInValuation
 from .meter import MeterTracker, to_kwh
 from .prices import ParsedPrices, parse_interval_prices
-from .quarters import count_range
 from .regime import Derived, Plant, derive, local_midnight, manual, rule_for
+from .report import build_report
 from .rules import NegativeQuarterHour
 from .smard import INDEX_URL, parse_index, parse_week, week_url, weeks_covering
 from .tariff import blended_rate
@@ -75,12 +78,6 @@ FORECAST_ATTRIBUTE = "data"
 # SMARD.de: one request per week of history; be gentle with the website.
 SMARD_PAUSE = 0.5
 SMARD_TIMEOUT = aiohttp.ClientTimeout(total=30)
-
-
-def rule_key(derived: Derived) -> str:
-    """Identifies a rule; counts made with another rule are discarded."""
-    applies_from = derived.applies_from.isoformat() if derived.applies_from else ""
-    return f"{derived.regime.value}:{applies_from}"
 
 
 def plant_from_config(config: Mapping[str, Any]) -> Plant:
@@ -145,7 +142,7 @@ class PlantRuntime:
                 rule=rule_for(self.derived),
                 shadow_rule=NegativeQuarterHour(),
             ),
-            rule_key=rule_key(self.derived),
+            since=local_midnight(self.commissioned),
         )
         self.unknown_unit: str | None = None
         self.backfill_error: str | None = None
@@ -193,13 +190,15 @@ class PlantRuntime:
     async def async_backfill(self) -> None:
         """Count quarter hours from commissioning until live counting began.
 
-        Opt-in, once per rule. Failures are reported as a repair issue and
+        Opt-in, once per commissioning date. Failures are reported as a repair issue and
         retried on the next start; they never affect live booking.
         """
         quarters = self.engine.quarters
-        if not self.backfill_enabled or quarters.backfilled or quarters.started is None:
-            return
         start = local_midnight(self.commissioned)
+        if not self.backfill_enabled or quarters.started is None:
+            return
+        if quarters.backfilled and quarters.backfill_from == start:
+            return  # done, for this commissioning date
         end = quarters.started
         try:
             prices = await self._async_fetch_smard(start, end) if start < end else {}
@@ -227,14 +226,59 @@ class PlantRuntime:
                 },
             )
             return
-        result = count_range(
-            prices, start, end, self.engine.rule, self.engine.shadow_rule, BERLIN
-        )
         self.backfill_error = None
-        self.backfill_missing = result.missing_prices
-        quarters.add_backfill(result)
+        self.backfill_missing = quarters.add_backfill(prices, start, end)
         ir.async_delete_issue(self.hass, DOMAIN, self.issue_id)
         self._changed()
+
+    async def async_report(self, first_day: date, last_day: date) -> dict[str, Any]:
+        """Sums for the local days `first_day` to `last_day` (inclusive).
+
+        Raises ValueError if the period holds no complete hour since commissioning.
+        """
+        now = dt_util.utcnow().replace(minute=0, second=0, microsecond=0)
+        start = max(local_midnight(first_day), self.engine.since)
+        end = min(local_midnight(last_day + timedelta(days=1)), now)
+        if end <= start:
+            raise ValueError("empty period")
+        hourly = await self._async_hourly_energy(start, end)
+        result = build_report(
+            hourly,
+            start,
+            end,
+            self.engine.quarters,
+            self.engine.rule,
+            self.rate_ct / 100,
+            BERLIN,
+        )
+        return {
+            "plant": self.name,
+            "start": start.astimezone(BERLIN).isoformat(),
+            "end": end.astimezone(BERLIN).isoformat(),
+            "rule": self.derived.regime.value,
+            "rate_ct_per_kwh": round(self.rate_ct, 4),
+            **result,
+        }
+
+    async def _async_hourly_energy(
+        self, start: datetime, end: datetime
+    ) -> list[tuple[datetime, float]]:
+        """Energy per hour (kWh) of the meter from Home Assistant's long-term statistics."""
+        rows = await get_instance(self.hass).async_add_executor_job(
+            statistics_during_period,
+            self.hass,
+            start,
+            end,
+            {self.meter_entity},
+            "hour",
+            {"energy": UnitOfEnergy.KILO_WATT_HOUR},
+            {"change"},
+        )
+        return [
+            (dt_util.utc_from_timestamp(row["start"]), row["change"])
+            for row in rows.get(self.meter_entity, [])
+            if row.get("change") is not None
+        ]
 
     async def _async_fetch_smard(
         self, start: datetime, end: datetime

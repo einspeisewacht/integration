@@ -51,6 +51,20 @@ Greift die Regel für deine Anlage noch nicht (z. B. ohne iMSys), zeigt Einspeis
 
 Mehrere Anlagen oder Zähler: je einen Eintrag anlegen. Ändern: *Einspeisewacht → ⋮ → Neu konfigurieren*.
 
+## Bericht für einen Zeitraum
+
+*Entwicklerwerkzeuge → Aktionen →* **Einspeisewacht: Bericht**, Anlage und Zeitraum wählen, „Antwort anzeigen“. Beispiel:
+
+```yaml
+action: einspeisewacht.report
+data:
+  config_entry_id: <Eintrag auswählen>
+  start: "2026-01-01"
+  end: "2026-12-31"
+```
+
+Die Antwort enthält kWh vergütet und unvergütet, Erlös, entgangenen Erlös und die negativen Viertelstunden, je Monat aufgeschlüsselt. Grundlage ist die Langzeitstatistik deines Einspeisezählers (Stundenwerte) – damit auch die Zeit vor der Einrichtung, wenn die SMARD-Option aktiv ist. Fehlende Preise oder Zählerwerte stehen unter `gaps`.
+
 ## Lizenz und Quellen
 
 MIT. Historische Day-Ahead-Preise (optional): Bundesnetzagentur | [SMARD.de](https://www.smard.de), [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/); Einspeisewacht zählt daraus nur negative Viertelstunden.

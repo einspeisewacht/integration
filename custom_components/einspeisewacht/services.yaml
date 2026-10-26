@@ -1,0 +1,17 @@
+report:
+  fields:
+    config_entry_id:
+      required: true
+      selector:
+        config_entry:
+          integration: einspeisewacht
+    start:
+      required: true
+      example: "2026-01-01"
+      selector:
+        date:
+    end:
+      required: false
+      example: "2026-12-31"
+      selector:
+        date:
