@@ -150,7 +150,11 @@
   "entity": {
     "binary_sensor": {
       "remunerated": {
-        "name": "Vergütung aktiv"
+        "name": "Vergütung aktiv",
+        "state": {
+          "on": "Vergütet",
+          "off": "Unvergütet"
+        }
       }
     },
     "sensor": {

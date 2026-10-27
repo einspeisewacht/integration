@@ -2,6 +2,9 @@
 
 ## Unveröffentlicht
 
+- „Vergütung aktiv“ zeigt „Vergütet“ bzw. „Unvergütet“ statt „Ein“/„Aus“.
+- README: fertige Dashboard-Karte (Einspeisung je Tag, Erlös und entgangener Erlös für heute und das Jahr, negative Viertelstunden, Nachholung, Vergütungsende) mit Screenshot.
+
 ## 0.1.0b10 – 2026-10-27
 
 - **Keine verwaisten Entitäten mehr:** Sensoren, die eine Anlage nicht mehr braucht – etwa die Schattenwerte, nachdem in der Neukonfiguration ein Smart Meter eingetragen oder das Inbetriebnahmejahr korrigiert wurde, oder sobald die Viertelstundenregel greift –, entfernt die Integration jetzt beim Start selbst aus der Entitätenliste. Bisher blieben sie als „nicht mehr bereitgestellt“ zurück und mussten von Hand gelöscht werden.

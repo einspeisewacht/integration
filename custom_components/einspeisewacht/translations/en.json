@@ -150,7 +150,11 @@
   "entity": {
     "binary_sensor": {
       "remunerated": {
-        "name": "Remunerated"
+        "name": "Remunerated",
+        "state": {
+          "on": "Paid",
+          "off": "Unpaid"
+        }
       }
     },
     "sensor": {

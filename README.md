@@ -92,7 +92,7 @@ Mehrere Anlagen oder Zähler: je einen Eintrag anlegen. Ändern: *Einspeisewacht
 
 Solange die Regel noch nicht greift (z. B. ohne iMSys), kommen „Unvergütet bei greifender Regel“, „Entgangener Erlös bei greifender Regel“ und „Viertelstunden ohne Vergütung bei greifender Regel“ dazu; Nachholung und „Vergütung bis“ entfallen dann.
 
-Tages-, Monats- und Jahreswerte: Die Summen-Sensoren haben Langzeitstatistik – z. B. mit der Statistik-Karte (Zeitraum „Monat“, Statistik „Änderung“).
+Tages-, Monats- und Jahreswerte: Die Summen-Sensoren haben Langzeitstatistik – z. B. mit der Statistik-Karte (Zeitraum „Monat“, Statistik „Änderung“); eine fertige Karte steht unter [Dashboard-Karte](#dashboard-karte-mit-tages--und-jahreswerten).
 
 ## Bericht für einen Zeitraum
 
@@ -146,6 +146,80 @@ Sie rechnet wie der Bericht (Stundenwerte des Zählers gegen die negativen Viert
 Der Kalender „Negative Preise“ zeigt die Zeitfenster ohne Vergütung – hier der Tag der Zeitumstellung 2026:
 
 <img src="https://raw.githubusercontent.com/einspeisewacht/integration/main/assets/screenshots/kalender.png" alt="Kalender mit fünf Zeitfenstern ohne Vergütung am 25.10.2026" width="620">
+
+### Dashboard-Karte mit Tages- und Jahreswerten
+
+Die Summen-Sensoren zählen ab der Einrichtung; Tages-, Monats- und Jahreswerte kommen aus ihrer Langzeitstatistik – nach [Statistik nachtragen](#statistik-nachtragen) auch für die Zeit davor. Diese Karte nutzt nur Bordmittel (Werte erfunden):
+
+<img src="https://raw.githubusercontent.com/einspeisewacht/integration/main/assets/screenshots/dashboard.png" alt="Karte mit Balken vergütet/unvergütet je Tag, Erlös und entgangenem Erlös für heute und das Jahr, negativen Viertelstunden, Nachholung und Vergütungsende" width="400">
+
+<details>
+<summary>YAML der Karte (Entitäten der Anlage „Dach“ anpassen)</summary>
+
+```yaml
+type: vertical-stack
+cards:
+  - type: statistics-graph
+    title: Einspeisung je Tag
+    entities:
+      - entity: sensor.dach_einspeisung_vergutet
+        name: Vergütet
+        color: "#27ae60"
+      - entity: sensor.dach_einspeisung_unvergutet
+        name: Unvergütet (0 ct)
+        color: "#e6007e"
+    period: day
+    days_to_show: 30
+    chart_type: bar-stack
+    stat_types:
+      - change
+  - type: grid
+    columns: 2
+    square: false
+    cards:
+      - type: statistic
+        entity: sensor.dach_erlos
+        name: Erlös heute
+        stat_type: change
+        period:
+          calendar:
+            period: day
+      - type: statistic
+        entity: sensor.dach_entgangener_erlos
+        name: Entgangen heute
+        stat_type: change
+        period:
+          calendar:
+            period: day
+      - type: statistic
+        entity: sensor.dach_erlos
+        name: Erlös Jahr
+        stat_type: change
+        period:
+          calendar:
+            period: year
+      - type: statistic
+        entity: sensor.dach_entgangener_erlos
+        name: Entgangen Jahr
+        stat_type: change
+        period:
+          calendar:
+            period: year
+  - type: entities
+    title: Negative Preise in diesem Jahr
+    entities:
+      - entity: sensor.dach_viertelstunden_ohne_vergutung
+        name: Ohne Vergütung
+      - entity: sensor.dach_nachholung
+        name: Nachholung
+      - entity: sensor.dach_vergutung_bis
+        name: Vergütung bis
+  - type: tile
+    entity: binary_sensor.dach_vergutung_aktiv
+    name: Jetzt
+```
+
+</details>
 
 ### Fertiger Blueprint
 
