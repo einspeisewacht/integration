@@ -85,6 +85,7 @@ Nicht verabschiedet (2./3. Lesung voraussichtlich 9.–13.11.2026, Bundesrat 20.
 - Der 25.10.2026 stimmt in allen 100 Viertelstunden mit dem EPEX-Spot-Fixture überein.
 - Lizenz: Marktdaten CC BY 4.0, Quellenangabe „Bundesnetzagentur | SMARD.de“ mit Lizenzlink ([Datennutzung](https://www.smard.de/en/datennutzung)). Die `chart_data`-Endpunkte sind **nicht als API dokumentiert** – Risiko: Format oder Pfade können sich ändern.
 - Fixtures: `tests/fixtures/smard_*.json`, Herkunft in `tests/fixtures/_index.json`.
+- **Quellen-Check:** `uv run tools/source_check.py` prüft Index und die beiden neuesten Wochen (Format, Aktualität, Viertelstundenraster, Preisspanne) mit dem echten Code; läuft montags per `.github/workflows/source-check.yml`, öffnet bei Problemen ein Issue (Label `quellen-check`), kommentiert ein offenes und schließt es, sobald alles wieder geht. Zeitgesteuerte Workflows laufen nur von `main` und schlafen nach 60 Tagen ohne Repo-Aktivität ein.
 
 ### Einspeisezähler
 
