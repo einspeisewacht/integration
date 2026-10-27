@@ -15,6 +15,7 @@ from homeassistant.components.sensor import (
 )
 from homeassistant.const import EntityCategory, UnitOfEnergy
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.util import dt as dt_util
 
@@ -90,7 +91,22 @@ async def async_setup_entry(
                 lambda r: r.engine.shadow_counts(),
             )
         )
+    _remove_stale(hass, entry, {entity.unique_id for entity in entities})
     async_add_entities(entities)
+
+
+def _remove_stale(
+    hass: HomeAssistant, entry: EinspeisewachtConfigEntry, provided: set[str | None]
+) -> None:
+    """Drop sensors this entry no longer provides.
+
+    E.g. the shadow values after a reconfiguration or once the rule applies;
+    otherwise they stay behind in the entity registry as orphans.
+    """
+    registry = er.async_get(hass)
+    for registered in er.async_entries_for_config_entry(registry, entry.entry_id):
+        if registered.domain == "sensor" and registered.unique_id not in provided:
+            registry.async_remove(registered.entity_id)
 
 
 class TotalSensor(PlantEntity, SensorEntity):

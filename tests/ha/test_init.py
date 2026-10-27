@@ -116,6 +116,27 @@ async def test_shadow_sensors_without_smart_meter(hass: HomeAssistant) -> None:
 
 
 @pytest.mark.freeze_time(START)
+async def test_reconfigure_removes_stale_sensors(hass: HomeAssistant) -> None:
+    """With the smart meter added, the shadow sensors leave the registry."""
+    entry = await setup(hass, **{CONF_SMART_METER: False, CONF_SMART_METER_DATE: None})
+    assert entity_id(hass, entry, "shadow_energy_unpaid") is not None
+    kept = entity_id(hass, entry, "energy_unpaid")
+
+    hass.config_entries.async_update_entry(entry, data=entry_data())
+    assert await hass.config_entries.async_reload(entry.entry_id)
+    await hass.async_block_till_done()
+
+    for key in (
+        "shadow_energy_unpaid",
+        "shadow_revenue_lost",
+        "shadow_negative_quarter_hours",
+    ):
+        assert entity_id(hass, entry, key) is None, key
+    assert entity_id(hass, entry, "energy_unpaid") == kept
+    assert entity_id(hass, entry, "remunerated") is not None
+
+
+@pytest.mark.freeze_time(START)
 async def test_remove_entry(hass: HomeAssistant) -> None:
     entry = await setup(hass)
     assert await hass.config_entries.async_remove(entry.entry_id)
