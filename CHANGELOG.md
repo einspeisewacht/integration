@@ -2,9 +2,10 @@
 
 ## Unveröffentlicht
 
+## 0.1.0b10 – 2026-10-27
+
 - **Keine verwaisten Entitäten mehr:** Sensoren, die eine Anlage nicht mehr braucht – etwa die Schattenwerte, nachdem in der Neukonfiguration ein Smart Meter eingetragen oder das Inbetriebnahmejahr korrigiert wurde, oder sobald die Viertelstundenregel greift –, entfernt die Integration jetzt beim Start selbst aus der Entitätenliste. Bisher blieben sie als „nicht mehr bereitgestellt“ zurück und mussten von Hand gelöscht werden.
-- Quellen-Check: Die Sollzahl der Viertelstunden berücksichtigt Wochen mit Zeitumstellung (668 bzw. 676 statt 672).
-- Intern: wöchentlicher Quellen-Check (`tools/source_check.py`, Workflow „Quellen-Check“, montags): lädt Index und die beiden neuesten Wochen von SMARD.de mit dem echten Parser und prüft Format, Aktualität, Viertelstundenraster und Preisspanne – die Schnittstelle ist nicht offiziell dokumentiert. Bei Problemen öffnet er ein Issue mit Label `quellen-check` und schließt es wieder, sobald alles geht.
+- Intern: wöchentlicher Quellen-Check (`tools/source_check.py`, Workflow „Quellen-Check“, montags): lädt Index und die beiden neuesten Wochen von SMARD.de mit dem echten Parser und prüft Format, Aktualität, Viertelstundenraster (auch in Wochen mit Zeitumstellung) und Preisspanne – die Schnittstelle ist nicht offiziell dokumentiert. Bei Problemen öffnet er ein Issue mit Label `quellen-check` und schließt es wieder, sobald alles geht.
 - Intern: Entwicklungs- und Testumgebung auf Home Assistant 2026.10.4 angehoben (Testbibliothek 0.13.375), wie bei Streckenwacht.
 - Intern: `astral-sh/setup-uv` 10.3.2; Dependabot schlägt Aktualisierungen jetzt für `dev` vor statt für `main`.
 
