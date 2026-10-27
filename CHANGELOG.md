@@ -2,6 +2,10 @@
 
 ## Unveröffentlicht
 
+## 0.1.1 – 2026-10-27
+
+Keine funktionalen Änderungen. HACS bot 0.1.0 nicht als Update an: GitHub sortiert die Beta-Releases 0.1.0b10 und 0.1.0b11 vor 0.1.0, und HACS nimmt das erste. 0.1.1 steht wieder vorn.
+
 ## 0.1.0 – 2026-10-27
 
 Erste Version ohne Beta-Zusatz. Gegenüber 0.1.0b11 nur Dokumentation:
