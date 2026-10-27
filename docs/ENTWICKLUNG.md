@@ -119,10 +119,10 @@ Nicht verabschiedet (2./3. Lesung voraussichtlich 9.–13.11.2026, Bundesrat 20.
 - Kein `categories` im Manifest: hassfest lehnt das Feld für Custom-Integrationen ab („not a valid option“, geprüft 2026-10-26 mit `energy` und Unterkategorien).
 - **Bekanntmachen:** simon42 Community ([Thema 94942](https://community.simon42.com/t/einspeisewacht-was-dich-negative-strompreise-bei-der-pv-einspeisung-kosten-hacs-integration/94942), 2026-10-26). Offen: HA Community (englisch), Hinweis im evcc-PR #33635, Antrag HACS-Standardliste.
 
-### GitHub-Einstellungen (Stand 2026-10-26, wie Eilwacht)
+### GitHub-Einstellungen (Stand 2026-10-27, wie Eilwacht)
 
 - **Organisation:** Zwei-Faktor-Pflicht für alle Mitglieder; Profilbild, Beschreibung und Website gesetzt. Actions: alle erlaubt (Einschränkung im Repo), Token standardmäßig nur lesend, Freigabe für Erst-Mitwirkende, Actions dürfen keine Pull-Requests erstellen. „Nur sichere 2FA-Methoden“ ist nicht gesetzt (würde SMS-2FA aussperren).
-- **Repo:** Rulesets „main schützen“ (kein Löschen, kein Force-Push, CI `test`/`hassfest`/`compat` muss grün sein) und „Release-Tags schützen“ (`v*` unveränderlich); Secret Scanning mit Push-Schutz; Dependabot-Alerts und -Sicherheitsupdates; vertrauliches Melden von Sicherheitslücken (SECURITY.md); Actions nur GitHub-eigene plus `astral-sh/setup-uv@*`, `home-assistant/actions/*`, `hacs/action@*` – neue Actions vorher dort freigeben; Branches nach Merge löschen; kein Wiki, keine Projekte; Social Preview gesetzt. **„Release immutability“ bewusst aus:** der Release-Workflow hängt die ZIP erst nach der Veröffentlichung an.
+- **Repo:** Rulesets „main schützen“ (kein Löschen, kein Force-Push, CI `test`/`hassfest`/`compat` muss grün sein) und „Release-Tags schützen“ (`v*` unveränderlich); Secret Scanning mit Push-Schutz; CodeQL (Standard-Setup, eingeschaltet 2026-10-27); Dependabot-Alerts und -Sicherheitsupdates; vertrauliches Melden von Sicherheitslücken (SECURITY.md); Actions nur GitHub-eigene plus `astral-sh/setup-uv@*`, `home-assistant/actions/*`, `hacs/action@*` – neue Actions vorher dort freigeben; Branches nach Merge löschen; kein Wiki, keine Projekte; Social Preview gesetzt. **„Release immutability“ bewusst aus:** der Release-Workflow hängt die ZIP erst nach der Veröffentlichung an.
 
 ## 6. Offene Fragen
 
