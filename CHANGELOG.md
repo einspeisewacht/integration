@@ -2,6 +2,12 @@
 
 ## Unveröffentlicht
 
+## 0.1.0 – 2026-10-27
+
+Erste Version ohne Beta-Zusatz. Gegenüber 0.1.0b11 nur Dokumentation:
+
+- README (deutsch und englisch): Beta-Hinweis ersetzt, Hinweis auf die EEG-Novelle 2027; Dashboard-Karte jetzt auch im englischen README.
+
 ## 0.1.0b11 – 2026-10-27
 
 - „Vergütung aktiv“ zeigt „Vergütet“ bzw. „Unvergütet“ statt „Ein“/„Aus“.

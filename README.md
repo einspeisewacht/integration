@@ -9,7 +9,7 @@
 
 🇩🇪 **Deutsch** · 🇬🇧 [English](https://github.com/einspeisewacht/integration/blob/main/README.en.md)
 
-> ℹ️ **Beta.** Einspeisewacht ist neu und wird gerade auf echten Anlagen erprobt. Rückmeldungen sind sehr willkommen – siehe [Fehler melden](#fehler-melden).
+> ℹ️ **Neu.** Einspeisewacht läuft seit Oktober 2026 auf echten Anlagen. Die EEG-Novelle 2027 ist noch im Bundestag; was sich für bestehende Anlagen ändert, kommt mit einem Update. Rückmeldungen sind sehr willkommen – siehe [Fehler melden](#fehler-melden).
 
 **Wie viel deiner PV-Einspeisung wird wegen negativer Strompreise nicht vergütet?** Seit dem Solarspitzengesetz verlieren neue PV-Anlagen die Einspeisevergütung in jeder Viertelstunde mit negativem Börsenpreis. Einspeisewacht rechnet das in Home Assistant für dich mit: Viertelstunde für Viertelstunde, mit dem Preis genau dieser Viertelstunde – und zeigt, was dich das kostet und wie viel Förderzeit dafür am Ende angehängt wird.
 
@@ -86,7 +86,7 @@ Mehrere Anlagen oder Zähler: je einen Eintrag anlegen. Ändern: *Einspeisewacht
 | Viertelstunden ohne Vergütung | Anzahl | im laufenden Kalenderjahr, auch ohne Einspeisung (zählt für § 51a); Attribut `years` je Jahr |
 | Nachholung | Volllast-Viertelstunden | Viertelstunden × 0,5, aufgerundet; Attribut `months` mit den Verlängerungsmonaten |
 | Vergütung bis | Datum | Ende der Förderung einschließlich Nachholung |
-| Vergütung aktiv | an/aus | ob die laufende Viertelstunde vergütet wird; unbekannt ohne Preis |
+| Vergütung aktiv | vergütet/unvergütet | ob die laufende Viertelstunde vergütet wird; unbekannt ohne Preis |
 | Negative Preise | Kalender | Zeitfenster mit negativem Preis |
 | Regel | Diagnose | die angewandte Regel, Attribute `applies_from` und `rate_ct_per_kwh` |
 

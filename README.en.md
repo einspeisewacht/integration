@@ -9,7 +9,7 @@
 
 🇩🇪 [Deutsch](https://github.com/einspeisewacht/integration/blob/main/README.md) · 🇬🇧 **English**
 
-> ℹ️ **Beta.** Einspeisewacht ("feed-in watch") is new and being tried on real plants. Feedback is very welcome – see [Reporting issues](#reporting-issues).
+> ℹ️ **New.** Einspeisewacht ("feed-in watch") has been running on real plants since October 2026. The EEG amendment for 2027 is still in parliament; any changes for existing plants will follow in an update. Feedback is very welcome – see [Reporting issues](#reporting-issues).
 
 **How much of your PV feed-in goes unpaid because of negative electricity prices?** Under Germany's Solarspitzengesetz, new PV plants lose their feed-in tariff in every quarter hour with a negative day-ahead price. Einspeisewacht tracks this in Home Assistant, quarter hour by quarter hour, with the price of exactly that quarter hour – and shows what it costs you and how much remuneration time is added at the end in return.
 
@@ -84,7 +84,7 @@ Several plants or meters: one entry each. To change: *Einspeisewacht → entry �
 | Quarter hours without remuneration | count | current calendar year, with or without feed-in (counts for § 51a); attribute `years` |
 | Extension | full-load quarter hours | quarter hours × 0.5, rounded up; attribute `months` with the extension months |
 | Remunerated until | date | end of remuneration including the extension |
-| Remunerated | on/off | whether the running quarter hour is remunerated; unknown without a price |
+| Remunerated | paid/unpaid | whether the running quarter hour is remunerated; unknown without a price |
 | Negative prices | calendar | windows with a negative price |
 | Rule | diagnostic | the rule applied, attributes `applies_from` and `rate_ct_per_kwh` |
 
@@ -122,6 +122,80 @@ It computes like the report and writes the hours **before** the first existing s
 The calendar "Negative prices" shows the windows without remuneration – here the day of the 2026 clock change (German UI):
 
 <img src="https://raw.githubusercontent.com/einspeisewacht/integration/main/assets/screenshots/kalender.png" alt="Calendar with five windows without remuneration on 25 Oct 2026" width="620">
+
+### Dashboard card with daily and yearly values
+
+The total sensors count from setup; daily, monthly and yearly values come from their long-term statistics – after [Import statistics](#import-statistics) also for the time before. This card uses built-in cards only (German UI, values made up):
+
+<img src="https://raw.githubusercontent.com/einspeisewacht/integration/main/assets/screenshots/dashboard.png" alt="Card with daily bars remunerated/not remunerated, revenue and lost revenue for today and the year, negative quarter hours, extension and end of remuneration" width="400">
+
+<details>
+<summary>YAML of the card (adjust the entities of plant "Roof")</summary>
+
+```yaml
+type: vertical-stack
+cards:
+  - type: statistics-graph
+    title: Feed-in per day
+    entities:
+      - entity: sensor.roof_feed_in_remunerated
+        name: Remunerated
+        color: "#27ae60"
+      - entity: sensor.roof_feed_in_not_remunerated
+        name: Not remunerated
+        color: "#e6007e"
+    period: day
+    days_to_show: 30
+    chart_type: bar-stack
+    stat_types:
+      - change
+  - type: grid
+    columns: 2
+    square: false
+    cards:
+      - type: statistic
+        entity: sensor.roof_revenue
+        name: Revenue today
+        stat_type: change
+        period:
+          calendar:
+            period: day
+      - type: statistic
+        entity: sensor.roof_lost_revenue
+        name: Lost today
+        stat_type: change
+        period:
+          calendar:
+            period: day
+      - type: statistic
+        entity: sensor.roof_revenue
+        name: Revenue year
+        stat_type: change
+        period:
+          calendar:
+            period: year
+      - type: statistic
+        entity: sensor.roof_lost_revenue
+        name: Lost year
+        stat_type: change
+        period:
+          calendar:
+            period: year
+  - type: entities
+    title: Negative prices this year
+    entities:
+      - entity: sensor.roof_quarter_hours_without_remuneration
+        name: Without remuneration
+      - entity: sensor.roof_extension
+        name: Extension
+      - entity: sensor.roof_remunerated_until
+        name: Remunerated until
+  - type: tile
+    entity: binary_sensor.roof_remunerated
+    name: Now
+```
+
+</details>
 
 
 **Blueprint "switch on negative prices":** runs your own actions when remuneration stops (charge the battery, switch on the wallbox, curtail) and others when it resumes. [![Import blueprint](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Feinspeisewacht%2Fintegration%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Feinspeisewacht%2Fvergutung_aus_an.yaml)
