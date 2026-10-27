@@ -2,6 +2,8 @@
 
 ## Unveröffentlicht
 
+## 0.1.0b11 – 2026-10-27
+
 - „Vergütung aktiv“ zeigt „Vergütet“ bzw. „Unvergütet“ statt „Ein“/„Aus“.
 - README: fertige Dashboard-Karte (Einspeisung je Tag, Erlös und entgangener Erlös für heute und das Jahr, negative Viertelstunden, Nachholung, Vergütungsende) mit Screenshot.
 
