@@ -93,8 +93,8 @@ Nicht verabschiedet (2./3. Lesung voraussichtlich 9.–13.11.2026, Bundesrat 20.
 
 ## 4. Entscheidungen
 
-- Helfer-Integration ohne Cloud; ein Config-Entry je Anlage und Zähler (die Testanlage läuft mit zwei Einträgen: Smart Meter und SolarNet, letzterer für den 1:1-Vergleich mit dem Eigenbau).
-- Preis einer Viertelstunde immer aus der Prognose (`data`), nie aus dem Live-Zustand im Moment der Buchung.
+- Integration ohne Cloud (`integration_type: service`); ein Config-Entry je Anlage und Zähler (die Testanlage läuft mit zwei Einträgen: Smart Meter und SolarNet, letzterer für den 1:1-Vergleich mit dem Eigenbau).
+- Preis einer Viertelstunde aus der Prognose (`data`), nie aus dem Live-Zustand im Moment der Buchung. Nur ein Preissensor ohne Prognose-Attribut liefert den Zustand als Preis der laufenden Viertelstunde; er wird zu jeder Viertelstunde neu gelesen, ein gehaltener Wert gilt also weiter (0.1.0b9).
 - **Buchung sofort und anteilig** (`ledger.py`): Jedes Zählerdelta wird zeitlinear auf die berührten Viertelstunden verteilt und jedes Teilstück sofort mit dem Preis seiner Viertelstunde gebucht. Keine Wartezeit an der Grenze; spätere Energie für eine Viertelstunde wird mit deren Preis nachgebucht.
 - **Preis fehlt:** Teilstück bis zu 24 h zurückhalten (Preis aus Prognose oder Zustandsverlauf nachholen), danach als vergütet buchen und in der Diagnose zählen.
 - **Zähler:** Rücksprung = Reset (neue Basis, nichts buchen); Sprung über 1,5 × Anlagenleistung × Zeit (+ 2 Wh Rundung) = unplausibel (neue Basis, nichts buchen, zählen).
@@ -115,7 +115,7 @@ Nicht verabschiedet (2./3. Lesung voraussichtlich 9.–13.11.2026, Bundesrat 20.
 
 - GitHub: Organisation `einspeisewacht`, Repo `integration` (öffentlich seit 2026-10-26, damit die HA-Tests in CI laufen und HACS installieren kann). Brand-Bilder seit 2026-10-26 (`docs/BRAND.md`).
 - **Releases, auch Betas, als reguläre GitHub-Releases** (nicht „Pre-release“): Ohne reguläres Release nimmt HACS den letzten Commit und sucht wegen `zip_release` eine ZIP unter `releases/download/<commit>/` – 404 (erlebt mit 0.1.0b2, 2026-10-26).
-
+- Kein `categories` im Manifest: hassfest lehnt das Feld für Custom-Integrationen ab („not a valid option“, geprüft 2026-10-26 mit `energy` und Unterkategorien).
 - **Bekanntmachen:** simon42 Community ([Thema 94942](https://community.simon42.com/t/einspeisewacht-was-dich-negative-strompreise-bei-der-pv-einspeisung-kosten-hacs-integration/94942), 2026-10-26). Offen: HA Community (englisch), Hinweis im evcc-PR #33635, Antrag HACS-Standardliste.
 
 ### GitHub-Einstellungen (Stand 2026-10-26, wie Eilwacht)
@@ -126,9 +126,7 @@ Nicht verabschiedet (2./3. Lesung voraussichtlich 9.–13.11.2026, Bundesrat 20.
 ## 6. Offene Fragen
 
 - EEG 2027 nach Verabschiedung (voraussichtlich November 2026) prüfen.
-- Quelle für historische Viertelstundenpreise zur Nachberechnung (SMARD.de?) und deren Nutzungsbedingungen.
-
-Kein `categories` im Manifest: hassfest lehnt das Feld für Custom-Integrationen ab („not a valid option“, geprüft 2026-10-26 mit `energy` und Unterkategorien).
+- Weitere Preisquellen (Nord Pool, Tibber, ENTSO-E): erst mit echtem Fixture eines Nutzers.
 
 ## 7. Integration Quality Scale (Stand 2026-10-26)
 

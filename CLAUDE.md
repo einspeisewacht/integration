@@ -5,7 +5,8 @@ Home-Assistant-Custom-Integration (HACS), Domain `einspeisewacht`. Berechnet fü
 ## Dokumentation
 
 - **`docs/ENTWICKLUNG.md`** – Umfang, Rechtsregeln mit Quellen, verifizierte Eigenheiten der Datenquellen, Entscheidungen, offene Fragen. Vor größeren Arbeiten lesen.
-- **`CHANGELOG.md`** – Projektstand und Versionsgeschichte. Hier stehen keine Statusberichte.
+- **`CHANGELOG.md`** – Versionsgeschichte und was auf `dev` unveröffentlicht liegt (Abschnitt „Unveröffentlicht“). Hier stehen keine Statusberichte.
+- **`NOTES.md`** (lokal, nicht im Repo) – Arbeitsstand, offene Punkte, Beobachtungen. Nach jeder Sitzung fortschreiben. Interna (Zahlen, Einschätzungen, Werte der Testanlage) gehören nur dorthin – das Repo ist öffentlich.
 - **`docs/BRAND.md`** – Farben, Schrift, Bilddateien, Regenerierung. Brand-Bilder nicht verändern oder neu erzeugen, außer auf ausdrücklichen Wunsch.
 - Konzept (Claude Docs): https://claude.ai/artifact/DLtTLdGpmePqYRZ1BT1GB7 – Stand 2026-10-22, bei Widersprüchen gilt `docs/ENTWICKLUNG.md`.
 
@@ -30,3 +31,11 @@ Home-Assistant-Custom-Integration (HACS), Domain `einspeisewacht`. Berechnet fü
 6. Tests gegen Fixtures. HA-Tests (`tests/ha/`, `pytest-homeassistant-custom-component`) nur in GitHub Actions.
 7. **Branches:** Entwickelt wird auf `dev`; `main` erhält nur freigegebene Stände (Versions-Bump in `manifest.json`, `const.py` und `pyproject.toml` mit `uv lock` + GitHub-Release, auch Betas als **reguläres** Release – sonst scheitert HACS). Ein Ruleset erzwingt das: `main` nimmt nur Commits mit grüner CI (`test`, `hassfest`, `compat`) an – erst `dev` pushen, CI abwarten, dann vorspulen – per `git push origin dev:main`, **ohne Branch-Wechsel** im Arbeitsverzeichnis (siehe `CLAUDE.local.md`). Ein Release erst anlegen, wenn `origin/main` nachweislich auf dem Versions-Commit steht. Kein Force-Push, Tags `v*` sind unveränderlich.
 8. **Werkzeuge:** `uv run pytest`, `uv run ruff check .`, `uv run ruff format .`. `homeassistant` (dev) und `pytest-homeassistant-custom-component` (ha-tests) immer gemeinsam anheben. Rechnerspezifisches und die Testanlage stehen in `CLAUDE.local.md`.
+
+## Fallstricke (dauerhaft)
+
+- **Zeitrechnung nur in UTC**, auch in Tests und Hilfsfunktionen: Schritte in Ortszeit verlieren oder verdoppeln am Umstellungstag Viertelstunden (zweimal passiert: Bericht und Test-Helfer).
+- **Release:** `gh release create vX --target main` – ein Kurz-SHA als Ziel gibt 422. `release-asset.yml` hängt `einspeisewacht.zip` an und bricht ab, wenn Tag und `manifest.json`-Version nicht übereinstimmen; danach prüfen, dass die ZIP dran ist.
+- **HA-Tests mit Recorder:** `auto_enable_custom_integrations` im Testmodul überschreiben und `recorder_mock` vor `enable_custom_integrations` anfordern (siehe `tests/ha/test_statistics_import.py`), sonst Fixture-Reihenfolgefehler.
+- **Schreiblast:** `Store.async_delay_save` verschiebt den Termin bei jeder Änderung – für häufig geänderte Daten eigene Intervalle (siehe `docs/ENTWICKLUNG.md`, Speichern in zwei Dateien). Schätzungen zur Schreiblast messen, nicht hochrechnen.
+- **Screenshots und Forentexte:** keine echten Werte der Testanlage in Repo-Bildern. Forenentwürfe liegen in `raw/forum/`; posten macht der Inhaber selbst.
