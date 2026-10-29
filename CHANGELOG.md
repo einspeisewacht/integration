@@ -2,6 +2,8 @@
 
 ## Unveröffentlicht
 
+## 0.1.2 – 2026-10-29
+
 - **Fehler behoben:** War Home Assistant länger als einen Tag aus und lieferte der Preissensor beim Start noch keine Daten, buchte Einspeisewacht die zurückgehaltene Energie sofort als vergütet und legte die Viertelstunden als „ohne Preis“ ab – auch wenn die Preise Sekunden später kamen. Jetzt wartet die Buchung nach dem Start auf den ersten Preis.
 - **Fehler behoben:** Kam der Preis einer schon als „ohne Preis“ abgelegten Viertelstunde später doch noch (EPEX Spot liefert den Vortag mit), wurde eine negative Viertelstunde nie mehr gezählt und fehlte in der Nachholung. Jetzt wird sie nachgezählt.
 - **„Statistik nachtragen“** lehnt einen Beginn nach der Einrichtung des Eintrags ab. Ab da haben die Sensoren eigene Statistik; ein späterer Beginn hätte falsche Zeilen erzeugt.
