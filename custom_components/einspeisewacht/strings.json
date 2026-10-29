@@ -224,6 +224,10 @@
     "meter_unit": {
       "title": "Meter unit not supported ({name})",
       "description": "The feed-in meter {entity} reports “{unit}”. Einspeisewacht needs Wh, kWh or MWh and does not book anything until then. Choose another meter under Reconfigure, or fix the unit of the sensor."
+    },
+    "rule_changed": {
+      "title": "Totals partly follow the previous rule ({name})",
+      "description": "The rule was changed. Up to the change on {date}, the totals “Feed-in remunerated/not remunerated”, “Revenue” and “Lost revenue” follow the previous rule: the new one judges {count} negative quarter hours already booked differently. Einspeisewacht does not rebook them, because Home Assistant would take a falling total for a meter replacement. The Report action gives the correct values for the time before. This message disappears if the rule is changed back; otherwise you can ignore it."
     }
   },
   "services": {

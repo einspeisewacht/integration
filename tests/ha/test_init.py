@@ -9,6 +9,7 @@ from freezegun.api import FrozenDateTimeFactory
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers import issue_registry as ir
 from pytest_homeassistant_custom_component.common import (
     MockConfigEntry,
     async_fire_time_changed,
@@ -17,10 +18,12 @@ from pytest_homeassistant_custom_component.common import (
 from custom_components.einspeisewacht.const import (
     CONF_METER,
     CONF_OVERRIDE,
+    CONF_OVERRIDE_DATE,
     CONF_RATES,
     CONF_SMART_METER,
     CONF_SMART_METER_DATE,
     DOMAIN,
+    OVERRIDE_FROM_DATE,
     OVERRIDE_NEVER,
 )
 from custom_components.einspeisewacht.diagnostics import (
@@ -191,12 +194,40 @@ async def test_reconfigured_rule_is_reported_not_rebooked(
     entry = await setup(hass)
     await book_negative_quarter_hour(hass, freezer)
 
+    issue_id = f"rule_changed_{entry.entry_id}"
+    issues = ir.async_get(hass)
+
+    # A rule that judges the booked quarter hour alike: no issue.
+    override = {CONF_OVERRIDE: OVERRIDE_FROM_DATE, CONF_OVERRIDE_DATE: "2026-10-01"}
+    await reconfigure(hass, entry, **override)
+    assert value(hass, entry, "active_rule") == "manual_from_date"
+    assert issues.async_get_issue(DOMAIN, issue_id) is None
+
     await reconfigure(hass, entry, **{CONF_OVERRIDE: OVERRIDE_NEVER})
     assert value(hass, entry, "active_rule") == "manual_never"
     # No decrease of a TOTAL_INCREASING sensor: the booked split stays.
     assert float(value(hass, entry, "energy_unpaid")) == pytest.approx(0.25)
     diagnostics = await async_get_config_entry_diagnostics(hass, entry)
     assert diagnostics["ledger"]["rule_change"]["quarter_hours"] == 1
+    issue = issues.async_get_issue(DOMAIN, issue_id)
+    assert issue is not None
+    assert issue.severity is ir.IssueSeverity.WARNING
+    assert issue.translation_placeholders == {
+        "name": "Dach",
+        "date": "2026-10-25",
+        "count": "1",
+    }
+
+    # Restart: still there.
+    assert await hass.config_entries.async_reload(entry.entry_id)
+    await hass.async_block_till_done()
+    assert issues.async_get_issue(DOMAIN, issue_id) is not None
+
+    # Changed back: the totals agree with the rule again.
+    await reconfigure(hass, entry)
+    assert issues.async_get_issue(DOMAIN, issue_id) is None
+    diagnostics = await async_get_config_entry_diagnostics(hass, entry)
+    assert diagnostics["ledger"]["rule_change"] is None
 
 
 @pytest.mark.freeze_time(START)

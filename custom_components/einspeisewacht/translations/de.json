@@ -224,6 +224,10 @@
     "meter_unit": {
       "title": "Einheit des Zählers nicht unterstützt ({name})",
       "description": "Der Einspeisezähler {entity} meldet „{unit}“. Einspeisewacht braucht Wh, kWh oder MWh und bucht bis dahin nichts. Unter „Neu konfigurieren“ einen anderen Zähler wählen oder die Einheit des Sensors korrigieren."
+    },
+    "rule_changed": {
+      "title": "Summen teils nach alter Regel ({name})",
+      "description": "Die Regel wurde geändert. Die Summen „Einspeisung vergütet/unvergütet“, „Erlös“ und „Entgangener Erlös“ folgen bis zur Änderung am {date} der alten Regel: {count} schon gebuchte negative Viertelstunden beurteilt die neue Regel anders. Einspeisewacht bucht sie nicht um, weil Home Assistant eine sinkende Summe für einen Zählerwechsel hielte. Die richtigen Werte für die Zeit davor liefert die Aktion „Bericht“. Die Meldung verschwindet, wenn die Regel zurückgeändert wird; sonst kannst du sie ignorieren."
     }
   },
   "services": {

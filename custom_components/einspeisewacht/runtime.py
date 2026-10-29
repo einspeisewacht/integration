@@ -204,6 +204,9 @@ class PlantRuntime:
                     self.name,
                     change["quarter_hours"],
                 )
+                # A new change shows again even if an earlier one was ignored.
+                ir.async_delete_issue(self.hass, DOMAIN, self._issue("rule_changed"))
+        self._update_rule_issue()
         now = dt_util.utcnow()
         if state := self.hass.states.get(self.price_entity):
             self._handle_price(state, now)
@@ -241,11 +244,45 @@ class PlantRuntime:
             self.issue_id,
             self._issue("price_missing"),
             self._issue("meter_unit"),
+            self._issue("rule_changed"),
         ):
             ir.async_delete_issue(self.hass, DOMAIN, issue)
 
     def _issue(self, key: str) -> str:
         return f"{key}_{self.entry_id}"
+
+    def _update_rule_issue(self) -> None:
+        """Say while the totals hold quarter hours booked under an earlier rule.
+
+        Created at every start while it applies (an ignored issue stays
+        ignored), deleted once nothing booked differs (e.g. changed back).
+        """
+        issue_id = self._issue("rule_changed")
+        change = self.engine.rule_change
+        if change is None:
+            ir.async_delete_issue(self.hass, DOMAIN, issue_id)
+            return
+        until = change.get("until")
+        day = datetime.fromisoformat(until).astimezone(BERLIN).date() if until else None
+        if day is None:
+            date_text = "–"
+        elif self.hass.config.language.startswith("de"):
+            date_text = day.strftime("%d.%m.%Y")
+        else:
+            date_text = day.isoformat()
+        ir.async_create_issue(
+            self.hass,
+            DOMAIN,
+            issue_id,
+            is_fixable=False,
+            severity=ir.IssueSeverity.WARNING,
+            translation_key="rule_changed",
+            translation_placeholders={
+                "name": self.name,
+                "date": date_text,
+                "count": str(change["quarter_hours"]),
+            },
+        )
 
     async def _async_save(self, now: datetime | None = None) -> None:
         """Write what changed: the live state, and the history if it changed."""

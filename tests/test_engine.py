@@ -351,10 +351,26 @@ def test_engine_reports_a_rule_change_for_booked_quarter_hours() -> None:
         "until": restored.quarters.next_slot.isoformat(),
         "quarter_hours": 6,
     }
-    # Kept over the next restart, not reported again.
+    assert restored.rule_history == [(NegativeQuarterHour(), DAY_END)]
+    # Kept over the next restart.
     again = reloaded(restored, rule=AlwaysPaid())
     assert again.rule_change == restored.rule_change
     # A rule that judges the booked quarter hours alike changes nothing.
     later = NegativeQuarterHour(applies_from=DAY_START)
     assert reloaded(engine, rule=later).rule_change is None
     assert reloaded(engine).rule_change is None
+    # Changed back: everything booked agrees again, the history is dropped.
+    back = reloaded(again)
+    assert back.rule_change is None and back.rule_history == []
+
+
+def test_engine_rule_change_counts_each_period_by_its_rule() -> None:
+    """Changed twice: quarter hours count against the rule that booked them."""
+    engine = reloaded(booked_day(), rule=AlwaysPaid())
+    assert engine.rule_change["quarter_hours"] == 6
+    # Another rule that also pays everything up to now: nothing new differs,
+    # the six quarter hours booked under the first rule still do.
+    later = NegativeQuarterHour(applies_from=DAY_END)
+    again = reloaded(engine, rule=later)
+    assert again.rule_change == engine.rule_change
+    assert len(again.rule_history) == 2

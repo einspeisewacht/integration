@@ -136,16 +136,28 @@ class QuarterCounter:
                 result[year] = result.get(year, 0) + 1
         return result
 
-    def changed_by(self, old: Rule, new: Rule) -> int:
-        """Recorded negative quarter hours since `started` that `new` judges unlike `old`."""
+    def booked_unlike(
+        self, earlier: list[tuple[Rule, datetime]], rule: Rule
+    ) -> tuple[int, datetime | None]:
+        """Recorded negative quarter hours since `started` booked unlike `rule`.
+
+        `earlier` lists the rules booked before `rule`, each with the quarter
+        hour it was replaced at (ascending). Returns how many quarter hours
+        differ and the end of the last earlier rule that judged one differently.
+        """
+        count, until = 0, None
         if self.started is None:
-            return 0
-        return sum(
-            1
-            for slot, price in self.negatives.items()
-            if slot >= self.started
-            and old.is_paid(slot, price) != new.is_paid(slot, price)
-        )
+            return count, until
+        for slot, price in self.negatives.items():
+            if slot < self.started:
+                continue
+            for booked, end in earlier:
+                if slot < end:
+                    if booked.is_paid(slot, price) != rule.is_paid(slot, price):
+                        count += 1
+                        until = end if until is None else max(until, end)
+                    break
+        return count, until
 
     def as_dict(self) -> dict[str, Any]:
         return {

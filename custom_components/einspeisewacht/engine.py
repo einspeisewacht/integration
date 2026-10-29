@@ -9,8 +9,9 @@ negative quarter hours), which changes rarely: `history_version` and
 The money totals always follow the current rate (`FeedInValuation.reprice`).
 The energy totals keep the rule they were booked with: moving energy from
 "unpaid" to "paid" would lower a TOTAL_INCREASING sensor, which Home Assistant
-takes for a meter reset. A changed rule that judges recorded quarter hours
-differently is therefore only reported (`rule_change`).
+takes for a meter reset. Earlier rules are kept with the quarter hour they
+were replaced at (`rule_history`); while one of them judged a recorded quarter
+hour unlike the current rule, `rule_change` says so (a repair issue).
 """
 
 from __future__ import annotations
@@ -57,8 +58,11 @@ class Engine:
     # price may only mean that the price sensor is not ready yet, and a tick
     # would give up on it (counter) or book the energy as paid (ledger).
     prices_seen: bool = False
-    # The last rule change that judges quarter hours booked before it
-    # differently: {"until": first quarter hour of the new rule, "quarter_hours": n}.
+    # Rules booked before the current one, each with the quarter hour it was
+    # replaced at; dropped once nothing booked differs from the current rule.
+    rule_history: list[tuple[Rule, datetime]] = field(default_factory=list)
+    # Booked quarter hours an earlier rule judged unlike the current one:
+    # {"until": end of that rule, "quarter_hours": n}; None if there are none.
     rule_change: dict[str, Any] | None = None
 
     @property
@@ -162,6 +166,9 @@ class Engine:
             "quarters": self.quarters.as_dict(),
             "meter_events": dict(self.meter_events),
             "rule": rule_as_dict(self.rule),
+            "rule_history": [
+                [rule_as_dict(rule), end.isoformat()] for rule, end in self.rule_history
+            ],
             "rule_change": self.rule_change,
         }
 
@@ -186,12 +193,26 @@ class Engine:
         self.valuation.reprice(self.ledger.totals)
         self.quarters.restore(live.get("quarters", {}), history.get("negatives"))
         self.meter_events = Counter(live.get("meter_events", {}))
-        self.rule_change = live.get("rule_change")
+        self._restore_rules(live)
+
+    def _restore_rules(self, live: dict[str, Any]) -> None:
+        """Which booked quarter hours an earlier rule judged unlike the current one."""
+        self.rule_history = [
+            (rule, datetime.fromisoformat(end))
+            for data, end in live.get("rule_history", [])
+            if (rule := rule_from_dict(data)) is not None
+        ]
         booked = rule_from_dict(live.get("rule"))
-        changed = 0 if booked is None else self.quarters.changed_by(booked, self.rule)
-        if changed:
-            until = self.quarters.next_slot
-            self.rule_change = {
-                "until": until.isoformat() if until else None,
-                "quarter_hours": changed,
-            }
+        end = self.quarters.next_slot
+        if booked is not None and booked != self.rule and end is not None:
+            self.rule_history.append((booked, end))
+        count, until = self.quarters.booked_unlike(self.rule_history, self.rule)
+        if not count:
+            # Everything booked agrees with the current rule (e.g. changed back).
+            self.rule_history = []
+            self.rule_change = None
+            return
+        self.rule_change = {
+            "until": until.isoformat() if until else None,
+            "quarter_hours": count,
+        }
