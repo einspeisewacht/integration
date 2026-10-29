@@ -21,7 +21,8 @@ from .prices import PriceTable
 from .rules import Rule
 from .timeslots import QUARTER, slot_start
 
-# Longer gaps (e.g. HA off for weeks) are not counted backwards.
+# Longer gaps (e.g. HA off for weeks) are not counted backwards; they stay
+# unknown (`gaps`), one entry per gap.
 MAX_CATCH_UP = timedelta(days=14)
 
 
@@ -39,7 +40,7 @@ class QuarterCounter:
 
     Known: from `backfill_from` to `started` once backfilled (historical
     prices), and from `started` to `next_slot` (live), except `missing`
-    quarter hours whose price never arrived.
+    quarter hours whose price never arrived and `gaps` that were skipped.
     """
 
     next_slot: datetime | None = None
@@ -48,6 +49,8 @@ class QuarterCounter:
     backfilled: bool = False
     negatives: dict[datetime, float] = field(default_factory=dict)
     missing: set[datetime] = field(default_factory=set)
+    # [start, end) skipped after a gap longer than MAX_CATCH_UP.
+    gaps: list[tuple[datetime, datetime]] = field(default_factory=list)
 
     def advance(self, now: datetime, prices: PriceTable) -> bool:
         """Record every quarter hour that ended by `now`; True if a negative one was added."""
@@ -55,6 +58,9 @@ class QuarterCounter:
         current = slot_start(now)
         if self.next_slot is None or current - self.next_slot > MAX_CATCH_UP:
             # First start (or a long gap): begin with the running quarter hour.
+            # The skipped time is kept as unknown, not as known without negatives.
+            if self.next_slot is not None:
+                self.gaps.append((self.next_slot, current))
             self.next_slot = current
             if self.started is None:
                 self.started = current
@@ -111,6 +117,8 @@ class QuarterCounter:
         """Whether the price of `slot` was seen (negative or not)."""
         if slot in self.missing or self.started is None or self.next_slot is None:
             return False
+        if any(start <= slot < end for start, end in self.gaps):
+            return False
         if self.started <= slot < self.next_slot:
             return True
         return (
@@ -128,6 +136,17 @@ class QuarterCounter:
                 result[year] = result.get(year, 0) + 1
         return result
 
+    def changed_by(self, old: Rule, new: Rule) -> int:
+        """Recorded negative quarter hours since `started` that `new` judges unlike `old`."""
+        if self.started is None:
+            return 0
+        return sum(
+            1
+            for slot, price in self.negatives.items()
+            if slot >= self.started
+            and old.is_paid(slot, price) != new.is_paid(slot, price)
+        )
+
     def as_dict(self) -> dict[str, Any]:
         return {
             "next_slot": _iso(self.next_slot),
@@ -135,6 +154,7 @@ class QuarterCounter:
             "backfill_from": _iso(self.backfill_from),
             "backfilled": self.backfilled,
             "missing": sorted(s.isoformat() for s in self.missing),
+            "gaps": [[a.isoformat(), b.isoformat()] for a, b in self.gaps],
         }
 
     def negatives_dict(self) -> dict[str, float]:
@@ -154,3 +174,7 @@ class QuarterCounter:
         self.backfilled = data.get("backfilled", False)
         self.negatives = {datetime.fromisoformat(s): p for s, p in negatives.items()}
         self.missing = {datetime.fromisoformat(s) for s in data.get("missing", [])}
+        self.gaps = [
+            (datetime.fromisoformat(a), datetime.fromisoformat(b))
+            for a, b in data.get("gaps", [])
+        ]

@@ -18,6 +18,13 @@ from .rules import Rule
 # How long a piece waits for its price before it is booked without one.
 PRICE_WAIT = timedelta(hours=24)
 
+# Money totals of a feed-in valuation and the energy totals they are worth.
+MONEY_TOTALS = {
+    "revenue": "energy_paid",
+    "revenue_lost": "energy_unpaid",
+    "shadow_revenue_lost": "shadow_energy_unpaid",
+}
+
 
 class Valuation(Protocol):
     """Adds one piece of energy to the totals."""
@@ -37,7 +44,8 @@ class FeedInValuation:
 
     `shadow_rule` books what would be lost if the negative-price rule applied
     already (e.g. before a smart meter is installed). Without a price, a piece
-    counts as paid.
+    counts as paid. Only energy is added up; the money totals are always the
+    energy totals times the rate (`reprice`).
     """
 
     rate: float
@@ -52,15 +60,23 @@ class FeedInValuation:
         price: float | None,
     ) -> None:
         paid = price is None or self.rule.is_paid(slot, price)
-        if paid:
-            _add(totals, "energy_paid", energy)
-            _add(totals, "revenue", energy * self.rate)
-        else:
-            _add(totals, "energy_unpaid", energy)
-            _add(totals, "revenue_lost", energy * self.rate)
+        _add(totals, "energy_paid" if paid else "energy_unpaid", energy)
         if price is not None and not self.shadow_rule.is_paid(slot, price):
             _add(totals, "shadow_energy_unpaid", energy)
-            _add(totals, "shadow_revenue_lost", energy * self.rate)
+        self.reprice(totals)
+
+    def reprice(self, totals: dict[str, float]) -> None:
+        """Recompute the money totals from the energy totals at this rate.
+
+        A plant has one rate (a single one, or one blend of capacity bands), so
+        money is energy times rate: a corrected rate applies to everything
+        booked since setup, not only to new bookings.
+        """
+        for money, energy in MONEY_TOTALS.items():
+            if energy in totals:
+                totals[money] = totals[energy] * self.rate
+            else:
+                totals.pop(money, None)
 
 
 def _add(totals: dict[str, float], key: str, value: float) -> None:

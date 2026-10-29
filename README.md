@@ -75,6 +75,12 @@ Oder von Hand:
 
 Mehrere Anlagen oder Zähler: je einen Eintrag anlegen. Ändern: *Einspeisewacht → Eintrag → ⋮ → Neu konfigurieren*.
 
+Was eine Änderung für die Zeit davor bedeutet:
+
+- **Vergütungssatz:** gilt rückwirkend ab der Einrichtung – Erlös und entgangener Erlös werden aus den gebuchten kWh neu berechnet. In der Langzeitstatistik erscheint die Korrektur in der Stunde der Änderung; schon [nachgetragene Statistik](#statistik-nachtragen) bleibt beim alten Satz.
+- **Regel** (Inbetriebnahme, Leistung, Smart-Meter-Datum, Übersteuerung): Viertelstunden ohne Vergütung, Nachholung, „Vergütung bis“ und der [Bericht](#bericht-für-einen-zeitraum) folgen sofort der neuen Regel, auch rückwirkend. Die Summen „Einspeisung vergütet/unvergütet“, „Erlös“ und „Entgangener Erlös“ behalten für die Zeit vor der Änderung aber ihre Aufteilung: Eine sinkende kWh-Summe hielte Home Assistant für einen Zählerwechsel und verfälschte die Statistik. Die Werte nach neuer Regel liefert der Bericht. Betrifft die Änderung schon gebuchte Viertelstunden, steht das im Protokoll und in der Diagnose (`rule_change`).
+- **Einspeisezähler:** Der neue Zähler beginnt mit eigenem Ausgangswert; die Einspeisung zwischen dem letzten Wert des alten und dem ersten Wert des neuen Zählers wird nicht gebucht.
+
 ## Entitäten
 
 | Entität | Typ | Bedeutung |
@@ -126,7 +132,7 @@ gaps:
   quarter_hours_without_price: 0
 ```
 
-Die Antwort enthält kWh vergütet und unvergütet, Erlös, entgangenen Erlös und die negativen Viertelstunden – gesamt und je Monat. Grundlage ist die Langzeitstatistik deines Einspeisezählers (Stundenwerte, gleichmäßig auf die vier Viertelstunden verteilt – exakt, wenn alle vier gleich ausgehen, sonst eine gute Näherung). Viertelstunden ohne bekannten Preis zählen als vergütet und stehen unter `gaps`; mit der SMARD-Option reichen die Preise bis zur Inbetriebnahme zurück.
+Die Antwort enthält kWh vergütet und unvergütet, Erlös, entgangenen Erlös und die negativen Viertelstunden – gesamt und je Monat. Grundlage ist die Langzeitstatistik deines Einspeisezählers (Stundenwerte, gleichmäßig auf die vier Viertelstunden verteilt – exakt, wenn alle vier gleich ausgehen, sonst eine gute Näherung). Viertelstunden ohne bekannten Preis zählen als vergütet und stehen unter `gaps` – auch die Zeit, in der Home Assistant länger als 14 Tage aus war; mit der SMARD-Option reichen die Preise bis zur Inbetriebnahme zurück.
 
 ## Statistik nachtragen
 

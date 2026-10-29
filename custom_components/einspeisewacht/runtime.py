@@ -159,7 +159,9 @@ class PlantRuntime:
         self.derived = derived_from_config(config)
         self.rate_ct = rate_from_config(config)
         self.engine = Engine(
-            meter=MeterTracker(max_power_kw=float(config[CONF_POWER])),
+            meter=MeterTracker(
+                max_power_kw=float(config[CONF_POWER]), source=self.meter_entity
+            ),
             valuation=FeedInValuation(
                 rate=self.rate_ct / 100,
                 rule=rule_for(self.derived),
@@ -193,6 +195,15 @@ class PlantRuntime:
         """Restore the stored state, read current values, start listening."""
         if live := await self._store.async_load():
             self.engine.restore(live, await self._history.async_load())
+            change = self.engine.rule_change
+            if change is not None and change != live.get("rule_change"):
+                _LOGGER.warning(
+                    "%s: the changed rule judges %s negative quarter hours since setup "
+                    "differently; the energy totals keep the previous rule for them "
+                    "(the report action recalculates any period)",
+                    self.name,
+                    change["quarter_hours"],
+                )
         now = dt_util.utcnow()
         if state := self.hass.states.get(self.price_entity):
             self._handle_price(state, now)

@@ -51,6 +51,7 @@ async def async_get_config_entry_diagnostics(
         "ledger": {
             "pending_quarter_hours": len(engine.ledger.pending),
             "booked_without_price": engine.ledger.booked_without_price,
+            "rule_change": engine.rule_change,
         },
         "quarters": {
             "next_slot": engine.quarters.next_slot.isoformat()
@@ -60,6 +61,10 @@ async def async_get_config_entry_diagnostics(
             "shadow_counts": {str(y): c for y, c in engine.shadow_counts().items()},
             "negative_quarter_hours_known": len(engine.quarters.negatives),
             "missing_prices": len(engine.quarters.missing),
+            "gaps": [
+                [start.isoformat(), end.isoformat()]
+                for start, end in engine.quarters.gaps
+            ],
             "started": engine.quarters.started.isoformat()
             if engine.quarters.started
             else None,

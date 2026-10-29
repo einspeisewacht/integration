@@ -2,6 +2,12 @@
 
 ## Unveröffentlicht
 
+- **Fehler behoben:** Ein in der Neukonfiguration korrigierter Vergütungssatz (oder eine geänderte Leistung bei gestaffelter Vergütung) galt nur für neue Buchungen; Erlös und entgangener Erlös blieben für die Zeit davor beim alten Satz. Jetzt rechnet Einspeisewacht sie beim Start aus den gebuchten kWh neu – der Satz gilt ab der Einrichtung. In der Langzeitstatistik erscheint die Korrektur in der Stunde der Änderung.
+- Eine geänderte **Regel** (Inbetriebnahme, Leistung, Smart-Meter-Datum, Übersteuerung) bucht die kWh-Summen für die Zeit davor bewusst nicht um: Eine sinkende Summe hielte Home Assistant für einen Zählerwechsel. Betrifft die Änderung schon gebuchte negative Viertelstunden, steht das jetzt im Protokoll und in der Diagnose (`rule_change`); die Werte nach neuer Regel liefert der Bericht. README: neuer Abschnitt, was eine Änderung für die Zeit davor bedeutet.
+- **Fehler behoben:** War Home Assistant länger als 14 Tage aus, galt die übersprungene Zeit als bekannt und ohne negative Preise. Jetzt führt der Bericht sie als Lücke ohne Preis (`gaps`).
+- **Fehler behoben:** Nach einem Zählertausch in der Neukonfiguration wurde der erste Wert des neuen Zählers gegen den letzten Stand des alten gerechnet; lag er knapp darüber, entstand gebuchte Einspeisung, die es nicht gab. Jetzt beginnt der neue Zähler mit eigenem Ausgangswert.
+- Diagnose: `rule_change` (Abschnitt `ledger`) und `gaps` (Abschnitt `quarters`).
+
 ## 0.1.3 – 2026-10-29
 
 - **Preise von SMARD.de, wenn der Preissensor ausfällt** (nur mit der SMARD-Option): Liefert der Preissensor für eine Viertelstunde länger als eine Stunde keinen Preis, holt Einspeisewacht die Day-Ahead-Preise von SMARD.de – höchstens einmal je Stunde und nur für Viertelstunden, die der Sensor offen gelassen hat. So bleiben Buchung und Nachholung auch bei einem tagelangen Ausfall der Preis-Integration richtig. Bisher galt die Einspeisung nach 24 Stunden ohne Preis als vergütet, und negative Viertelstunden fehlten in der Nachholung.

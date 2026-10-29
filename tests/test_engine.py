@@ -13,6 +13,7 @@ from custom_components.einspeisewacht.ledger import FeedInValuation
 from custom_components.einspeisewacht.meter import MeterTracker
 from custom_components.einspeisewacht.prices import PriceTable, parse_interval_prices
 from custom_components.einspeisewacht.quarters import MAX_CATCH_UP, QuarterCounter
+from custom_components.einspeisewacht.report import build_report, unknown_slots
 from custom_components.einspeisewacht.rules import AlwaysPaid, NegativeQuarterHour
 from tests.conftest import load_fixture
 
@@ -96,10 +97,30 @@ def test_counter_counts_a_price_that_arrives_late() -> None:
 
 def test_counter_does_not_catch_up_long_gaps() -> None:
     counter = QuarterCounter(next_slot=DAY_START, started=DAY_START)
-    later = DAY_START + MAX_CATCH_UP + timedelta(hours=1)
+    later = DAY_START + MAX_CATCH_UP + timedelta(hours=1, minutes=5)
+    back = later.replace(minute=0)
     counter.advance(later, PriceTable())
-    assert counter.next_slot == later.replace(minute=0)
+    assert counter.next_slot == back
     assert counter.started == DAY_START
+    # The skipped time stays unknown: one range, not a quarter hour each.
+    assert counter.gaps == [(DAY_START, back)]
+    assert counter.missing == set()
+    assert not counter.known(DAY_START)
+    assert not counter.known(back - timedelta(minutes=15))
+    assert len(unknown_slots(DAY_START, back, counter)) == (back - DAY_START) / (
+        timedelta(minutes=15)
+    )
+    counter.advance(back + timedelta(minutes=15), PriceTable({back: 0.05}))
+    assert counter.known(back)
+
+
+def test_report_shows_a_long_gap() -> None:
+    """HA was off for weeks: the report lists the time as without price."""
+    counter = QuarterCounter(next_slot=DAY_START, started=DAY_START)
+    back = DAY_START + MAX_CATCH_UP + timedelta(days=1)
+    counter.advance(back, PriceTable())
+    report = build_report([], DAY_START, DAY_END, counter, RULE, RATE, BERLIN)
+    assert report["gaps"]["quarter_hours_without_price"] == 100  # 25-hour day
 
 
 def test_counter_years_follow_local_time() -> None:
@@ -115,6 +136,7 @@ def test_counter_round_trip_and_legacy_data() -> None:
     counter = QuarterCounter(next_slot=DAY_START, started=DAY_START)
     counter.advance(DAY_END, fixture_prices())
     counter.missing.add(DAY_END)
+    counter.gaps.append((DAY_START - timedelta(days=30), DAY_START - timedelta(days=9)))
     restored = QuarterCounter()
     restored.restore(
         json.loads(json.dumps(counter.as_dict())),
@@ -130,11 +152,13 @@ def test_counter_round_trip_and_legacy_data() -> None:
 # --- engine -------------------------------------------------------------------
 
 
-def make_engine() -> Engine:
+def make_engine(rate: float = RATE, rule=None) -> Engine:
     return Engine(
         meter=MeterTracker(max_power_kw=9),
         valuation=FeedInValuation(
-            rate=RATE, rule=NegativeQuarterHour(), shadow_rule=NegativeQuarterHour()
+            rate=rate,
+            rule=rule or NegativeQuarterHour(),
+            shadow_rule=NegativeQuarterHour(),
         ),
     )
 
@@ -273,3 +297,64 @@ def test_engine_prunes_old_prices_about_daily() -> None:
     assert DAY_START in engine.prices.prices
     engine.tick(DAY_START + timedelta(days=20))
     assert engine.prices.prices == {}
+
+
+def booked_day(rate: float = RATE, rule=None) -> Engine:
+    """1 kW all day on 25.10.2026 (six negative quarter hours)."""
+    engine = make_engine(rate, rule)
+    for parsed in fixture_parsed():
+        engine.on_prices(parsed, DAY_START)
+    at, value = DAY_START, 1234.0
+    while at <= DAY_END:
+        engine.on_meter(value, at, at)
+        engine.tick(at)
+        at += timedelta(minutes=5)
+        value += 1 / 12
+    return engine
+
+
+def reloaded(engine: Engine, rate: float = RATE, rule=None) -> Engine:
+    """The engine after a restart with the given (reconfigured) rate and rule."""
+    restored = make_engine(rate, rule)
+    restored.restore(
+        json.loads(json.dumps(engine.as_live_dict())),
+        json.loads(json.dumps(engine.as_history_dict())),
+    )
+    return restored
+
+
+def test_engine_corrected_rate_applies_since_setup() -> None:
+    engine = booked_day()
+    restored = reloaded(engine, rate=0.0821)
+    totals = restored.ledger.totals
+    assert totals["energy_paid"] == engine.ledger.totals["energy_paid"]
+    assert totals["revenue"] == pytest.approx(totals["energy_paid"] * 0.0821)
+    assert totals["revenue_lost"] == pytest.approx(1.5 * 0.0821)
+    assert totals["shadow_revenue_lost"] == pytest.approx(1.5 * 0.0821)
+    assert restored.rule_change is None
+    # New bookings use the new rate as well.
+    restored.on_meter(1236.0, DAY_END + timedelta(hours=1), DAY_END)
+    assert restored.ledger.totals["revenue"] == pytest.approx(
+        restored.ledger.totals["energy_paid"] * 0.0821
+    )
+
+
+def test_engine_reports_a_rule_change_for_booked_quarter_hours() -> None:
+    engine = booked_day()
+    totals = dict(engine.ledger.totals)
+    # Reconfigured to "not affected": the six booked negative quarter hours
+    # would be paid now. The energy totals keep their split (no decrease of a
+    # TOTAL_INCREASING sensor), the change is recorded.
+    restored = reloaded(engine, rule=AlwaysPaid())
+    assert restored.ledger.totals == pytest.approx(totals)
+    assert restored.rule_change == {
+        "until": restored.quarters.next_slot.isoformat(),
+        "quarter_hours": 6,
+    }
+    # Kept over the next restart, not reported again.
+    again = reloaded(restored, rule=AlwaysPaid())
+    assert again.rule_change == restored.rule_change
+    # A rule that judges the booked quarter hours alike changes nothing.
+    later = NegativeQuarterHour(applies_from=DAY_START)
+    assert reloaded(engine, rule=later).rule_change is None
+    assert reloaded(engine).rule_change is None

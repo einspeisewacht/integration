@@ -5,6 +5,12 @@ forecasts and clock ticks. It stores the small, often changing live state
 (`as_live_dict()`) apart from the history (`as_history_dict()`: prices and
 negative quarter hours), which changes rarely: `history_version` and
 `negatives_version` tell when it needs writing.
+
+The money totals always follow the current rate (`FeedInValuation.reprice`).
+The energy totals keep the rule they were booked with: moving energy from
+"unpaid" to "paid" would lower a TOTAL_INCREASING sensor, which Home Assistant
+takes for a meter reset. A changed rule that judges recorded quarter hours
+differently is therefore only reported (`rule_change`).
 """
 
 from __future__ import annotations
@@ -20,7 +26,7 @@ from .ledger import FeedInValuation, Ledger
 from .meter import MeterTracker, MeterUpdate
 from .prices import ParsedPrices, PriceTable
 from .quarters import QuarterCounter
-from .rules import Rule
+from .rules import Rule, rule_as_dict, rule_from_dict
 from .timeslots import slot_start
 
 # Prices older than this are dropped from storage (pending pieces give up
@@ -51,6 +57,9 @@ class Engine:
     # price may only mean that the price sensor is not ready yet, and a tick
     # would give up on it (counter) or book the energy as paid (ledger).
     prices_seen: bool = False
+    # The last rule change that judges quarter hours booked before it
+    # differently: {"until": first quarter hour of the new rule, "quarter_hours": n}.
+    rule_change: dict[str, Any] | None = None
 
     @property
     def rule(self) -> Rule:
@@ -152,6 +161,8 @@ class Engine:
             "ledger": self.ledger.as_dict(),
             "quarters": self.quarters.as_dict(),
             "meter_events": dict(self.meter_events),
+            "rule": rule_as_dict(self.rule),
+            "rule_change": self.rule_change,
         }
 
     def as_history_dict(self) -> dict[str, Any]:
@@ -172,5 +183,15 @@ class Engine:
         self.meter.restore(live.get("meter", {}))
         self.prices.restore(history.get("prices", {}))
         self.ledger.restore(live.get("ledger", {}))
+        self.valuation.reprice(self.ledger.totals)
         self.quarters.restore(live.get("quarters", {}), history.get("negatives"))
         self.meter_events = Counter(live.get("meter_events", {}))
+        self.rule_change = live.get("rule_change")
+        booked = rule_from_dict(live.get("rule"))
+        changed = 0 if booked is None else self.quarters.changed_by(booked, self.rule)
+        if changed:
+            until = self.quarters.next_slot
+            self.rule_change = {
+                "until": until.isoformat() if until else None,
+                "quarter_hours": changed,
+            }

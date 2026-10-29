@@ -9,12 +9,19 @@ from freezegun.api import FrozenDateTimeFactory
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant_custom_component.common import (
+    MockConfigEntry,
+    async_fire_time_changed,
+)
 
 from custom_components.einspeisewacht.const import (
+    CONF_METER,
+    CONF_OVERRIDE,
+    CONF_RATES,
     CONF_SMART_METER,
     CONF_SMART_METER_DATE,
     DOMAIN,
+    OVERRIDE_NEVER,
 )
 from custom_components.einspeisewacht.diagnostics import (
     async_get_config_entry_diagnostics,
@@ -142,3 +149,72 @@ async def test_remove_entry(hass: HomeAssistant) -> None:
     assert await hass.config_entries.async_remove(entry.entry_id)
     await hass.async_block_till_done()
     assert hass.config_entries.async_entries(DOMAIN) == []
+
+
+async def book_negative_quarter_hour(
+    hass: HomeAssistant, freezer: FrozenDateTimeFactory
+) -> None:
+    """250 Wh at a negative price, then the tick that records the quarter hour."""
+    freezer.move_to(datetime(2026, 10, 25, 3, 14, 30, tzinfo=UTC))
+    hass.states.async_set(METER, "1250", METER_ATTRIBUTES)
+    await hass.async_block_till_done()
+    tick = datetime(2026, 10, 25, 3, 15, 1, tzinfo=UTC)
+    freezer.move_to(tick)
+    async_fire_time_changed(hass, tick)
+    await hass.async_block_till_done()
+
+
+async def reconfigure(hass: HomeAssistant, entry: MockConfigEntry, **changes) -> None:
+    hass.config_entries.async_update_entry(entry, data=entry_data(**changes))
+    assert await hass.config_entries.async_reload(entry.entry_id)
+    await hass.async_block_till_done()
+
+
+@pytest.mark.freeze_time(START)
+async def test_reconfigured_rate_applies_since_setup(
+    hass: HomeAssistant, freezer: FrozenDateTimeFactory
+) -> None:
+    entry = await setup(hass)
+    await book_negative_quarter_hour(hass, freezer)
+    assert float(value(hass, entry, "revenue_lost")) == pytest.approx(0.25 * 0.0794)
+
+    await reconfigure(hass, entry, **{CONF_RATES: [8.21]})
+    assert float(value(hass, entry, "energy_unpaid")) == pytest.approx(0.25)
+    assert float(value(hass, entry, "revenue_lost")) == pytest.approx(0.25 * 0.0821)
+    assert float(value(hass, entry, "revenue")) == 0
+
+
+@pytest.mark.freeze_time(START)
+async def test_reconfigured_rule_is_reported_not_rebooked(
+    hass: HomeAssistant, freezer: FrozenDateTimeFactory
+) -> None:
+    entry = await setup(hass)
+    await book_negative_quarter_hour(hass, freezer)
+
+    await reconfigure(hass, entry, **{CONF_OVERRIDE: OVERRIDE_NEVER})
+    assert value(hass, entry, "active_rule") == "manual_never"
+    # No decrease of a TOTAL_INCREASING sensor: the booked split stays.
+    assert float(value(hass, entry, "energy_unpaid")) == pytest.approx(0.25)
+    diagnostics = await async_get_config_entry_diagnostics(hass, entry)
+    assert diagnostics["ledger"]["rule_change"]["quarter_hours"] == 1
+
+
+@pytest.mark.freeze_time(START)
+async def test_swapped_meter_books_no_phantom_energy(
+    hass: HomeAssistant, freezer: FrozenDateTimeFactory
+) -> None:
+    entry = await setup(hass)
+    other = "sensor.other_export"
+    # Minutes later, a meter 100 Wh above the old one's last reading (1000 Wh):
+    # within the plausibility bound, so it would be booked against it.
+    freezer.move_to(datetime(2026, 10, 25, 3, 5, tzinfo=UTC))
+    hass.states.async_set(other, "1100", METER_ATTRIBUTES)
+    hass.config_entries.async_update_entry(entry, unique_id=other)
+    await reconfigure(hass, entry, **{CONF_METER: other})
+    assert float(value(hass, entry, "energy_unpaid")) == 0
+    assert float(value(hass, entry, "energy_paid")) == 0
+    # From now on the new meter books.
+    freezer.move_to(datetime(2026, 10, 25, 3, 10, tzinfo=UTC))
+    hass.states.async_set(other, "1150", METER_ATTRIBUTES)
+    await hass.async_block_till_done()
+    assert float(value(hass, entry, "energy_unpaid")) == pytest.approx(0.05)

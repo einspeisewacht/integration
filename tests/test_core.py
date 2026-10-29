@@ -13,7 +13,12 @@ from custom_components.einspeisewacht.ledger import (
 )
 from custom_components.einspeisewacht.meter import MeterEvent, MeterTracker, to_kwh
 from custom_components.einspeisewacht.prices import PriceTable, parse_interval_prices
-from custom_components.einspeisewacht.rules import AlwaysPaid, NegativeQuarterHour
+from custom_components.einspeisewacht.rules import (
+    AlwaysPaid,
+    NegativeQuarterHour,
+    rule_as_dict,
+    rule_from_dict,
+)
 from custom_components.einspeisewacht.solar import daylight_weight
 from custom_components.einspeisewacht.timeslots import (
     QUARTER,
@@ -116,11 +121,27 @@ def test_meter_ignores_out_of_order_readings() -> None:
 
 
 def test_meter_round_trip() -> None:
-    meter = MeterTracker(max_power_kw=9)
+    meter = MeterTracker(max_power_kw=9, source="sensor.export")
     meter.update(1.0, utc(2026, 1, 1, 9, 5))
-    restored = MeterTracker(max_power_kw=9)
+    restored = MeterTracker(max_power_kw=9, source="sensor.export")
     restored.restore(meter.as_dict())
     assert restored == meter
+
+
+def test_swapped_meter_starts_with_a_new_baseline() -> None:
+    """Reconfigured to another meter: its first reading books nothing."""
+    old = MeterTracker(max_power_kw=9, source="sensor.old")
+    old.update(5000.0, utc(2026, 6, 1, 10))
+    new = MeterTracker(max_power_kw=9, source="sensor.new")
+    new.restore(old.as_dict())
+    assert new.last_value is None
+    # 30 kWh above the old meter a day later would pass the plausibility bound.
+    update = new.update(5030.0, utc(2026, 6, 2, 10))
+    assert update.event is MeterEvent.FIRST and update.pieces == []
+    # Stored before the meter was remembered (older versions): restored as is.
+    legacy = MeterTracker(max_power_kw=9, source="sensor.new")
+    legacy.restore({"last_value": 5000.0, "last_time": "2026-06-01T10:00:00+00:00"})
+    assert legacy.last_value == 5000.0
 
 
 # --- prices -------------------------------------------------------------------
@@ -200,6 +221,16 @@ def test_rule_applies_from() -> None:
     assert not rule.is_paid(utc(2025, 12, 31, 23), -0.1)
 
 
+@pytest.mark.parametrize(
+    "rule",
+    [AlwaysPaid(), NegativeQuarterHour(), NegativeQuarterHour(utc(2025, 12, 31, 23))],
+)
+def test_rule_round_trip(rule) -> None:
+    assert rule_from_dict(rule_as_dict(rule)) == rule
+    assert rule_from_dict(None) is None
+    assert rule_from_dict({"type": "block_2023"}) is None
+
+
 # --- ledger -------------------------------------------------------------------
 
 
@@ -244,6 +275,23 @@ def test_rule_not_applying_yet_books_shadow_only() -> None:
     assert "energy_unpaid" not in ledger.totals
     assert ledger.totals["shadow_energy_unpaid"] == pytest.approx(1.5)
     assert ledger.totals["shadow_revenue_lost"] == pytest.approx(1.5 * RATE)
+
+
+def test_money_follows_the_rate() -> None:
+    """A corrected rate applies to everything booked so far."""
+    ledger = simulate_constant_feed_in(NegativeQuarterHour(), timedelta(minutes=7))
+    totals = ledger.totals
+    corrected = FeedInValuation(
+        rate=0.0821, rule=NegativeQuarterHour(), shadow_rule=NegativeQuarterHour()
+    )
+    corrected.reprice(totals)
+    assert totals["revenue"] == pytest.approx(totals["energy_paid"] * 0.0821)
+    assert totals["revenue_lost"] == pytest.approx(1.5 * 0.0821)
+    assert totals["shadow_revenue_lost"] == pytest.approx(1.5 * 0.0821)
+    # Money without energy (nothing booked as unpaid) does not appear.
+    totals.pop("energy_unpaid")
+    corrected.reprice(totals)
+    assert "revenue_lost" not in totals
 
 
 def test_missing_price_waits_then_books_paid() -> None:

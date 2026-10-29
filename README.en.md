@@ -73,6 +73,12 @@ Or by hand:
 
 Several plants or meters: one entry each. To change: *Einspeisewacht → entry → ⋮ → Reconfigure*.
 
+What a change means for the time before it:
+
+- **Rate:** applies retroactively from setup – revenue and lost revenue are recalculated from the booked kWh. In the long-term statistics the correction shows up in the hour of the change; statistics already added with [Import statistics](#import-statistics) keep the old rate.
+- **Rule** (commissioning, capacity, smart meter date, override): quarter hours without remuneration, extension, "Remunerated until" and the [report](#report-for-a-period) follow the new rule at once, retroactively too. The totals "Feed-in remunerated/not remunerated", "Revenue" and "Lost revenue" keep their split for the time before the change, though: Home Assistant would take a falling kWh total for a meter replacement and distort the statistics. The report gives the values under the new rule. If the change affects quarter hours already booked, the log and the diagnostics (`rule_change`) say so.
+- **Feed-in meter:** the new meter starts from its own baseline; feed-in between the old meter's last reading and the new one's first is not booked.
+
 ## Entities
 
 | Entity | Type | Meaning |
@@ -102,7 +108,7 @@ data:
   end: "2026-12-31"
 ```
 
-The response holds kWh remunerated and not, revenue, lost revenue and the negative quarter hours – in total and by month. It is based on your feed-in meter's long-term statistics (hourly values spread evenly over the four quarter hours – exact when all four end the same way, a close estimate otherwise). Quarter hours without a known price count as remunerated and are listed under `gaps`; with the SMARD option, prices reach back to commissioning.
+The response holds kWh remunerated and not, revenue, lost revenue and the negative quarter hours – in total and by month. It is based on your feed-in meter's long-term statistics (hourly values spread evenly over the four quarter hours – exact when all four end the same way, a close estimate otherwise). Quarter hours without a known price count as remunerated and are listed under `gaps` – including time Home Assistant was off for more than 14 days; with the SMARD option, prices reach back to commissioning.
 
 ## Import statistics
 
