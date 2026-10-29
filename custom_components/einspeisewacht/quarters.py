@@ -72,6 +72,23 @@ class QuarterCounter:
             self.next_slot = slot + QUARTER
         return found
 
+    def resolve(self, prices: PriceTable) -> bool:
+        """Count missing quarter hours whose price arrived late; True if a negative one was added.
+
+        A price sensor can deliver the previous day after more than a day
+        without data (EPEX Spot keeps it in its forecast attribute).
+        """
+        found = False
+        for slot in sorted(self.missing):
+            price = prices.get(slot)
+            if price is None:
+                continue
+            self.missing.discard(slot)
+            if price < 0:
+                self.negatives[slot] = price
+                found = True
+        return found
+
     def add_backfill(
         self, prices: Mapping[datetime, float], start: datetime, end: datetime
     ) -> int:

@@ -2,6 +2,10 @@
 
 ## Unveröffentlicht
 
+- **Fehler behoben:** War Home Assistant länger als einen Tag aus und lieferte der Preissensor beim Start noch keine Daten, buchte Einspeisewacht die zurückgehaltene Energie sofort als vergütet und legte die Viertelstunden als „ohne Preis“ ab – auch wenn die Preise Sekunden später kamen. Jetzt wartet die Buchung nach dem Start auf den ersten Preis.
+- **Fehler behoben:** Kam der Preis einer schon als „ohne Preis“ abgelegten Viertelstunde später doch noch (EPEX Spot liefert den Vortag mit), wurde eine negative Viertelstunde nie mehr gezählt und fehlte in der Nachholung. Jetzt wird sie nachgezählt.
+- **„Statistik nachtragen“** lehnt einen Beginn nach der Einrichtung des Eintrags ab. Ab da haben die Sensoren eigene Statistik; ein späterer Beginn hätte falsche Zeilen erzeugt.
+
 ## 0.1.1 – 2026-10-27
 
 Keine funktionalen Änderungen. HACS bot 0.1.0 nicht als Update an: GitHub sortiert die Beta-Releases 0.1.0b10 und 0.1.0b11 vor 0.1.0, und HACS nimmt das erste. 0.1.1 steht wieder vorn.

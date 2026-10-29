@@ -132,3 +132,20 @@ async def test_import_statistics(recorder_mock: Recorder, hass: HomeAssistant) -
     with pytest.raises(ServiceValidationError) as err:
         await import_statistics(hass, entry.entry_id)
     assert err.value.translation_key == "import_nothing_to_import"
+
+
+@pytest.mark.freeze_time(START)
+async def test_import_statistics_refuses_start_after_setup(
+    recorder_mock: Recorder, hass: HomeAssistant
+) -> None:
+    """From the setup on the sensors have statistics of their own."""
+    entry = await setup(hass)
+    with pytest.raises(ServiceValidationError) as err:
+        await hass.services.async_call(
+            DOMAIN,
+            "import_statistics",
+            {"config_entry_id": entry.entry_id, "start": "2026-10-26"},
+            blocking=True,
+            return_response=True,
+        )
+    assert err.value.translation_key == "import_start_after_setup"

@@ -47,6 +47,10 @@ class Engine:
     weight: Callable[[datetime], float] | None = None
     history_version: int = 0
     negatives_version: int = 0
+    # Ticks wait for the first forecast after a start: until then a missing
+    # price may only mean that the price sensor is not ready yet, and a tick
+    # would give up on it (counter) or book the energy as paid (ledger).
+    prices_seen: bool = False
 
     @property
     def rule(self) -> Rule:
@@ -75,12 +79,17 @@ class Engine:
     def on_prices(self, parsed: ParsedPrices, now: datetime) -> None:
         """A new price forecast from the price sensor."""
         self.last_parse = parsed
+        self.prices_seen = True
         if self.prices.merge(parsed.prices):
             self.history_version += 1
+            if self.quarters.resolve(self.prices):
+                self.negatives_version += 1
         self.tick(now)
 
     def tick(self, now: datetime) -> None:
         """Clock tick (every quarter hour) or after new prices."""
+        if not self.prices_seen:
+            return
         self.ledger.retry_pending(self.prices, self.valuation, now)
         if self.quarters.advance(now, self.prices):
             self.history_version += 1

@@ -60,8 +60,16 @@ async def async_import_history(
             raise StatisticsImportError("entities_missing")
         entity_ids[key] = entity_id
 
-    instance = get_instance(hass)
+    started = runtime.engine.quarters.started
+    if started is None:
+        raise StatisticsImportError("no_statistics_yet")
     start = max(local_midnight(first_day), runtime.engine.since)
+    # Before the setup the sensors have no statistics, so the imported sums can
+    # start at 0; a later start could fall into a gap after existing rows.
+    if start >= started:
+        raise StatisticsImportError("start_after_setup")
+
+    instance = get_instance(hass)
     existing = await instance.async_add_executor_job(
         statistics_during_period,
         hass,

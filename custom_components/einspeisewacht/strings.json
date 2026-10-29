@@ -279,6 +279,9 @@
     "import_no_statistics_yet": {
       "message": "The total sensors have no statistics yet. Home Assistant compiles them every hour – try again in an hour."
     },
+    "import_start_after_setup": {
+      "message": "The start must be before the setup of this entry – from then on the sensors have their own statistics. Choose an earlier day."
+    },
     "import_nothing_to_import": {
       "message": "Nothing to fill in: the statistics already reach back to this day."
     },

@@ -279,6 +279,9 @@
     "import_no_statistics_yet": {
       "message": "Die Summen-Sensoren haben noch keine Statistik. Home Assistant legt sie stündlich an – bitte in einer Stunde erneut versuchen."
     },
+    "import_start_after_setup": {
+      "message": "Der Beginn muss vor der Einrichtung dieses Eintrags liegen – ab da haben die Sensoren schon eigene Statistik. Bitte einen früheren Tag wählen."
+    },
     "import_nothing_to_import": {
       "message": "Nichts nachzutragen: Die Statistik reicht bereits bis zu diesem Tag zurück."
     },

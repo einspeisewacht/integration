@@ -81,6 +81,19 @@ def test_counter_waits_for_missing_price_then_skips() -> None:
     assert not counter.known(DAY_START)
 
 
+def test_counter_counts_a_price_that_arrives_late() -> None:
+    negative = datetime(2026, 10, 25, 3, tzinfo=UTC)  # 04:00 CET, price below 0
+    counter = QuarterCounter(next_slot=negative, started=negative)
+    counter.advance(negative + timedelta(hours=24, minutes=15), PriceTable())
+    assert counter.missing == {negative}
+    # The price sensor delivers the previous day after all.
+    assert counter.resolve(fixture_prices())
+    assert counter.missing == set()
+    assert negative in counter.negatives
+    assert counter.known(negative)
+    assert not counter.resolve(fixture_prices())
+
+
 def test_counter_does_not_catch_up_long_gaps() -> None:
     counter = QuarterCounter(next_slot=DAY_START, started=DAY_START)
     later = DAY_START + MAX_CATCH_UP + timedelta(hours=1)
@@ -143,6 +156,31 @@ def test_engine_day() -> None:
     assert engine.counts() == {2026: 6}
     assert engine.shadow_counts() == {2026: 6}
     assert engine.meter_events == {"first": 1}
+
+
+def test_engine_waits_for_prices_after_a_start() -> None:
+    """HA was off for over a day; at the start the price sensor is not ready yet."""
+    engine = make_engine()
+    engine.quarters = QuarterCounter(next_slot=DAY_START, started=DAY_START)
+    # 25 kWh over 25.10. while no prices were known: held back.
+    engine.on_meter(1000.0, DAY_START, DAY_START)
+    engine.on_meter(1025.0, DAY_END, DAY_END)
+    start = DAY_END + timedelta(hours=25)
+    engine.tick(start)
+    assert engine.ledger.totals.get("energy_paid", 0) == 0
+    assert engine.quarters.missing == set()
+    # Seconds later the sensor delivers its forecast, previous day included
+    # (one attribute, as EPEX Spot has it).
+    fixture = load_fixture("epex_spot_2026-10-25.json")
+    engine.on_prices(
+        parse_interval_prices(
+            fixture["history_supplement"] + fixture["attributes"]["data"]
+        ),
+        start,
+    )
+    assert engine.ledger.totals["energy_unpaid"] == pytest.approx(1.5)
+    assert engine.ledger.totals["energy_paid"] == pytest.approx(25 - 1.5)
+    assert engine.counts() == {2026: 6}
 
 
 def test_engine_paid_now() -> None:
