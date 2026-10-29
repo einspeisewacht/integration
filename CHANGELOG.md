@@ -2,6 +2,8 @@
 
 ## Unveröffentlicht
 
+## 0.1.3 – 2026-10-29
+
 - **Preise von SMARD.de, wenn der Preissensor ausfällt** (nur mit der SMARD-Option): Liefert der Preissensor für eine Viertelstunde länger als eine Stunde keinen Preis, holt Einspeisewacht die Day-Ahead-Preise von SMARD.de – höchstens einmal je Stunde und nur für Viertelstunden, die der Sensor offen gelassen hat. So bleiben Buchung und Nachholung auch bei einem tagelangen Ausfall der Preis-Integration richtig. Bisher galt die Einspeisung nach 24 Stunden ohne Preis als vergütet, und negative Viertelstunden fehlten in der Nachholung.
 - Der Hinweis „Kein Preis für die laufende Viertelstunde“ richtet sich nach dem Preissensor selbst und bleibt, solange er ausfällt – auch wenn SMARD.de die Lücke füllt.
 - **„Statistik nachtragen“** ergänzt jetzt auch den Teil der Einrichtungsstunde vor der Einrichtung, der bisher in der Statistik fehlte.
