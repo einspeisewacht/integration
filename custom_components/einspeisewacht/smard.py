@@ -1,6 +1,7 @@
 """Historical day-ahead prices from SMARD.de (Bundesnetzagentur), opt-in only.
 
-Used once to count negative quarter hours before the integration was set up.
+Used once to count negative quarter hours before the integration was set up,
+and to fill prices the price sensor leaves open for more than an hour.
 The chart_data endpoints back the SMARD website and are not documented as an
 API; formats are taken from tests/fixtures/smard_*.json. Filter 4169 is the
 day-ahead price for the bidding zone DE-LU in EUR/MWh, delivered in weekly

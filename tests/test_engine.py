@@ -183,6 +183,27 @@ def test_engine_waits_for_prices_after_a_start() -> None:
     assert engine.counts() == {2026: 6}
 
 
+def test_engine_fills_prices_the_sensor_left_open() -> None:
+    """The price sensor stopped after 24.10. 23:00 local; SMARD.de has the day."""
+    engine = make_engine()
+    engine.quarters = QuarterCounter(next_slot=DAY_START, started=DAY_START)
+    sensor, smard = fixture_parsed()  # 24.10. 22:00-23:00 UTC, then the rest
+    engine.on_prices(sensor, DAY_START)
+    engine.on_meter(1000.0, DAY_START, DAY_START)
+    engine.on_meter(1025.0, DAY_END, DAY_END)
+    now = DAY_END + timedelta(hours=2)
+    engine.tick(now)
+    assert engine.price_gap(now) == DAY_START + timedelta(hours=1)
+    kept = next(iter(sensor.prices))
+    # SMARD.de prices only where the sensor had none.
+    assert engine.fill_prices({**smard.prices, kept: -1.0}, now) == len(smard.prices)
+    assert engine.prices.get(kept) == sensor.prices[kept]
+    assert engine.ledger.totals["energy_unpaid"] == pytest.approx(1.5)
+    assert engine.counts() == {2026: 6}
+    assert engine.price_gap(now) is None
+    assert engine.fill_prices(smard.prices, now) == 0
+
+
 def test_engine_paid_now() -> None:
     engine = make_engine()
     for parsed in fixture_parsed():

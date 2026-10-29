@@ -134,6 +134,55 @@ async def test_import_statistics(recorder_mock: Recorder, hass: HomeAssistant) -
     assert err.value.translation_key == "import_nothing_to_import"
 
 
+@pytest.mark.freeze_time(datetime(2026, 10, 25, 3, 40, 30, tzinfo=UTC))
+async def test_import_statistics_adds_the_setup_hour_before_the_setup(
+    recorder_mock: Recorder, hass: HomeAssistant
+) -> None:
+    """Set up at 03:40: the sensors missed 03:00-03:30 of their first hour."""
+    entry = await setup(hass)
+    ids = {key: entity_id(hass, entry, key) for key in KEYS}
+    # The sensors booked 0.5 kWh of the setup hour (0.25 paid, 0.25 not).
+    for key, statistic_id in ids.items():
+        energy = key.startswith("energy")
+        value = 0.25 if energy else 0.25 * RATE
+        async_import_statistics(
+            hass,
+            {
+                "has_sum": True,
+                "mean_type": StatisticMeanType.NONE,
+                "name": None,
+                "source": "recorder",
+                "statistic_id": statistic_id,
+                "unit_class": "energy" if energy else None,
+                "unit_of_measurement": "kWh" if energy else "EUR",
+            },
+            [{"start": LIVE_START, "state": value, "sum": value}],
+        )
+    await async_wait_recording_done(hass)
+
+    engine = entry.runtime_data.engine
+    start = local_midnight(IMPORT_FROM)
+    week = parse_week(load_fixture("smard_week_2026-10-19.json"))
+    engine.add_backfill(week, start, engine.quarters.started)
+    # The meter: 1 kWh in every hour, the setup hour included.
+    with patch.object(
+        PlantRuntime,
+        "async_hourly_energy",
+        return_value=hourly(start, LIVE_START + timedelta(hours=1)),
+    ):
+        await import_statistics(hass, entry.entry_id)
+        await async_wait_recording_done(hass)
+
+    # 0.5 kWh before the setup: 03:00 (negative) and 03:15 (price 0).
+    paid, unpaid = (
+        await sums(hass, ids["energy_paid"]),
+        await sums(hass, ids["energy_unpaid"]),
+    )
+    assert paid[-1] == (LIVE_START, pytest.approx(paid[-2][1] + 0.25 + 0.25))
+    assert unpaid[-1] == (LIVE_START, pytest.approx(unpaid[-2][1] + 0.25 + 0.25))
+    assert paid[-2][1] + unpaid[-2][1] == pytest.approx(29)
+
+
 @pytest.mark.freeze_time(START)
 async def test_import_statistics_refuses_start_after_setup(
     recorder_mock: Recorder, hass: HomeAssistant

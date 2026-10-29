@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 
 import pytest
 from freezegun.api import FrozenDateTimeFactory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import issue_registry as ir
+from pytest_homeassistant_custom_component.common import async_fire_time_changed
 from pytest_homeassistant_custom_component.test_util.aiohttp import AiohttpClientMocker
 
 from custom_components.einspeisewacht.const import (
@@ -29,6 +30,7 @@ from .conftest import PRICE, price_attributes
 from .test_init import START, entity_id, setup, value
 
 WEEK = 1792360800000  # Monday 19.10.2026 00:00 CEST
+NEXT_WEEK = 1792969200000  # Monday 26.10.2026 00:00 CET
 
 
 @pytest.mark.freeze_time(START)
@@ -116,6 +118,57 @@ async def test_backfill_from_smard(
         "error": None,
         "missing_prices": 0,
     }
+
+
+@pytest.mark.freeze_time(START)
+async def test_prices_from_smard_while_the_sensor_is_out(
+    hass: HomeAssistant,
+    freezer: FrozenDateTimeFactory,
+    aioclient_mock: AiohttpClientMocker,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The price sensor's forecast ends at 04:00 UTC; SMARD.de fills the gap."""
+    monkeypatch.setattr("custom_components.einspeisewacht.runtime.SMARD_PAUSE", 0)
+    aioclient_mock.get(INDEX_URL, json=load_fixture("smard_index_quarterhour.json"))
+    week = load_fixture("smard_week_2026-10-19.json")
+    aioclient_mock.get(week_url(WEEK), json=week)
+    aioclient_mock.get(week_url(NEXT_WEEK), json={"series": []})
+    gap = datetime(2026, 10, 25, 4, tzinfo=UTC)
+    attributes = price_attributes()
+    attributes["data"] = [
+        e for e in attributes["data"] if datetime.fromisoformat(e["start_time"]) < gap
+    ]
+    monkeypatch.setattr("tests.ha.test_init.price_attributes", lambda: attributes)
+    changes = {
+        CONF_COMMISSIONED: "2026-10-20",
+        CONF_OVERRIDE: OVERRIDE_FROM_DATE,
+        CONF_OVERRIDE_DATE: "2026-10-01",
+        CONF_BACKFILL: True,
+    }
+    entry = await setup(hass, **changes)
+    await hass.async_block_till_done(wait_background_tasks=True)
+    backfilled = int(value(hass, entry, "negative_quarter_hours"))
+    calls = aioclient_mock.call_count
+
+    # Quarter-hour ticks until 05:15; at 05:00 the quarter hour from 04:00 has
+    # waited an hour for its price.
+    moment = datetime(2026, 10, 25, 3, 15, 1, tzinfo=UTC)
+    while moment <= datetime(2026, 10, 25, 5, 15, 1, tzinfo=UTC):
+        freezer.move_to(moment)
+        async_fire_time_changed(hass, moment)
+        await hass.async_block_till_done(wait_background_tasks=True)
+        moment += timedelta(minutes=15)
+
+    # 03:00 and 03:30 from the sensor, 05:00 (negative) from SMARD.de.
+    assert value(hass, entry, "negative_quarter_hours") == str(backfilled + 3)
+    assert aioclient_mock.call_count == calls + 3  # index and two weeks, once
+    # The sensor is still broken: the repair issue stays.
+    issue = ir.async_get(hass).async_get_issue(
+        DOMAIN, f"price_missing_{entry.entry_id}"
+    )
+    assert issue is not None
+    diagnostics = await async_get_config_entry_diagnostics(hass, entry)
+    assert diagnostics["smard_fill"]["filled_quarter_hours"] > 0
 
 
 @pytest.mark.freeze_time(START)

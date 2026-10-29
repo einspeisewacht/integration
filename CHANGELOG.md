@@ -2,6 +2,11 @@
 
 ## Unveröffentlicht
 
+- **Preise von SMARD.de, wenn der Preissensor ausfällt** (nur mit der SMARD-Option): Liefert der Preissensor für eine Viertelstunde länger als eine Stunde keinen Preis, holt Einspeisewacht die Day-Ahead-Preise von SMARD.de – höchstens einmal je Stunde und nur für Viertelstunden, die der Sensor offen gelassen hat. So bleiben Buchung und Nachholung auch bei einem tagelangen Ausfall der Preis-Integration richtig. Bisher galt die Einspeisung nach 24 Stunden ohne Preis als vergütet, und negative Viertelstunden fehlten in der Nachholung.
+- Der Hinweis „Kein Preis für die laufende Viertelstunde“ richtet sich nach dem Preissensor selbst und bleibt, solange er ausfällt – auch wenn SMARD.de die Lücke füllt.
+- **„Statistik nachtragen“** ergänzt jetzt auch den Teil der Einrichtungsstunde vor der Einrichtung, der bisher in der Statistik fehlte.
+- Diagnose: Abschnitt `smard_fill` mit der Zahl der von SMARD.de ergänzten Viertelstunden.
+
 ## 0.1.2 – 2026-10-29
 
 - **Fehler behoben:** War Home Assistant länger als einen Tag aus und lieferte der Preissensor beim Start noch keine Daten, buchte Einspeisewacht die zurückgehaltene Energie sofort als vergütet und legte die Viertelstunden als „ohne Preis“ ab – auch wenn die Preise Sekunden später kamen. Jetzt wartet die Buchung nach dem Start auf den ersten Preis.

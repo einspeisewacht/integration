@@ -81,24 +81,29 @@ async def async_import_history(
         {"sum"},
     )
     firsts: dict[str, datetime] = {}
+    first_sums: dict[str, float] = {}
     for entity_id in entity_ids.values():
         rows = existing.get(entity_id)
         if not rows:
             raise StatisticsImportError("no_statistics_yet")
         firsts[entity_id] = dt_util.utc_from_timestamp(rows[0]["start"])
+        first_sums[entity_id] = rows[0].get("sum") or 0.0
     end = max(firsts.values())
     if end <= start:
         raise StatisticsImportError("nothing_to_import")
-    if unknown := unknown_slots(start, end, runtime.engine.quarters):
+    # The setup hour's quarter hours before the setup are checked too (see below).
+    if unknown := unknown_slots(start, max(end, started), runtime.engine.quarters):
         raise StatisticsImportError("prices_missing", {"count": str(len(unknown))})
 
     metadata = await instance.async_add_executor_job(
         lambda: get_metadata(hass, statistic_ids=set(entity_ids.values()))
     )
     rate = runtime.rate_ct / 100
+    quarters, rule = runtime.engine.quarters, runtime.engine.rule
+    meter = dict(await runtime.async_hourly_energy(start, end + HOUR))
     hourly = [
-        (hour, *split_hour(hour, energy, runtime.engine.quarters, runtime.engine.rule))
-        for hour, energy in await runtime.async_hourly_energy(start, end)
+        (hour, *split_hour(hour, energy, quarters, rule))
+        for hour, energy in meter.items()
     ]
     values = {
         "energy_paid": lambda paid, unpaid: paid,
@@ -106,6 +111,19 @@ async def async_import_history(
         "revenue": lambda paid, unpaid: paid * rate,
         "revenue_lost": lambda paid, unpaid: unpaid * rate,
     }
+
+    # The sensors' first statistics hour is the setup hour; its part before the
+    # setup is in the meter's change of that hour but in no sensor: add it to
+    # the shift (the meter's hour minus what the sensors booked in it).
+    setup_hour = started.replace(minute=0)
+    paid_id, unpaid_id = entity_ids["energy_paid"], entity_ids["energy_unpaid"]
+    extra = (0.0, 0.0)
+    if firsts[paid_id] == firsts[unpaid_id] == setup_hour < started:
+        before = (
+            meter.get(setup_hour, 0.0) - first_sums[paid_id] - first_sums[unpaid_id]
+        )
+        if before > 0:
+            extra = split_hour(setup_hour, before, quarters, rule, until=started)
 
     result: dict[str, Any] = {"start": start.isoformat(), "sensors": {}}
     for key, entity_id in entity_ids.items():
@@ -121,13 +139,14 @@ async def async_import_history(
             continue
         meta = metadata[entity_id][1]
         async_import_statistics(hass, meta, rows)
+        shift = total + (values[key](*extra) if first == setup_hour else 0.0)
         # Shift every later sum (short- and long-term) by what was added before.
         instance.async_adjust_statistics(
-            entity_id, first, total, meta["unit_of_measurement"] or ""
+            entity_id, first, shift, meta["unit_of_measurement"] or ""
         )
         result["sensors"][entity_id] = {
             "hours": len(rows),
-            "added": round(total, 3),
+            "added": round(shift, 3),
             "until": (first - HOUR).isoformat(),
         }
     return result

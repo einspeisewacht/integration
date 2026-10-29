@@ -70,4 +70,8 @@ async def async_get_config_entry_diagnostics(
             "error": runtime.backfill_error,
             "missing_prices": runtime.backfill_missing,
         },
+        "smard_fill": {
+            "filled_quarter_hours": runtime.smard_filled,
+            "error": runtime.smard_fill_error,
+        },
     }

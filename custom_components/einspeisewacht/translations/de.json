@@ -85,7 +85,7 @@
         },
         "data_description": {
           "override_date": "Nur für „Ab einem Datum“.",
-          "backfill_smard": "Einmalig, über das Internet: Day-Ahead-Preise seit der Inbetriebnahme von SMARD.de (Bundesnetzagentur, CC BY 4.0), damit die Nachholung (§ 51a EEG) auch die Zeit vor der Einrichtung erfasst. Ohne diese Option beginnt die Zählung jetzt."
+          "backfill_smard": "Über das Internet, von SMARD.de (Bundesnetzagentur, CC BY 4.0): einmalig die Day-Ahead-Preise seit der Inbetriebnahme, damit die Nachholung (§ 51a EEG) auch die Zeit vor der Einrichtung erfasst – und Preise, die der Preissensor länger als eine Stunde schuldig bleibt. Ohne diese Option beginnt die Zählung jetzt."
         }
       }
     },
@@ -219,7 +219,7 @@
     },
     "price_missing": {
       "title": "Kein Preis für die laufende Viertelstunde ({name})",
-      "description": "Der Preissensor {entity} liefert seit über einer Stunde keinen Preis für die laufende Viertelstunde. Einspeisewacht hält die Einspeisung bis zu 24 Stunden zurück und bucht sie, sobald der Preis kommt; danach zählt sie als vergütet. Bitte die Preis-Integration prüfen. Der Hinweis verschwindet von selbst, sobald wieder Preise kommen."
+      "description": "Der Preissensor {entity} liefert seit über einer Stunde keinen Preis für die laufende Viertelstunde. Einspeisewacht hält die Einspeisung bis zu 24 Stunden zurück und bucht sie, sobald der Preis kommt; danach zählt sie als vergütet. Bitte die Preis-Integration prüfen. Der Hinweis verschwindet von selbst, sobald wieder Preise kommen. Mit der SMARD-Option rechnet Einspeisewacht so lange mit den Day-Ahead-Preisen von SMARD.de."
     },
     "meter_unit": {
       "title": "Einheit des Zählers nicht unterstützt ({name})",

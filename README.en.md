@@ -67,7 +67,7 @@ Or by hand:
 1. **Plant:** name, commissioning date, installed capacity (kWp), iMSys and its installation date.
 2. **Remuneration:** the rate from your grid operator's statement in ct/kWh (after the 0.4 ct deduction) – single or tiered by capacity band; for tiered rates Einspeisewacht forms the blended rate (§ 23c EEG).
 3. **Data sources:** feed-in meter and price sensor.
-4. **Rule:** shows the derived rule, when it starts and the rate; override it if your grid operator settles differently. Optional: **count earlier negative quarter hours from SMARD.de**, so the extension covers the time before setup too (a one-time download of public price data, see [Privacy](#privacy)).
+4. **Rule:** shows the derived rule, when it starts and the rate; override it if your grid operator settles differently. Optional: **count earlier negative quarter hours from SMARD.de**, so the extension covers the time before setup too; if your price sensor fails, Einspeisewacht also fetches the missing prices from there (public price data, see [Privacy](#privacy)).
 
 <img src="https://raw.githubusercontent.com/einspeisewacht/integration/main/assets/screenshots/einrichtung_regel.png" alt="Last setup step with the derived rule (German UI)" width="420">
 
@@ -219,7 +219,7 @@ Entity IDs depend on your plant's name and Home Assistant language.
 
 ## Privacy
 
-Einspeisewacht computes locally and reads only the entities you choose. The single exception, only if you turn it on: the SMARD option downloads public day-ahead prices from smard.de (German Federal Network Agency) once. Nothing about you or your plant is sent – only requests for the price files, identified as `Einspeisewacht/<version>`. The diagnostics file contains neither the plant's name nor meter readings, energy or revenue totals.
+Einspeisewacht computes locally and reads only the entities you choose. The single exception, only if you turn it on: the SMARD option downloads public day-ahead prices from smard.de (German Federal Network Agency) – once for the time before setup, and afterwards only while your price sensor delivers no prices for more than an hour (at most once an hour). Nothing about you or your plant is sent – only requests for the price files, identified as `Einspeisewacht/<version>`. The diagnostics file contains neither the plant's name nor meter readings, energy or revenue totals.
 
 ## What Einspeisewacht does not do
 

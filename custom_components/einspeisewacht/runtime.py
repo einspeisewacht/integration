@@ -81,6 +81,10 @@ NEGATIVES_SAVE_DELAY = 10
 SMARD_RETRY_INTERVAL = timedelta(hours=24)
 # Raise a repair issue once the running quarter hour has had no price this long.
 PRICE_MISSING_ISSUE_AFTER = timedelta(hours=1)
+# With the SMARD option: fetch prices the sensor left open once a quarter hour
+# has waited this long, at most once per interval (index + one or two weeks).
+SMARD_FILL_AFTER = timedelta(hours=1)
+SMARD_FILL_INTERVAL = timedelta(hours=1)
 
 # Price sensors without a forecast attribute: the state is the current price.
 # Only its sign matters for the rule, so the unit is not converted.
@@ -167,6 +171,10 @@ class PlantRuntime:
         self.unknown_unit: str | None = None
         self.backfill_error: str | None = None
         self.backfill_missing: int | None = None
+        self.smard_filled = 0
+        self.smard_fill_error: str | None = None
+        self._last_fill_attempt: datetime | None = None
+        self._fill_task: asyncio.Task[None] | None = None
         self._store: Store[dict[str, Any]] = Store(
             hass, STORAGE_VERSION, f"{DOMAIN}.{entry_id}"
         )
@@ -209,6 +217,9 @@ class PlantRuntime:
         for unsubscribe in self._unsubscribe:
             unsubscribe()
         self._unsubscribe = []
+        if self._fill_task is not None:
+            self._fill_task.cancel()
+            self._fill_task = None
         await self._store.async_save(self.engine.as_live_dict())
         await self._history.async_save(self.engine.as_history_dict())
 
@@ -291,6 +302,54 @@ class PlantRuntime:
         self.backfill_missing = self.engine.add_backfill(prices, start, end)
         ir.async_delete_issue(self.hass, DOMAIN, self.issue_id)
         self._changed()
+
+    @callback
+    def _maybe_fill_prices(self, now: datetime) -> None:
+        """With the SMARD option, fetch prices the price sensor left open."""
+        if not self.backfill_enabled or self._fill_task is not None:
+            return
+        if (
+            self._last_fill_attempt is not None
+            and now - self._last_fill_attempt < SMARD_FILL_INTERVAL
+        ):
+            return
+        gap = self.engine.price_gap(now)
+        if gap is None or now - gap < SMARD_FILL_AFTER:
+            return
+        self._last_fill_attempt = now
+        self._fill_task = self.hass.async_create_background_task(
+            self._async_fill_prices(gap), f"einspeisewacht prices {self.entry_id}"
+        )
+
+    async def _async_fill_prices(self, start: datetime) -> None:
+        """Day-ahead prices from SMARD.de from `start` until tomorrow; never blocks booking."""
+        end = slot_start(dt_util.utcnow()) + timedelta(days=1)
+        try:
+            prices = await self._async_fetch_smard(start, end)
+        except (
+            aiohttp.ClientError,
+            TimeoutError,
+            KeyError,
+            TypeError,
+            ValueError,
+        ) as err:
+            self.smard_fill_error = f"{type(err).__name__}: {err}"
+            _LOGGER.warning(
+                "%s: prices from SMARD.de failed: %s", self.name, self.smard_fill_error
+            )
+            return
+        finally:
+            self._fill_task = None
+        self.smard_fill_error = None
+        if filled := self.engine.fill_prices(prices, dt_util.utcnow()):
+            self.smard_filled += filled
+            _LOGGER.info(
+                "%s: %s quarter-hour prices from SMARD.de (price sensor %s left them open)",
+                self.name,
+                filled,
+                self.price_entity,
+            )
+            self._changed()
 
     async def async_report(self, first_day: date, last_day: date) -> dict[str, Any]:
         """Sums for the local days `first_day` to `last_day` (inclusive).
@@ -385,6 +444,7 @@ class PlantRuntime:
         if state := self.hass.states.get(self.price_entity):
             self._handle_price(state, now)
         self.engine.tick(now)
+        self._maybe_fill_prices(now)
         self._changed()
 
     def _handle_meter(self, state: State, now: datetime) -> None:
@@ -426,8 +486,13 @@ class PlantRuntime:
             listener()
 
     def _update_issues(self, now: datetime) -> None:
-        """Never book wrongly in silence: say when prices or the meter unit are missing."""
-        if self.engine.prices.get(slot_start(now)) is None:
+        """Never book wrongly in silence: say when prices or the meter unit are missing.
+
+        The price check asks the sensor itself, not the price table: prices
+        from SMARD.de keep the booking right, but the sensor is still broken.
+        """
+        parsed = self.engine.last_parse
+        if parsed is None or parsed.prices.get(slot_start(now)) is None:
             self._price_missing_since = self._price_missing_since or now
             if now - self._price_missing_since >= PRICE_MISSING_ISSUE_AFTER:
                 ir.async_create_issue(

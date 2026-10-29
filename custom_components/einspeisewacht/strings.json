@@ -85,7 +85,7 @@
         },
         "data_description": {
           "override_date": "Only for “From a date”.",
-          "backfill_smard": "Once, over the internet: day-ahead prices since commissioning from SMARD.de (Bundesnetzagentur, CC BY 4.0), so that the extension (§ 51a EEG) also covers the time before setup. Without it, counting starts now."
+          "backfill_smard": "Over the internet, from SMARD.de (Bundesnetzagentur, CC BY 4.0): once the day-ahead prices since commissioning, so that the extension (§ 51a EEG) also covers the time before setup – and prices that the price sensor leaves open for more than an hour. Without it, counting starts now."
         }
       }
     },
@@ -219,7 +219,7 @@
     },
     "price_missing": {
       "title": "No price for the current quarter hour ({name})",
-      "description": "The price sensor {entity} has not delivered a price for the running quarter hour for more than an hour. Einspeisewacht holds the feed-in back for up to 24 hours and books it as soon as the price arrives; after that it counts as remunerated. Check the price integration. This message disappears by itself once prices arrive again."
+      "description": "The price sensor {entity} has not delivered a price for the running quarter hour for more than an hour. Einspeisewacht holds the feed-in back for up to 24 hours and books it as soon as the price arrives; after that it counts as remunerated. Check the price integration. This message disappears by itself once prices arrive again. With the SMARD.de option, Einspeisewacht uses the day-ahead prices from SMARD.de in the meantime."
     },
     "meter_unit": {
       "title": "Meter unit not supported ({name})",

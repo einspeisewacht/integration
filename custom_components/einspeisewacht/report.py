@@ -47,17 +47,26 @@ def _ranges(slots: list[datetime]) -> list[tuple[datetime, datetime]]:
 
 
 def split_hour(
-    hour: datetime, energy: float, counter: QuarterCounter, rule: Rule
+    hour: datetime,
+    energy: float,
+    counter: QuarterCounter,
+    rule: Rule,
+    until: datetime | None = None,
 ) -> tuple[float, float]:
-    """(remunerated, not remunerated) kWh of one hour, spread over its quarter hours."""
+    """(remunerated, not remunerated) kWh of one hour, spread over its quarter hours.
+
+    With `until`, only over the quarter hours starting before it.
+    """
+    slots = [hour + i * QUARTER for i in range(4)]
+    if until is not None:
+        slots = [slot for slot in slots if slot < until]
     paid = unpaid = 0.0
-    for i in range(4):
-        slot = hour + i * QUARTER
+    for slot in slots:
         price = counter.negatives.get(slot)
         if price is not None and not rule.is_paid(slot, price):
-            unpaid += energy / 4
+            unpaid += energy / len(slots)
         else:
-            paid += energy / 4
+            paid += energy / len(slots)
     return paid, unpaid
 
 

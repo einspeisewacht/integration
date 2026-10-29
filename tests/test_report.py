@@ -8,7 +8,7 @@ import pytest
 
 from custom_components.einspeisewacht.const import BERLIN
 from custom_components.einspeisewacht.quarters import QuarterCounter
-from custom_components.einspeisewacht.report import HOUR, build_report
+from custom_components.einspeisewacht.report import HOUR, build_report, split_hour
 from custom_components.einspeisewacht.rules import AlwaysPaid, NegativeQuarterHour
 from custom_components.einspeisewacht.smard import parse_week
 from tests.conftest import load_fixture
@@ -130,3 +130,17 @@ def test_report_splits_months_in_local_time() -> None:
         ("2026-10", 1.0),
         ("2026-11", 1.0),
     ]
+
+
+def test_split_hour_until_spreads_over_the_quarter_hours_before() -> None:
+    hour = datetime(2026, 10, 25, 3, tzinfo=UTC)  # 03:00 negative, 03:15 price 0
+    rule = NegativeQuarterHour()
+    assert split_hour(hour, 1.0, counter(), rule) == pytest.approx((0.5, 0.5))
+    until = hour + timedelta(minutes=30)
+    assert split_hour(hour, 1.0, counter(), rule, until=until) == pytest.approx(
+        (0.5, 0.5)
+    )
+    until = hour + timedelta(minutes=15)
+    assert split_hour(hour, 1.0, counter(), rule, until=until) == pytest.approx(
+        (0.0, 1.0)
+    )

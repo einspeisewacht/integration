@@ -10,7 +10,7 @@ negative quarter hours), which changes rarely: `history_version` and
 from __future__ import annotations
 
 from collections import Counter
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 from typing import Any
@@ -85,6 +85,37 @@ class Engine:
             if self.quarters.resolve(self.prices):
                 self.negatives_version += 1
         self.tick(now)
+
+    def price_gap(self, now: datetime) -> datetime | None:
+        """Earliest quarter hour still waiting for a price, if any.
+
+        Held-back energy, the counter's next quarter hour, the running one and
+        quarter hours given up on (within the price retention) all count.
+        """
+        current = slot_start(now)
+        waiting = [s for s in self.ledger.pending if self.prices.get(s) is None]
+        if (slot := self.quarters.next_slot) is not None and slot < current:
+            waiting.append(slot)
+        waiting.append(current)
+        cutoff = current - PRICE_RETENTION
+        waiting.extend(s for s in self.quarters.missing if s >= cutoff)
+        return min((s for s in waiting if self.prices.get(s) is None), default=None)
+
+    def fill_prices(self, prices: Mapping[datetime, float], now: datetime) -> int:
+        """Prices from another source (SMARD.de) for quarter hours the sensor left open.
+
+        Prices the sensor delivered are kept. Returns how many were added.
+        """
+        added = {s: p for s, p in prices.items() if self.prices.get(s) is None}
+        if not added:
+            return 0
+        self.prices.merge(added)
+        self.history_version += 1
+        if self.quarters.resolve(self.prices):
+            self.negatives_version += 1
+        self.prices_seen = True
+        self.tick(now)
+        return len(added)
 
     def tick(self, now: datetime) -> None:
         """Clock tick (every quarter hour) or after new prices."""
