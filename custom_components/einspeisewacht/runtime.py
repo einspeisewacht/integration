@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Coroutine, Mapping
 from datetime import date, datetime, timedelta
 from typing import Any
 
@@ -196,6 +196,10 @@ class PlantRuntime:
         self._price_missing_since: datetime | None = None
         self._meter_missing_since: datetime | None = None
         self._backfill_running = False
+        # Background work (SMARD.de backfill and price fill); cancelled on stop,
+        # so it never writes after the next runtime has taken over the files.
+        self._tasks: set[asyncio.Task[None]] = set()
+        self._stopped = False
         self._listeners: list[Callable[[], None]] = []
         self._unsubscribe: list[CALLBACK_TYPE] = []
 
@@ -230,18 +234,37 @@ class PlantRuntime:
             ),
             async_track_time_interval(self.hass, self._async_save, LIVE_SAVE_INTERVAL),
             async_track_time_interval(
-                self.hass, self._async_retry_backfill, SMARD_RETRY_INTERVAL
+                self.hass, self._retry_backfill, SMARD_RETRY_INTERVAL
             ),
         ]
 
+    @callback
+    def start_backfill(self) -> None:
+        """Opt-in history from SMARD.de in the background; never delays setup."""
+        self._background(self.async_backfill(), "backfill")
+
+    def _background(
+        self, work: Coroutine[Any, Any, None], name: str
+    ) -> asyncio.Task[None]:
+        """Run `work` in the background until it is done or the runtime stops."""
+        task = self.hass.async_create_background_task(
+            work, f"{DOMAIN} {name} {self.entry_id}"
+        )
+        self._tasks.add(task)
+        task.add_done_callback(self._tasks.discard)
+        return task
+
     async def async_stop(self) -> None:
-        """Stop listening and write the state."""
+        """Stop listening and background work, then write the state."""
+        self._stopped = True
         for unsubscribe in self._unsubscribe:
             unsubscribe()
         self._unsubscribe = []
-        if self._fill_task is not None:
-            self._fill_task.cancel()
-            self._fill_task = None
+        if tasks := [task for task in self._tasks if not task.done()]:
+            for task in tasks:
+                task.cancel()
+            await asyncio.wait(tasks)
+        self._fill_task = None
         await self._store.async_save(self.engine.as_live_dict())
         await self._history.async_save(self.engine.as_history_dict())
 
@@ -302,8 +325,9 @@ class PlantRuntime:
             self._saved_history = self.engine.history_version
             await self._history.async_save(self.engine.as_history_dict())
 
-    async def _async_retry_backfill(self, now: datetime | None = None) -> None:
-        await self.async_backfill()
+    @callback
+    def _retry_backfill(self, now: datetime | None = None) -> None:
+        self.start_backfill()
 
     @property
     def issue_id(self) -> str:
@@ -329,6 +353,8 @@ class PlantRuntime:
         self._backfill_running = True
         try:
             prices = await self._async_fetch_smard(start, end) if start < end else {}
+            if self._stopped:
+                return
         except (
             aiohttp.ClientError,
             TimeoutError,
@@ -374,9 +400,7 @@ class PlantRuntime:
         if gap is None or now - gap < SMARD_FILL_AFTER:
             return
         self._last_fill_attempt = now
-        self._fill_task = self.hass.async_create_background_task(
-            self._async_fill_prices(gap), f"einspeisewacht prices {self.entry_id}"
-        )
+        self._fill_task = self._background(self._async_fill_prices(gap), "prices")
 
     async def _async_fill_prices(self, start: datetime) -> None:
         """Day-ahead prices from SMARD.de from `start` until tomorrow; never blocks booking."""
@@ -397,6 +421,8 @@ class PlantRuntime:
             return
         finally:
             self._fill_task = None
+        if self._stopped:
+            return
         self.smard_fill_error = None
         if filled := self.engine.fill_prices(prices, dt_util.utcnow()):
             self.smard_filled += filled
@@ -531,6 +557,8 @@ class PlantRuntime:
             self.engine.on_prices(parsed, now)
 
     def _changed(self) -> None:
+        if self._stopped:
+            return  # the next runtime owns the files
         self._live_dirty = True
         if self.engine.negatives_version != self._saved_negatives:
             self._saved_negatives = self.engine.negatives_version

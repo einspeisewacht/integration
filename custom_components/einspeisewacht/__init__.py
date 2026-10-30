@@ -137,10 +137,7 @@ async def async_setup_entry(
         hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, _async_on_stop)
     )
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
-    # Opt-in history from SMARD.de; never delays setup.
-    entry.async_create_background_task(
-        hass, runtime.async_backfill(), f"einspeisewacht backfill {entry.entry_id}"
-    )
+    runtime.start_backfill()
     return True
 
 

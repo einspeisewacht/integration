@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+import asyncio
+import copy
 from datetime import UTC, date, datetime, timedelta
+from typing import Any
 
 import pytest
 from freezegun.api import FrozenDateTimeFactory
@@ -23,6 +26,7 @@ from custom_components.einspeisewacht.diagnostics import (
     async_get_config_entry_diagnostics,
 )
 from custom_components.einspeisewacht.regime import local_midnight
+from custom_components.einspeisewacht.runtime import PlantRuntime
 from custom_components.einspeisewacht.smard import INDEX_URL, parse_week, week_url
 from tests.conftest import load_fixture
 
@@ -204,3 +208,44 @@ async def test_no_extension_sensors_while_rule_does_not_apply(
     assert entity_id(hass, entry, "catch_up") is None
     assert entity_id(hass, entry, "remunerated_until") is None
     assert entity_id(hass, entry, "unpaid_windows") is not None
+
+
+@pytest.mark.freeze_time(START)
+async def test_hanging_backfill_is_cancelled_on_stop(
+    hass: HomeAssistant,
+    hass_storage: dict[str, Any],
+    freezer: FrozenDateTimeFactory,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A SMARD.de download still running at unload is cancelled and awaited;
+    the old runtime writes nothing over the files of the next one."""
+    started, cancelled = asyncio.Event(), asyncio.Event()
+
+    async def hanging(self, start: datetime, end: datetime) -> dict:
+        started.set()
+        try:
+            await asyncio.Event().wait()
+        except asyncio.CancelledError:
+            cancelled.set()
+            raise
+        return {}
+
+    monkeypatch.setattr(PlantRuntime, "_async_fetch_smard", hanging)
+    entry = await setup(hass, **{CONF_COMMISSIONED: "2026-10-20", CONF_BACKFILL: True})
+    assert started.is_set()
+    runtime = entry.runtime_data
+    assert runtime._tasks
+
+    assert await hass.config_entries.async_unload(entry.entry_id)
+    assert cancelled.is_set()
+    assert not runtime._tasks
+    key = f"{DOMAIN}.{entry.entry_id}.history"
+    saved = copy.deepcopy(hass_storage[key])
+
+    # A late change of the stopped runtime schedules no delayed write.
+    runtime.engine.negatives_version += 1
+    runtime._changed()
+    freezer.tick(timedelta(seconds=30))
+    async_fire_time_changed(hass)
+    await hass.async_block_till_done()
+    assert hass_storage[key] == saved

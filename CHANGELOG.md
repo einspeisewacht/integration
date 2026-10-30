@@ -1,5 +1,9 @@
 # Changelog
 
+## Unveröffentlicht
+
+- **Fehler behoben:** Lief beim Neuladen eines Eintrags (z. B. nach „Neu konfigurieren“) gerade ein Abruf von SMARD.de, konnte er danach noch fertig werden und Sekunden später einen alten Stand über die gespeicherten Daten des neu geladenen Eintrags schreiben. Abrufe im Hintergrund werden jetzt beim Entladen abgebrochen und abgewartet, bevor gespeichert wird.
+
 ## 0.1.4 – 2026-10-30
 
 - **Umbenannte Entitäten:** Benennt man Einspeisezähler oder Preissensor in Home Assistant um (neue Entity-ID), zieht Einspeisewacht das jetzt selbst nach – Eintrag, eindeutige ID und gespeicherter Zählerstand. Bisher buchte Einspeisewacht nach dem Umbenennen des Zählers still nichts mehr; nach dem Umbenennen des Preissensors kam nach einer Stunde der Hinweis „Kein Preis“.
