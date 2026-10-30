@@ -257,6 +257,18 @@ Long-term statistics of the deleted sensors stay until you remove them under *De
 
 Please open an [issue](https://github.com/einspeisewacht/integration/issues), ideally with the diagnostics file and your Home Assistant and Einspeisewacht versions. Security issues privately, see [SECURITY.md](SECURITY.md).
 
+## Sister integrations
+
+By the same author and built the same way: set up in the UI, in German and English, gentle on SD cards.
+
+- **Energy**
+  - [Tarifwacht](https://github.com/tarifwacht/integration) – what your grid consumption would have cost with other tariffs, including dynamic ones and Modul 3
+  - [Speicherwacht](https://github.com/speicherwacht/integration) – efficiency, cycles and capacity of your home battery
+  - [Wärmewacht](https://github.com/waermewacht/integration) – performance factors and health check for your heat pump
+- **Everyday**
+  - [Eilwacht](https://github.com/eilwacht/integration) – Tagesschau breaking news and regional news as automation triggers (German)
+  - [Streckenwacht](https://github.com/streckenwacht/integration) – roadworks, closures and traffic jams on your own routes (Germany, Luxembourg)
+
 ## License and sources
 
 MIT. Historical day-ahead prices (optional): Bundesnetzagentur | [SMARD.de](https://www.smard.de), [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/); Einspeisewacht only counts the negative quarter hours from them.
