@@ -1,6 +1,6 @@
 # Einspeisewacht – Projektkontext für Claude
 
-Home-Assistant-Custom-Integration (HACS), Domain `einspeisewacht`. Berechnet für PV-Anlagen mit fester Einspeisevergütung, wie viel Einspeisung wegen negativer Day-Ahead-Preise unvergütet bleibt (§ 51 EEG), den Erlös, den entgangenen Erlös und die Nachholung (§ 51a EEG). Schwesterprojekt von Streckenwacht (`../streckenwacht`) und Eilwacht (`../eilwacht`) – deren Muster übernehmen, wo es passt.
+Home-Assistant-Custom-Integration (HACS), Domain `einspeisewacht`. Berechnet für PV-Anlagen mit fester Einspeisevergütung, wie viel Einspeisung wegen negativer Day-Ahead-Preise unvergütet bleibt (§ 51 EEG), den Erlös, den entgangenen Erlös und die Nachholung (§ 51a EEG). Schwesterprojekt von Streckenwacht (`../streckenwacht`), Eilwacht (`../eilwacht`), Tarifwacht (`../tarifwacht`), Wärmewacht (`../waermewacht`) und Speicherwacht (`../speicherwacht`) – deren Muster übernehmen, wo es passt.
 
 ## Dokumentation
 
@@ -34,7 +34,7 @@ Home-Assistant-Custom-Integration (HACS), Domain `einspeisewacht`. Berechnet fü
 
 ## Release
 
-Gleicher Ablauf in allen Schwesterprojekten (Eilwacht, Einspeisewacht, Streckenwacht, Tarifwacht). Neue Erkenntnisse zum Ablauf hier eintragen und für die Schwestern melden.
+Gleicher Ablauf in allen Schwesterprojekten (Eilwacht, Einspeisewacht, Speicherwacht, Streckenwacht, Tarifwacht, Wärmewacht). Neue Erkenntnisse zum Ablauf hier eintragen und für die Schwestern melden.
 
 1. Version in `manifest.json`, `const.py` und `pyproject.toml` anheben, `uv lock`; `tests/test_manifest.py` prüft die Gleichheit. „Unveröffentlicht“ in `CHANGELOG.md` zur Version machen. **Nach Betas `0.x.0bN` nie `0.x.0` veröffentlichen, sondern `0.x.1`:** GitHub listet `0.1.0b11` vor `0.1.0`, HACS nimmt den ersten Eintrag und bietet die Endversion nicht an (erlebt 2026-10-27, behoben mit 0.1.1).
 2. `dev` pushen und auf den CI-Lauf **genau dieses Commits** warten (`gh run list --commit <sha>`): Push-CI startet manchmal Minuten verspätet, ein älterer grüner Lauf täuscht.

@@ -12,6 +12,7 @@ from homeassistant.data_entry_flow import FlowResultType
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.einspeisewacht.const import (
+    CONF_METER_PREVIOUS,
     CONF_OVERRIDE,
     CONF_OVERRIDE_DATE,
     CONF_RATES,
@@ -229,3 +230,33 @@ async def test_note_above_100_kw(hass: HomeAssistant) -> None:
         hass, result, {"meter_entity": METER, "price_entity": PRICE}
     )
     assert result["description_placeholders"]["note"] == ""
+
+
+@pytest.mark.parametrize(
+    ("meter", "previous"),
+    [(METER, ["sensor.old_export"]), ("sensor.other_export", None)],
+)
+async def test_reconfigure_keeps_earlier_meter_ids_only_for_the_same_meter(
+    hass: HomeAssistant, meter: str, previous: list[str] | None
+) -> None:
+    """Earlier ids of a renamed meter mean nothing for another meter."""
+    hass.states.async_set("sensor.other_export", "5.0", METER_ATTRIBUTES)
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        unique_id=METER,
+        title="Dach",
+        data=entry_data(**{CONF_METER_PREVIOUS: ["sensor.old_export"]}),
+    )
+    entry.add_to_hass(hass)
+    result = await entry.start_reconfigure_flow(hass)
+    result = await configure(hass, result, PLANT)
+    result = await configure(
+        hass, result, {"rate_mode": "single", "feed_in_type": "partial", "rate": 7.94}
+    )
+    result = await configure(
+        hass, result, {"meter_entity": meter, "price_entity": PRICE}
+    )
+    result = await configure(hass, result, {CONF_OVERRIDE: OVERRIDE_AUTO})
+    assert result["reason"] == "reconfigure_successful"
+    assert entry.unique_id == meter
+    assert entry.data.get(CONF_METER_PREVIOUS) == previous

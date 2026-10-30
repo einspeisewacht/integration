@@ -81,6 +81,8 @@ Was eine Änderung für die Zeit davor bedeutet:
 - **Regel** (Inbetriebnahme, Leistung, Smart-Meter-Datum, Übersteuerung): Viertelstunden ohne Vergütung, Nachholung, „Vergütung bis“ und der [Bericht](#bericht-für-einen-zeitraum) folgen sofort der neuen Regel, auch rückwirkend. Die Summen „Einspeisung vergütet/unvergütet“, „Erlös“ und „Entgangener Erlös“ behalten für die Zeit vor der Änderung aber ihre Aufteilung: Eine sinkende kWh-Summe hielte Home Assistant für einen Zählerwechsel und verfälschte die Statistik. Die Werte nach neuer Regel liefert der Bericht. Betrifft die Änderung schon gebuchte negative Viertelstunden, erscheint unter *Einstellungen → Reparaturen* der Hinweis „Summen teils nach alter Regel“ mit dem Datum der Änderung und der Zahl der betroffenen Viertelstunden. Er verschwindet, wenn die Regel zurückgeändert wird, und lässt sich sonst ignorieren.
 - **Einspeisezähler:** Der neue Zähler beginnt mit eigenem Ausgangswert; die Einspeisung zwischen dem letzten Wert des alten und dem ersten Wert des neuen Zählers wird nicht gebucht.
 
+Benennst du Einspeisezähler oder Preissensor in Home Assistant um (neue Entity-ID), zieht Einspeisewacht das selbst nach – ohne Neu konfigurieren und ohne Verlust.
+
 ## Entitäten
 
 | Entität | Typ | Bedeutung |
@@ -291,6 +293,7 @@ Einspeisewacht rechnet lokal und liest nur die Entitäten, die du auswählst. Ei
 
 - **Werte bleiben bei 0:** Prüfe, ob der Einspeisezähler Werte liefert und ob die Regel schon greift (Sensor „Regel“, Attribut `applies_from`).
 - **„Vergütung aktiv“ ist unbekannt:** Der Preissensor liefert für die laufende Viertelstunde keinen Preis.
+- **Hinweis „Einspeisezähler fehlt“ unter Reparaturen:** Die Zähler-Entität gibt es nicht mehr (gelöscht oder umbenannt, während Einspeisewacht nicht geladen war). Bis sie wieder da ist, bucht Einspeisewacht nichts. Unter *Neu konfigurieren* den richtigen Zähler wählen; die bisherigen Summen bleiben erhalten.
 - **Hinweis „SMARD.de nicht erreichbar“ unter Reparaturen:** Der Abruf früherer Preise ist fehlgeschlagen; beim nächsten Start von Home Assistant wird es erneut versucht. Die laufende Buchung ist nicht betroffen.
 - **Diagnose:** *Einspeisewacht → Eintrag → ⋮ → Diagnose herunterladen*. **Debug-Protokoll:** *Einspeisewacht → ⋮ → Debug-Protokollierung aktivieren*.
 

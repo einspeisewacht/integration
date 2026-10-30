@@ -52,13 +52,15 @@ class MeterTracker:
 
     `max_power_kw` bounds plausible increases (rated peak power of the plant).
     `source` names the meter (its entity); a stored reading of another meter
-    is not restored, so a swapped meter starts with a new baseline.
+    is not restored, so a swapped meter starts with a new baseline. `aliases`
+    are earlier names of the same meter (renamed entity): their reading stays.
     """
 
     max_power_kw: float
     last_value: float | None = None
     last_time: datetime | None = None
     source: str | None = None
+    aliases: tuple[str, ...] = ()
 
     def update(
         self,
@@ -102,7 +104,12 @@ class MeterTracker:
 
     def restore(self, data: dict[str, Any]) -> None:
         stored = data.get("source")
-        if stored is not None and self.source is not None and stored != self.source:
+        if (
+            stored is not None
+            and self.source is not None
+            and stored != self.source
+            and stored not in self.aliases
+        ):
             # Another meter (swapped in the reconfiguration): its last reading
             # is no baseline for this one; the first reading starts afresh.
             return

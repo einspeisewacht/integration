@@ -41,6 +41,7 @@ from .const import (
     CONF_COMMISSIONED,
     CONF_FEED_IN_TYPE,
     CONF_METER,
+    CONF_METER_PREVIOUS,
     CONF_NAME,
     CONF_OVERRIDE,
     CONF_OVERRIDE_DATE,
@@ -81,6 +82,10 @@ NEGATIVES_SAVE_DELAY = 10
 SMARD_RETRY_INTERVAL = timedelta(hours=24)
 # Raise a repair issue once the running quarter hour has had no price this long.
 PRICE_MISSING_ISSUE_AFTER = timedelta(hours=1)
+# Raise a repair issue once the meter entity has been gone this long (removed,
+# or renamed while the entry was not loaded). The grace covers a start of Home
+# Assistant, when the meter's integration may set up after this one.
+METER_MISSING_ISSUE_AFTER = timedelta(minutes=10)
 # With the SMARD option: fetch prices the sensor left open once a quarter hour
 # has waited this long, at most once per interval (index + one or two weeks).
 SMARD_FILL_AFTER = timedelta(hours=1)
@@ -160,7 +165,9 @@ class PlantRuntime:
         self.rate_ct = rate_from_config(config)
         self.engine = Engine(
             meter=MeterTracker(
-                max_power_kw=float(config[CONF_POWER]), source=self.meter_entity
+                max_power_kw=float(config[CONF_POWER]),
+                source=self.meter_entity,
+                aliases=tuple(config.get(CONF_METER_PREVIOUS) or ()),
             ),
             valuation=FeedInValuation(
                 rate=self.rate_ct / 100,
@@ -187,6 +194,7 @@ class PlantRuntime:
         self._saved_history = 0
         self._saved_negatives = 0
         self._price_missing_since: datetime | None = None
+        self._meter_missing_since: datetime | None = None
         self._backfill_running = False
         self._listeners: list[Callable[[], None]] = []
         self._unsubscribe: list[CALLBACK_TYPE] = []
@@ -244,6 +252,7 @@ class PlantRuntime:
             self.issue_id,
             self._issue("price_missing"),
             self._issue("meter_unit"),
+            self._issue("meter_missing"),
             self._issue("rule_changed"),
         ):
             ir.async_delete_issue(self.hass, DOMAIN, issue)
@@ -574,3 +583,28 @@ class PlantRuntime:
             )
         else:
             ir.async_delete_issue(self.hass, DOMAIN, self._issue("meter_unit"))
+        self._update_meter_missing(now)
+
+    def _update_meter_missing(self, now: datetime) -> None:
+        """Say when the meter entity is gone: nothing is booked until it is back.
+
+        Unavailable is not missing: the next reading books the gap.
+        """
+        if self.hass.states.get(self.meter_entity) is not None:
+            self._meter_missing_since = None
+            ir.async_delete_issue(self.hass, DOMAIN, self._issue("meter_missing"))
+            return
+        self._meter_missing_since = self._meter_missing_since or now
+        if now - self._meter_missing_since >= METER_MISSING_ISSUE_AFTER:
+            ir.async_create_issue(
+                self.hass,
+                DOMAIN,
+                self._issue("meter_missing"),
+                is_fixable=False,
+                severity=ir.IssueSeverity.ERROR,
+                translation_key="meter_missing",
+                translation_placeholders={
+                    "name": self.name,
+                    "entity": self.meter_entity,
+                },
+            )

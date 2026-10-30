@@ -9,7 +9,10 @@ import pytest
 from freezegun.api import FrozenDateTimeFactory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import issue_registry as ir
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant_custom_component.common import (
+    MockConfigEntry,
+    async_fire_time_changed,
+)
 
 from custom_components.einspeisewacht.const import DOMAIN
 
@@ -62,6 +65,52 @@ async def test_meter_unit_issue(
     hass.states.async_set(METER, "1010", METER_ATTRIBUTES)
     await hass.async_block_till_done()
     assert issue(hass, "meter_unit", entry) is None
+
+
+@pytest.mark.freeze_time(START)
+async def test_meter_missing_issue(
+    hass: HomeAssistant, freezer: FrozenDateTimeFactory
+) -> None:
+    """A meter entity that is gone (removed, renamed elsewhere) is reported
+    after the grace time; a meter that is back clears it."""
+    entry = await setup(hass)
+    hass.states.async_remove(METER)
+    await hass.async_block_till_done()
+
+    first_tick = datetime(2026, 10, 25, 3, 15, 1, tzinfo=UTC)
+    freezer.move_to(first_tick)
+    async_fire_time_changed(hass, first_tick)
+    await hass.async_block_till_done()
+    assert issue(hass, "meter_missing", entry) is None  # grace time
+
+    second_tick = datetime(2026, 10, 25, 3, 30, 1, tzinfo=UTC)
+    freezer.move_to(second_tick)
+    async_fire_time_changed(hass, second_tick)
+    await hass.async_block_till_done()
+    found = issue(hass, "meter_missing", entry)
+    assert found.translation_key == "meter_missing"
+    assert found.translation_placeholders["entity"] == METER
+
+    hass.states.async_set(METER, "1100", METER_ATTRIBUTES)
+    await hass.async_block_till_done()
+    assert issue(hass, "meter_missing", entry) is None
+
+
+@pytest.mark.freeze_time(START)
+async def test_meter_unavailable_is_not_missing(
+    hass: HomeAssistant, freezer: FrozenDateTimeFactory
+) -> None:
+    """Unavailable for a while: the next reading books the gap, no issue."""
+    entry = await setup(hass)
+    hass.states.async_set(METER, "unavailable", METER_ATTRIBUTES)
+    for tick in (
+        datetime(2026, 10, 25, 3, 15, 1, tzinfo=UTC),
+        datetime(2026, 10, 25, 3, 30, 1, tzinfo=UTC),
+    ):
+        freezer.move_to(tick)
+        async_fire_time_changed(hass, tick)
+        await hass.async_block_till_done()
+    assert issue(hass, "meter_missing", entry) is None
 
 
 @pytest.mark.freeze_time(START)

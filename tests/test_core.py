@@ -144,6 +144,19 @@ def test_swapped_meter_starts_with_a_new_baseline() -> None:
     assert legacy.last_value == 5000.0
 
 
+def test_renamed_meter_keeps_its_baseline() -> None:
+    """The stored reading names an earlier id of the same meter."""
+    old = MeterTracker(max_power_kw=9, source="sensor.old")
+    old.update(5000.0, utc(2026, 6, 1, 10))
+    renamed = MeterTracker(max_power_kw=9, source="sensor.new", aliases=("sensor.old",))
+    renamed.restore(old.as_dict())
+    assert renamed.last_value == 5000.0
+    update = renamed.update(5001.0, utc(2026, 6, 1, 10, 15))
+    assert update.event is None and update.delta == 1.0
+    # The next save names the meter by its new id.
+    assert renamed.as_dict()["source"] == "sensor.new"
+
+
 # --- prices -------------------------------------------------------------------
 
 

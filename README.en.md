@@ -79,6 +79,8 @@ What a change means for the time before it:
 - **Rule** (commissioning, capacity, smart meter date, override): quarter hours without remuneration, extension, "Remunerated until" and the [report](#report-for-a-period) follow the new rule at once, retroactively too. The totals "Feed-in remunerated/not remunerated", "Revenue" and "Lost revenue" keep their split for the time before the change, though: Home Assistant would take a falling kWh total for a meter replacement and distort the statistics. The report gives the values under the new rule. If the change affects negative quarter hours already booked, *Settings → Repairs* shows "Totals partly follow the previous rule" with the date of the change and the number of quarter hours affected. It disappears if the rule is changed back; otherwise you can ignore it.
 - **Feed-in meter:** the new meter starts from its own baseline; feed-in between the old meter's last reading and the new one's first is not booked.
 
+If you rename the feed-in meter or the price sensor in Home Assistant (new entity ID), Einspeisewacht follows by itself – no reconfiguration, nothing lost.
+
 ## Entities
 
 | Entity | Type | Meaning |
@@ -240,6 +242,7 @@ Einspeisewacht computes locally and reads only the entities you choose. The sing
 
 - **Values stay at 0:** check that the feed-in meter reports values and whether the rule applies yet (sensor "Rule", attribute `applies_from`).
 - **"Remunerated" is unknown:** the price sensor has no price for the running quarter hour.
+- **Repair "Feed-in meter missing":** the meter entity no longer exists (deleted, or renamed while Einspeisewacht was not loaded). Nothing is booked until it is back. Choose the right meter under *Reconfigure*; the totals so far are kept.
 - **Repair "SMARD.de unreachable":** downloading earlier prices failed; it is retried at the next Home Assistant start. Live booking is not affected.
 - **Diagnostics:** *Einspeisewacht → entry → ⋮ → Download diagnostics*. **Debug log:** *Einspeisewacht → ⋮ → Enable debug logging*.
 

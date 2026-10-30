@@ -24,6 +24,9 @@ CONF_FEED_IN_TYPE: Final = "feed_in_type"
 CONF_RATES: Final = "rates"  # ct/kWh, one per capacity band
 CONF_METER: Final = "meter_entity"
 CONF_PRICE: Final = "price_entity"
+# Earlier ids of the meter, renamed in the entity registry (rename.py): the
+# stored last reading still names one of them and stays the baseline.
+CONF_METER_PREVIOUS: Final = "meter_previous"
 CONF_OVERRIDE: Final = "override"
 CONF_OVERRIDE_DATE: Final = "override_date"
 CONF_BACKFILL: Final = (
