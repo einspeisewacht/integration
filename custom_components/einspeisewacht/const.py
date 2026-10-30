@@ -6,7 +6,7 @@ from typing import Final
 from zoneinfo import ZoneInfo
 
 DOMAIN: Final = "einspeisewacht"
-VERSION: Final = "0.1.3"
+VERSION: Final = "0.1.4"
 USER_AGENT: Final = (
     f"Einspeisewacht/{VERSION} (+https://github.com/einspeisewacht/integration)"
 )
