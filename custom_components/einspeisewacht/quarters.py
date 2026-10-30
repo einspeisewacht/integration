@@ -11,7 +11,7 @@ changed rule therefore needs no new history.
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, tzinfo
 from typing import Any
@@ -159,19 +159,26 @@ class QuarterCounter:
         return result
 
     def booked_unlike(
-        self, earlier: list[tuple[Rule, datetime]], rule: Rule
+        self,
+        earlier: list[tuple[Rule, datetime]],
+        rule: Rule,
+        daylight: Callable[[datetime], float] | None = None,
     ) -> tuple[int, datetime | None]:
         """Recorded negative quarter hours since `started` booked unlike `rule`.
 
         `earlier` lists the rules booked before `rule`, each with the quarter
         hour it was replaced at (ascending). Returns how many quarter hours
         differ and the end of the last earlier rule that judged one differently.
+        With `daylight` (the sun's height), quarter hours at night are left
+        out: without feed-in both rules booked the same totals.
         """
         count, until = 0, None
         if self.started is None:
             return count, until
         for slot, price in self.negatives.items():
             if slot < self.started:
+                continue
+            if daylight is not None and daylight(slot + QUARTER / 2) <= 0:
                 continue
             for booked, end in earlier:
                 if slot < end:

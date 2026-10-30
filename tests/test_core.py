@@ -244,6 +244,18 @@ def test_rule_round_trip(rule) -> None:
     assert rule_from_dict({"type": "block_2023"}) is None
 
 
+def test_unknown_rule_is_stored_as_unknown() -> None:
+    """Saving must not fail for a rule type the storage does not know."""
+
+    class FutureRule:
+        def is_paid(self, slot, price) -> bool:
+            return True
+
+    data = rule_as_dict(FutureRule())
+    assert data == {"type": "unknown"}
+    assert rule_from_dict(data) is None
+
+
 # --- ledger -------------------------------------------------------------------
 
 
@@ -318,6 +330,28 @@ def test_missing_price_waits_then_books_paid() -> None:
     assert ledger.pending == {}
     assert ledger.booked_without_price == 1
     assert ledger.totals["energy_paid"] == pytest.approx(0.3)
+
+
+def test_pieces_without_energy_are_not_held_back() -> None:
+    """A long gap spread by the sun leaves zero pieces at night: nothing waits."""
+    prices, ledger, val = PriceTable(), Ledger(), valuation()
+    night, day = utc(2026, 10, 25, 1), utc(2026, 10, 25, 11)
+    now = utc(2026, 10, 25, 12)
+    ledger.book([(night, 0.0), (day, 0.4)], prices, val, now)
+    assert list(ledger.pending) == [day]
+    ledger.retry_pending(prices, val, now + PRICE_WAIT)
+    assert ledger.booked_without_price == 1
+    # Held back by 0.1.3 and earlier: dropped when loading.
+    restored = Ledger()
+    restored.restore(
+        {
+            "pending": [
+                [night.isoformat(), 0.0, now.isoformat()],
+                [day.isoformat(), 0.4, now.isoformat()],
+            ]
+        }
+    )
+    assert list(restored.pending) == [day]
 
 
 def test_missing_price_booked_when_it_arrives() -> None:

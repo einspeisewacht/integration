@@ -53,7 +53,8 @@ def rule_as_dict(rule: Rule) -> dict[str, Any]:
         }
     if isinstance(rule, AlwaysPaid):
         return {"type": "always_paid"}
-    raise TypeError(rule)
+    # Saving must never fail; rule_from_dict reads it back as no rule.
+    return {"type": "unknown"}
 
 
 def rule_from_dict(data: Mapping[str, Any] | None) -> Rule | None:

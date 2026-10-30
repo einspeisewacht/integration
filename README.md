@@ -293,7 +293,7 @@ Einspeisewacht rechnet lokal und liest nur die Entitäten, die du auswählst. Ei
 
 - **Werte bleiben bei 0:** Prüfe, ob der Einspeisezähler Werte liefert und ob die Regel schon greift (Sensor „Regel“, Attribut `applies_from`).
 - **„Vergütung aktiv“ ist unbekannt:** Der Preissensor liefert für die laufende Viertelstunde keinen Preis.
-- **Hinweis „Einspeisezähler fehlt“ unter Reparaturen:** Die Zähler-Entität gibt es nicht mehr (gelöscht oder umbenannt, während Einspeisewacht nicht geladen war). Bis sie wieder da ist, bucht Einspeisewacht nichts. Unter *Neu konfigurieren* den richtigen Zähler wählen; die bisherigen Summen bleiben erhalten.
+- **Hinweis „Einspeisezähler fehlt“ unter Reparaturen:** Die Zähler-Entität gibt es nicht mehr (gelöscht oder umbenannt, während Einspeisewacht nicht geladen war). Bis sie wieder da ist, bucht Einspeisewacht nichts. Unter *Neu konfigurieren* den richtigen Zähler wählen; die bisherigen Summen bleiben erhalten. Der gewählte Zähler beginnt dann wie bei einem Zählertausch mit eigenem Ausgangswert: Einspeisung aus der Zeit, in der der alte Zähler fehlte, wird nicht gebucht.
 - **Hinweis „SMARD.de nicht erreichbar“ unter Reparaturen:** Der Abruf früherer Preise ist fehlgeschlagen; beim nächsten Start von Home Assistant wird es erneut versucht. Die laufende Buchung ist nicht betroffen.
 - **Diagnose:** *Einspeisewacht → Eintrag → ⋮ → Diagnose herunterladen*. **Debug-Protokoll:** *Einspeisewacht → ⋮ → Debug-Protokollierung aktivieren*.
 

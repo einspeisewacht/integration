@@ -103,6 +103,9 @@ class Ledger:
         for slot, energy in pieces:
             price = prices.get(slot)
             if price is None:
+                if energy == 0:
+                    # A night in a long gap: nothing to wait for.
+                    continue
                 held, since = self.pending.get(slot, (0.0, now))
                 self.pending[slot] = (held + energy, since)
             else:
@@ -136,5 +139,6 @@ class Ledger:
         self.pending = {
             datetime.fromisoformat(slot): (energy, datetime.fromisoformat(since))
             for slot, energy, since in data.get("pending", [])
+            if energy != 0  # held back by 0.1.3 and earlier
         }
         self.booked_without_price = data.get("booked_without_price", 0)

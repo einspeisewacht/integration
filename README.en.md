@@ -242,7 +242,7 @@ Einspeisewacht computes locally and reads only the entities you choose. The sing
 
 - **Values stay at 0:** check that the feed-in meter reports values and whether the rule applies yet (sensor "Rule", attribute `applies_from`).
 - **"Remunerated" is unknown:** the price sensor has no price for the running quarter hour.
-- **Repair "Feed-in meter missing":** the meter entity no longer exists (deleted, or renamed while Einspeisewacht was not loaded). Nothing is booked until it is back. Choose the right meter under *Reconfigure*; the totals so far are kept.
+- **Repair "Feed-in meter missing":** the meter entity no longer exists (deleted, or renamed while Einspeisewacht was not loaded). Nothing is booked until it is back. Choose the right meter under *Reconfigure*; the totals so far are kept. As with a replaced meter, the chosen meter then starts from its own baseline: feed-in during the time the old meter was missing is not booked.
 - **Repair "SMARD.de unreachable":** downloading earlier prices failed; it is retried at the next Home Assistant start. Live booking is not affected.
 - **Diagnostics:** *Einspeisewacht → entry → ⋮ → Download diagnostics*. **Debug log:** *Einspeisewacht → ⋮ → Enable debug logging*.
 

@@ -206,7 +206,9 @@ class Engine:
         end = self.quarters.next_slot
         if booked is not None and booked != self.rule and end is not None:
             self.rule_history.append((booked, end))
-        count, until = self.quarters.booked_unlike(self.rule_history, self.rule)
+        count, until = self.quarters.booked_unlike(
+            self.rule_history, self.rule, self.weight
+        )
         if not count:
             # Everything booked agrees with the current rule (e.g. changed back).
             self.rule_history = []

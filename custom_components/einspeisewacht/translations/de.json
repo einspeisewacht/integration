@@ -227,7 +227,7 @@
     },
     "meter_missing": {
       "title": "Einspeisezähler fehlt ({name})",
-      "description": "Den Einspeisezähler {entity} gibt es in Home Assistant nicht mehr. Einspeisewacht bucht nichts, bis er wieder da ist. Wurde die Entität umbenannt, während Einspeisewacht nicht geladen war, unter „Neu konfigurieren“ die neue wählen; die bisherigen Summen bleiben erhalten. Umbenennungen im laufenden Betrieb zieht Einspeisewacht selbst nach. Die Meldung verschwindet, sobald der Zähler wieder da ist."
+      "description": "Den Einspeisezähler {entity} gibt es in Home Assistant nicht mehr. Einspeisewacht bucht nichts, bis er wieder da ist. Wurde die Entität umbenannt, während Einspeisewacht nicht geladen war, unter „Neu konfigurieren“ die neue wählen; die bisherigen Summen bleiben erhalten. Nach „Neu konfigurieren“ mit der neuen ID beginnt der Zähler wie bei einem Zählertausch mit eigenem Ausgangswert: Einspeisung aus der Zeit, in der der alte Zähler fehlte, wird nicht gebucht. Umbenennungen im laufenden Betrieb zieht Einspeisewacht selbst nach. Die Meldung verschwindet, sobald der Zähler wieder da ist."
     },
     "rule_changed": {
       "title": "Summen teils nach alter Regel ({name})",

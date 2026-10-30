@@ -91,6 +91,8 @@ class EinspeisewachtConfigFlow(ConfigFlow, domain=DOMAIN):
 
     def __init__(self) -> None:
         self._data: dict[str, Any] = {}
+        # The entry data when a reconfigure flow started.
+        self._initial: dict[str, Any] = {}
 
     @property
     def _full_feed_in(self) -> bool:
@@ -107,7 +109,8 @@ class EinspeisewachtConfigFlow(ConfigFlow, domain=DOMAIN):
     ) -> ConfigFlowResult:
         """Change an existing plant: the same steps, prefilled."""
         if not self._data:
-            self._data = dict(self._get_reconfigure_entry().data)
+            self._initial = dict(self._get_reconfigure_entry().data)
+            self._data = dict(self._initial)
         return await self._async_plant_step("reconfigure", user_input)
 
     async def _async_plant_step(
@@ -354,10 +357,18 @@ class EinspeisewachtConfigFlow(ConfigFlow, domain=DOMAIN):
         }
 
     async def _async_finish(self) -> ConfigFlowResult:
-        meter = self._data[CONF_METER]
         if self.source == SOURCE_RECONFIGURE:
             entry = self._get_reconfigure_entry()
-            if meter != entry.data[CONF_METER]:
+            current = entry.data
+            for key in (CONF_METER, CONF_PRICE):
+                # Renamed while the flow was open: the form still held the
+                # old id; keep the new one (__init__.py followed the rename).
+                if self._data[key] == self._initial.get(key) != current[key]:
+                    self._data[key] = current[key]
+            meter = self._data[CONF_METER]
+            if meter == current[CONF_METER] and CONF_METER_PREVIOUS in current:
+                self._data[CONF_METER_PREVIOUS] = current[CONF_METER_PREVIOUS]
+            elif meter != current[CONF_METER]:
                 # Another meter: earlier names of the old one keep nothing.
                 self._data.pop(CONF_METER_PREVIOUS, None)
             return self.async_update_reload_and_abort(
@@ -366,6 +377,7 @@ class EinspeisewachtConfigFlow(ConfigFlow, domain=DOMAIN):
                 title=self._data[CONF_NAME],
                 data=self._data,
             )
+        meter = self._data[CONF_METER]
         await self.async_set_unique_id(meter)
         self._abort_if_unique_id_configured()
         return self.async_create_entry(title=self._data[CONF_NAME], data=self._data)

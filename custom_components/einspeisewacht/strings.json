@@ -227,7 +227,7 @@
     },
     "meter_missing": {
       "title": "Feed-in meter missing ({name})",
-      "description": "The feed-in meter {entity} no longer exists in Home Assistant. Einspeisewacht books nothing until it is back. If the entity was renamed while Einspeisewacht was not loaded, choose the new one under Reconfigure; the totals so far are kept. Renames while it is loaded are followed automatically. This message disappears once the meter is there again."
+      "description": "The feed-in meter {entity} no longer exists in Home Assistant. Einspeisewacht books nothing until it is back. If the entity was renamed while Einspeisewacht was not loaded, choose the new one under Reconfigure; the totals so far are kept. After Reconfigure with the new ID, the meter starts from its own baseline as with a replaced meter: feed-in during the time the old meter was missing is not booked. Renames while it is loaded are followed automatically. This message disappears once the meter is there again."
     },
     "rule_changed": {
       "title": "Totals partly follow the previous rule ({name})",

@@ -15,6 +15,7 @@ from custom_components.einspeisewacht.prices import PriceTable, parse_interval_p
 from custom_components.einspeisewacht.quarters import MAX_CATCH_UP, QuarterCounter
 from custom_components.einspeisewacht.report import build_report, unknown_slots
 from custom_components.einspeisewacht.rules import AlwaysPaid, NegativeQuarterHour
+from custom_components.einspeisewacht.solar import daylight_weight
 from custom_components.einspeisewacht.timeslots import QUARTER
 from tests.conftest import load_fixture
 
@@ -388,6 +389,26 @@ def test_engine_reports_a_rule_change_for_booked_quarter_hours() -> None:
     # Changed back: everything booked agrees again, the history is dropped.
     back = reloaded(again)
     assert back.rule_change is None and back.rule_history == []
+
+
+def test_engine_rule_change_leaves_out_night_quarter_hours() -> None:
+    """Negative prices at night: no feed-in, so both rules booked the same."""
+    engine = booked_day()  # negative 04:00, 04:30, 06:00, 14:00, 14:15, 15:00 CET
+
+    def restart(weight) -> Engine:
+        restored = make_engine(rule=AlwaysPaid())
+        restored.weight = weight
+        restored.restore(
+            json.loads(json.dumps(engine.as_live_dict())),
+            json.loads(json.dumps(engine.as_history_dict())),
+        )
+        return restored
+
+    # Stuttgart: the sun rises at about 07:50 CET on 25.10.
+    assert restart(daylight_weight(48.78, 9.18)).rule_change["quarter_hours"] == 3
+    # Only night quarter hours differ: no repair issue at all.
+    night_only = restart(lambda moment: 0.0)
+    assert night_only.rule_change is None and night_only.rule_history == []
 
 
 def test_engine_rule_change_counts_each_period_by_its_rule() -> None:

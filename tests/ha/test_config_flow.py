@@ -12,6 +12,7 @@ from homeassistant.data_entry_flow import FlowResultType
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.einspeisewacht.const import (
+    CONF_METER,
     CONF_METER_PREVIOUS,
     CONF_OVERRIDE,
     CONF_OVERRIDE_DATE,
@@ -20,6 +21,7 @@ from custom_components.einspeisewacht.const import (
     OVERRIDE_AUTO,
     OVERRIDE_FROM_DATE,
 )
+from custom_components.einspeisewacht.rename import renamed_data
 
 from .conftest import METER, METER_ATTRIBUTES, PRICE, entry_data, price_attributes
 
@@ -260,3 +262,32 @@ async def test_reconfigure_keeps_earlier_meter_ids_only_for_the_same_meter(
     assert result["reason"] == "reconfigure_successful"
     assert entry.unique_id == meter
     assert entry.data.get(CONF_METER_PREVIOUS) == previous
+
+
+async def test_reconfigure_keeps_a_rename_made_while_the_flow_was_open(
+    hass: HomeAssistant,
+) -> None:
+    """The form still holds the old meter id; the rename is not undone."""
+    entry = MockConfigEntry(
+        domain=DOMAIN, unique_id=METER, title="Dach", data=entry_data()
+    )
+    entry.add_to_hass(hass)
+    result = await entry.start_reconfigure_flow(hass)
+    result = await configure(hass, result, PLANT)
+    result = await configure(
+        hass, result, {"rate_mode": "single", "feed_in_type": "partial", "rate": 7.94}
+    )
+    result = await configure(
+        hass, result, {"meter_entity": METER, "price_entity": PRICE}
+    )
+    # Renamed now (as __init__.py follows it), before the last step.
+    hass.config_entries.async_update_entry(
+        entry,
+        unique_id="sensor.meter_export",
+        data=renamed_data(entry.data, METER, "sensor.meter_export"),
+    )
+    result = await configure(hass, result, {CONF_OVERRIDE: OVERRIDE_AUTO})
+    assert result["reason"] == "reconfigure_successful"
+    assert entry.data[CONF_METER] == "sensor.meter_export"
+    assert entry.data[CONF_METER_PREVIOUS] == [METER]
+    assert entry.unique_id == "sensor.meter_export"
