@@ -15,6 +15,7 @@ from custom_components.einspeisewacht.prices import PriceTable, parse_interval_p
 from custom_components.einspeisewacht.quarters import MAX_CATCH_UP, QuarterCounter
 from custom_components.einspeisewacht.report import build_report, unknown_slots
 from custom_components.einspeisewacht.rules import AlwaysPaid, NegativeQuarterHour
+from custom_components.einspeisewacht.timeslots import QUARTER
 from tests.conftest import load_fixture
 
 DAY_START = datetime(2026, 10, 24, 22, tzinfo=UTC)  # 25.10. 00:00 local
@@ -143,10 +144,35 @@ def test_counter_round_trip_and_legacy_data() -> None:
         json.loads(json.dumps(counter.negatives_dict())),
     )
     assert restored == counter
+    # Up to 0.1.3 the missing quarter hours were stored one by one.
+    old = counter.as_dict()
+    del old["missing_ranges"]
+    old["missing"] = sorted(s.isoformat() for s in counter.missing)
+    migrated = QuarterCounter()
+    migrated.restore(old, counter.negatives_dict())
+    assert migrated == counter
     # 0.1.0b3 stored counts only: start afresh.
     legacy = QuarterCounter()
     legacy.restore({"next_slot": DAY_START.isoformat(), "counts": {"2026": 3}}, None)
     assert legacy == QuarterCounter()
+
+
+def test_missing_quarter_hours_are_stored_as_ranges() -> None:
+    """A day without prices is one range in the live state, not 96 entries."""
+    counter = QuarterCounter(next_slot=DAY_END + timedelta(days=1), started=DAY_START)
+    day = {DAY_START + QUARTER * n for n in range(96)}
+    single = DAY_END + timedelta(hours=2)
+    counter.missing = day | {single}
+    assert counter.as_dict()["missing_ranges"] == [
+        [DAY_START.isoformat(), (DAY_START + timedelta(days=1)).isoformat()],
+        [single.isoformat(), (single + QUARTER).isoformat()],
+    ]
+    assert "missing" not in counter.as_dict()
+    restored = QuarterCounter()
+    restored.restore(json.loads(json.dumps(counter.as_dict())), {})
+    assert restored.missing == counter.missing
+    assert not restored.known(DAY_START + timedelta(hours=5))
+    assert restored.known(single - QUARTER)
 
 
 # --- engine -------------------------------------------------------------------

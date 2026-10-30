@@ -2,6 +2,7 @@
 
 ## Unveröffentlicht
 
+- Weniger Schreiblast nach längerem Preisausfall: Viertelstunden ohne Preis stehen im gespeicherten Stand jetzt als Zeitbereiche statt einzeln (ein Tag ohne Preis war bisher 96 Einträge, die alle 10 Minuten mitgeschrieben wurden). Ältere gespeicherte Stände werden beim Start übernommen.
 - **Umbenannte Entitäten:** Benennt man Einspeisezähler oder Preissensor in Home Assistant um (neue Entity-ID), zieht Einspeisewacht das jetzt selbst nach – Eintrag, eindeutige ID und gespeicherter Zählerstand. Bisher buchte Einspeisewacht nach dem Umbenennen des Zählers still nichts mehr; nach dem Umbenennen des Preissensors kam nach einer Stunde der Hinweis „Kein Preis“.
 - Neuer Hinweis unter *Reparaturen*: **„Einspeisezähler fehlt“**, wenn die Zähler-Entität länger als 10 Minuten nicht existiert (z. B. gelöscht). Er verschwindet, sobald der Zähler wieder da ist.
 - **Fehler behoben:** Ein in der Neukonfiguration korrigierter Vergütungssatz (oder eine geänderte Leistung bei gestaffelter Vergütung) galt nur für neue Buchungen; Erlös und entgangener Erlös blieben für die Zeit davor beim alten Satz. Jetzt rechnet Einspeisewacht sie beim Start aus den gebuchten kWh neu – der Satz gilt ab der Einrichtung. In der Langzeitstatistik erscheint die Korrektur in der Stunde der Änderung.

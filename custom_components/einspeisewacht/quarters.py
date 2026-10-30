@@ -34,6 +34,28 @@ def _moment(text: str | None) -> datetime | None:
     return datetime.fromisoformat(text) if text else None
 
 
+def slot_ranges(slots: set[datetime]) -> list[tuple[datetime, datetime]]:
+    """Quarter hours as [start, end) ranges of consecutive slots."""
+    ranges: list[tuple[datetime, datetime]] = []
+    for slot in sorted(slots):
+        if ranges and ranges[-1][1] == slot:
+            ranges[-1] = (ranges[-1][0], slot + QUARTER)
+        else:
+            ranges.append((slot, slot + QUARTER))
+    return ranges
+
+
+def range_slots(ranges: list[tuple[datetime, datetime]]) -> set[datetime]:
+    """The quarter hours of [start, end) ranges."""
+    slots: set[datetime] = set()
+    for start, end in ranges:
+        slot = start
+        while slot < end:
+            slots.add(slot)
+            slot += QUARTER
+    return slots
+
+
 @dataclass
 class QuarterCounter:
     """Which quarter hours had a negative price, and which are known at all.
@@ -165,7 +187,11 @@ class QuarterCounter:
             "started": _iso(self.started),
             "backfill_from": _iso(self.backfill_from),
             "backfilled": self.backfilled,
-            "missing": sorted(s.isoformat() for s in self.missing),
+            # As ranges: a price sensor off for a day leaves ~100 quarter
+            # hours in a row, and the live state is written every 10 minutes.
+            "missing_ranges": [
+                [a.isoformat(), b.isoformat()] for a, b in slot_ranges(self.missing)
+            ],
             "gaps": [[a.isoformat(), b.isoformat()] for a, b in self.gaps],
         }
 
@@ -185,7 +211,14 @@ class QuarterCounter:
         self.backfill_from = _moment(data.get("backfill_from"))
         self.backfilled = data.get("backfilled", False)
         self.negatives = {datetime.fromisoformat(s): p for s, p in negatives.items()}
-        self.missing = {datetime.fromisoformat(s) for s in data.get("missing", [])}
+        self.missing = range_slots(
+            [
+                (datetime.fromisoformat(a), datetime.fromisoformat(b))
+                for a, b in data.get("missing_ranges", [])
+            ]
+        )
+        # Up to 0.1.3: one entry per quarter hour.
+        self.missing |= {datetime.fromisoformat(s) for s in data.get("missing", [])}
         self.gaps = [
             (datetime.fromisoformat(a), datetime.fromisoformat(b))
             for a, b in data.get("gaps", [])
