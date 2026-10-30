@@ -191,6 +191,8 @@ async def test_reconfigured_rate_applies_since_setup(
 async def test_reconfigured_rule_is_reported_not_rebooked(
     hass: HomeAssistant, freezer: FrozenDateTimeFactory
 ) -> None:
+    # Only quarter hours with daylight count; 04:00 CET is noon in Tokyo.
+    hass.config.latitude, hass.config.longitude = 35.68, 139.69
     entry = await setup(hass)
     await book_negative_quarter_hour(hass, freezer)
 
