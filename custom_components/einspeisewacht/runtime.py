@@ -245,8 +245,12 @@ class PlantRuntime:
 
     def _background(
         self, work: Coroutine[Any, Any, None], name: str
-    ) -> asyncio.Task[None]:
-        """Run `work` in the background until it is done or the runtime stops."""
+    ) -> asyncio.Task[None] | None:
+        """Run `work` in the background until it is done or the runtime stops;
+        nothing once stopped (a setup still running when Home Assistant stops)."""
+        if self._stopped:
+            work.close()
+            return None
         task = self.hass.async_create_background_task(
             work, f"{DOMAIN} {name} {self.entry_id}"
         )
@@ -389,7 +393,9 @@ class PlantRuntime:
     @callback
     def _maybe_fill_prices(self, now: datetime) -> None:
         """With the SMARD option, fetch prices the price sensor left open."""
-        if not self.backfill_enabled or self._fill_task is not None:
+        if not self.backfill_enabled or (
+            self._fill_task is not None and not self._fill_task.done()
+        ):
             return
         if (
             self._last_fill_attempt is not None

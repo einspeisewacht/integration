@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import asyncio
-import copy
 from datetime import UTC, date, datetime, timedelta
 from typing import Any
 
@@ -240,7 +239,9 @@ async def test_hanging_backfill_is_cancelled_on_stop(
     assert cancelled.is_set()
     assert not runtime._tasks
     key = f"{DOMAIN}.{entry.entry_id}.history"
-    saved = copy.deepcopy(hass_storage[key])
+    # Stands for the file of the next runtime: the old one must not touch it.
+    next_file = {"version": 1, "key": key, "data": {"written_by": "next runtime"}}
+    hass_storage[key] = next_file
 
     # A late change of the stopped runtime schedules no delayed write.
     runtime.engine.negatives_version += 1
@@ -248,4 +249,8 @@ async def test_hanging_backfill_is_cancelled_on_stop(
     freezer.tick(timedelta(seconds=30))
     async_fire_time_changed(hass)
     await hass.async_block_till_done()
-    assert hass_storage[key] == saved
+    assert hass_storage[key] is next_file
+
+    # Nor does it start new background work.
+    assert runtime._background(asyncio.sleep(0), "late") is None
+    assert not runtime._tasks
