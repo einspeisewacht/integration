@@ -1,6 +1,6 @@
 # Changelog
 
-## Unveröffentlicht
+## 0.1.5 – 2026-11-02
 
 - **Fehler behoben:** Lief beim Neuladen eines Eintrags (z. B. nach „Neu konfigurieren“) gerade ein Abruf von SMARD.de, konnte er danach noch fertig werden und Sekunden später einen alten Stand über die gespeicherten Daten des neu geladenen Eintrags schreiben. Abrufe im Hintergrund werden jetzt beim Entladen abgebrochen und abgewartet, bevor gespeichert wird.
 
