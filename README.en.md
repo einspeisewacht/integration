@@ -3,6 +3,7 @@
   <img alt="Einspeisewacht – every quarter hour in view." src="https://raw.githubusercontent.com/einspeisewacht/integration/main/assets/github/readme-header-light@2x.png" width="640">
 </picture>
 
+[![HACS Default](https://img.shields.io/badge/HACS-Default-005B8C.svg)](https://hacs.xyz/)
 [![Release](https://img.shields.io/github/v/release/einspeisewacht/integration?color=008351)](https://github.com/einspeisewacht/integration/releases)
 [![CI](https://github.com/einspeisewacht/integration/actions/workflows/ci.yml/badge.svg)](https://github.com/einspeisewacht/integration/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-F5A623.svg)](LICENSE)
@@ -64,11 +65,12 @@ Sources and details (German): [docs/ENTWICKLUNG.md](docs/ENTWICKLUNG.md), sectio
 
 **One click:** [![Open in HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=einspeisewacht&repository=integration&category=integration) → download, restart Home Assistant → [![Add integration](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=einspeisewacht)
 
-Or by hand:
+Or by hand – Einspeisewacht has been in the HACS default list since November 2026, no custom repository needed:
 
-1. HACS → ⋮ → *Custom repositories* → `https://github.com/einspeisewacht/integration`, type *Integration*.
-2. Search for Einspeisewacht and download it. Restart Home Assistant.
-3. *Settings → Devices & services → Add integration → Einspeisewacht*.
+1. Search for Einspeisewacht in HACS and download it. Restart Home Assistant.
+2. *Settings → Devices & services → Add integration → Einspeisewacht*.
+
+Note: the icon is currently missing in the HACS dashboard ([HACS issue #5171](https://github.com/hacs/integration/issues/5171)); it is shown in the Home Assistant settings.
 
 ## Setup
 

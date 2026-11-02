@@ -131,7 +131,7 @@ Nicht verabschiedet (2./3. Lesung voraussichtlich 9.–13.11.2026, Bundesrat 20.
 - GitHub: Organisation `einspeisewacht`, Repo `integration` (öffentlich seit 2026-10-26, damit die HA-Tests in CI laufen und HACS installieren kann). Brand-Bilder seit 2026-10-26 (`docs/BRAND.md`).
 - **Releases, auch Betas, als reguläre GitHub-Releases** (nicht „Pre-release“): Ohne reguläres Release nimmt HACS den letzten Commit und sucht wegen `zip_release` eine ZIP unter `releases/download/<commit>/` – 404 (erlebt mit 0.1.0b2, 2026-10-26).
 - Kein `categories` im Manifest: hassfest lehnt das Feld für Custom-Integrationen ab („not a valid option“, geprüft 2026-10-26 mit `energy` und Unterkategorien).
-- **Bekanntmachen:** simon42 Community ([Thema 94942](https://community.simon42.com/t/einspeisewacht-was-dich-negative-strompreise-bei-der-pv-einspeisung-kosten-hacs-integration/94942), 2026-10-26). Offen: HA Community (englisch), Hinweis im evcc-PR #33635, Antrag HACS-Standardliste.
+- **Bekanntmachen:** simon42 Community ([Thema 94942](https://community.simon42.com/t/einspeisewacht-was-dich-negative-strompreise-bei-der-pv-einspeisung-kosten-hacs-integration/94942), 2026-10-26). HACS-Standardliste: aufgenommen 2026-11-02 ([hacs/default#12787](https://github.com/hacs/default/pull/12787)), README seitdem mit Installation über die HACS-Suche. Offen: HA Community (englisch), Hinweis im evcc-PR #33635.
 
 ### GitHub-Einstellungen (Stand 2026-10-27, wie Eilwacht)
 
