@@ -318,6 +318,8 @@ Die Langzeitstatistik der gelöschten Sensoren bleibt in Home Assistant erhalten
 
 Bitte als [Issue](https://github.com/einspeisewacht/integration/issues) – am besten mit Diagnose-Datei und den Versionen von Home Assistant und Einspeisewacht. Sicherheitslücken bitte vertraulich, siehe [SECURITY.md](SECURITY.md).
 
+Pull Requests sind willkommen. Wie, steht in [CONTRIBUTING.md](CONTRIBUTING.md).
+
 ## Weitere Wachten
 
 Vom selben Autor und nach demselben Muster gebaut: Einrichtung über die Oberfläche, deutsch und englisch, schonend für SD-Karten.

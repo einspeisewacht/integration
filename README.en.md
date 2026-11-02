@@ -267,6 +267,8 @@ Long-term statistics of the deleted sensors stay until you remove them under *De
 
 Please open an [issue](https://github.com/einspeisewacht/integration/issues), ideally with the diagnostics file and your Home Assistant and Einspeisewacht versions. Security issues privately, see [SECURITY.md](SECURITY.md).
 
+Pull requests are welcome, see [CONTRIBUTING.md](CONTRIBUTING.md) (with an English summary at the end).
+
 ## Sister integrations
 
 By the same author and built the same way: set up in the UI, in German and English, gentle on SD cards.
