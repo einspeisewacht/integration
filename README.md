@@ -17,6 +17,14 @@
 
 Die Oberfläche gibt es auf Deutsch und Englisch; sie folgt der Sprache deines Home Assistant.
 
+## Inhalt
+
+- [Was Einspeisewacht kann](#was-einspeisewacht-kann) · [Welche Regel gilt](#welche-regel-gilt--51-eeg) · [Was Einspeisewacht nicht kann](#was-einspeisewacht-nicht-kann)
+- **Loslegen:** [Voraussetzungen](#voraussetzungen) · [Installation](#installation-hacs) · [Einrichtung](#einrichtung)
+- **Nutzen:** [Entitäten](#entitäten) · [Bericht für einen Zeitraum](#bericht-für-einen-zeitraum) · [Statistik nachtragen](#statistik-nachtragen)
+- **[Was du damit bauen kannst](#was-du-damit-bauen-kannst):** [Dashboard-Karte](#dashboard-karte-mit-tages--und-jahreswerten) · [Blueprint](#fertiger-blueprint) · [Speicher laden](#speicher-laden-solange-es-keine-vergütung-gibt-als-eigene-automation) · [Hinweis am Vortag](#hinweis-am-vortag)
+- **Mehr:** [Datenschutz](#datenschutz) · [Fehlerbehebung](#fehlerbehebung) · [Entfernen](#entfernen) · [Fehler melden](#fehler-melden) · [Weitere Wachten](#weitere-wachten) · [Lizenz und Quellen](#lizenz-und-quellen)
+
 ## Was Einspeisewacht kann
 
 - **Einspeisung vergütet / unvergütet** (kWh) und **Erlös / entgangener Erlös** (€) – mit Langzeitstatistik, also auch für Tag, Monat und Jahr.

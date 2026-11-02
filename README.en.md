@@ -17,6 +17,14 @@
 
 The integration's UI is available in German and English and follows your Home Assistant language. It is built for German law (EEG) and the German-Luxembourg bidding zone.
 
+## Contents
+
+- [What Einspeisewacht does](#what-einspeisewacht-does) · [Which rule applies](#which-rule-applies--51-eeg) · [What Einspeisewacht does not do](#what-einspeisewacht-does-not-do)
+- **Getting started:** [Requirements](#requirements) · [Installation](#installation-hacs) · [Setup](#setup)
+- **Using it:** [Entities](#entities) · [Report for a period](#report-for-a-period) · [Import statistics](#import-statistics)
+- **[Examples](#examples):** [Dashboard card](#dashboard-card-with-daily-and-yearly-values)
+- **More:** [Privacy](#privacy) · [Troubleshooting](#troubleshooting) · [Removal](#removal) · [Reporting issues](#reporting-issues) · [Sister integrations](#sister-integrations) · [License and sources](#license-and-sources)
+
 ## What Einspeisewacht does
 
 - **Feed-in remunerated / not remunerated** (kWh) and **revenue / lost revenue** (€), with long-term statistics for day, month and year.
