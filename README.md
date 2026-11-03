@@ -10,7 +10,7 @@
 
 🇩🇪 **Deutsch** · 🇬🇧 [English](https://github.com/einspeisewacht/integration/blob/main/README.en.md)
 
-> ℹ️ **Neu.** Einspeisewacht läuft seit Oktober 2026 auf echten Anlagen. Die EEG-Novelle 2027 ist noch im Bundestag; was sich für bestehende Anlagen ändert, kommt mit einem Update. Rückmeldungen sind sehr willkommen – siehe [Fehler melden](#fehler-melden).
+> ℹ️ **EEG-Novelle 2027:** Sie ist noch im Bundestag; was sich für bestehende Anlagen ändert, kommt mit einem Update.
 
 **Wie viel deiner PV-Einspeisung wird wegen negativer Strompreise nicht vergütet?** Seit dem Solarspitzengesetz verlieren neue PV-Anlagen die Einspeisevergütung in jeder Viertelstunde mit negativem Börsenpreis. Einspeisewacht rechnet das in Home Assistant für dich mit: Viertelstunde für Viertelstunde, mit dem Preis genau dieser Viertelstunde – und zeigt, was dich das kostet und wie viel Förderzeit dafür am Ende angehängt wird.
 

@@ -10,7 +10,7 @@
 
 🇩🇪 [Deutsch](https://github.com/einspeisewacht/integration/blob/main/README.md) · 🇬🇧 **English**
 
-> ℹ️ **New.** Einspeisewacht ("feed-in watch") has been running on real plants since October 2026. The EEG amendment for 2027 is still in parliament; any changes for existing plants will follow in an update. Feedback is very welcome – see [Reporting issues](#reporting-issues).
+> ℹ️ **EEG amendment 2027:** It is still in parliament; any changes for existing plants will follow in an update.
 
 **How much of your PV feed-in goes unpaid because of negative electricity prices?** Under Germany's Solarspitzengesetz, new PV plants lose their feed-in tariff in every quarter hour with a negative day-ahead price. Einspeisewacht tracks this in Home Assistant, quarter hour by quarter hour, with the price of exactly that quarter hour – and shows what it costs you and how much remuneration time is added at the end in return.
 
