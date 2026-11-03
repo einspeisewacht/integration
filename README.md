@@ -7,12 +7,15 @@
 [![Release](https://img.shields.io/github/v/release/einspeisewacht/integration?color=008351)](https://github.com/einspeisewacht/integration/releases)
 [![CI](https://github.com/einspeisewacht/integration/actions/workflows/ci.yml/badge.svg)](https://github.com/einspeisewacht/integration/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-F5A623.svg)](LICENSE)
+[![Live-Demo](https://img.shields.io/badge/Live--Demo-ausprobieren-F5A623.svg)](https://einspeisewacht.github.io/integration/?lang=de)
 
 🇩🇪 **Deutsch** · 🇬🇧 [English](https://github.com/einspeisewacht/integration/blob/main/README.en.md)
 
 > ℹ️ **EEG-Novelle 2027:** Sie ist noch im Bundestag; was sich für bestehende Anlagen ändert, kommt mit einem Update.
 
 **Wie viel deiner PV-Einspeisung wird wegen negativer Strompreise nicht vergütet?** Seit dem Solarspitzengesetz verlieren neue PV-Anlagen die Einspeisevergütung in jeder Viertelstunde mit negativem Börsenpreis. Einspeisewacht rechnet das in Home Assistant für dich mit: Viertelstunde für Viertelstunde, mit dem Preis genau dieser Viertelstunde – und zeigt, was dich das kostet und wie viel Förderzeit dafür am Ende angehängt wird.
+
+**Ausprobieren ohne Installation:** Die [Live-Demo](https://einspeisewacht.github.io/integration/?lang=de) zeigt Dashboard-Karte, Kalender, Hinweis am Vortag, Gerät und Bericht für eine Anlage mit und eine ohne Smart-Meter-Gateway – mit erfundenen Erträgen und Preisen, aber gerechnet vom Code der Integration.
 
 > **Keine Rechts- oder Abrechnungsberatung.** Die Werte sind eine Orientierung. Maßgeblich ist die Abrechnung deines Netzbetreibers – er rechnet mit den Messwerten seines Zählers, Home Assistant meist mit Wechselrichter- oder Lesekopfwerten.
 

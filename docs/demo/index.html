@@ -1,0 +1,653 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Einspeisewacht – Live-Demo</title>
+    <meta
+      name="description"
+      content="Einspeisewacht zum Ausprobieren: unvergütete Viertelstunden bei negativen Preisen, Erlös und Nachholung – mit erfundenen Anlagen und Preisen, gerechnet vom Code der Integration."
+    />
+    <link rel="icon" href="../../custom_components/einspeisewacht/brand/icon.png" />
+    <style>
+      /* Page chrome in the Einspeisewacht colours (docs/BRAND.md), the
+         dashboard with Home Assistant's default theme variables. */
+      :root {
+        color-scheme: light;
+        --page-bg: #faf7f2;
+        --page-text: #1f1c18;
+        --page-muted: #6b6357;
+        --page-line: #e4ddd1;
+        --brand: #008351;
+        --accent: #f5a623;
+        --control-bg: #ffffff;
+        --card-background-color: #ffffff;
+        --primary-text-color: #212121;
+        --secondary-text-color: #727272;
+        --secondary-background-color: #f2f2f2;
+        --divider-color: rgba(0, 0, 0, 0.12);
+        --state-icon-color: #44739e;
+        --paid: #27ae60;
+        --unpaid: #e6007e;
+        --price: #44739e;
+      }
+      :root[data-theme="dark"] {
+        color-scheme: dark;
+        --page-bg: #14181d;
+        --page-text: #ece8e1;
+        --page-muted: #b9b2a6;
+        --page-line: #2a3038;
+        --brand: #3dbb86;
+        --control-bg: #1d232a;
+        --card-background-color: #1c1c1c;
+        --primary-text-color: #e1e1e1;
+        --secondary-text-color: #9b9b9b;
+        --secondary-background-color: #282828;
+        --divider-color: rgba(225, 225, 225, 0.12);
+        --state-icon-color: #6aa7d8;
+        --price: #6aa7d8;
+      }
+      * { box-sizing: border-box; }
+      body { margin: 0; background: var(--page-bg); color: var(--page-text);
+        font: 15px/1.5 Roboto, system-ui, -apple-system, "Segoe UI", sans-serif; }
+      .page { max-width: 1280px; margin: 0 auto; padding: 24px 16px 48px; }
+      header { display: flex; gap: 14px; align-items: center; margin-bottom: 20px; }
+      header img { width: 52px; height: 52px; border-radius: 12px; }
+      h1 { margin: 0; font-size: 24px; line-height: 1.2; }
+      h1 span { color: var(--page-muted); font-weight: 400; }
+      .tagline { margin: 2px 0 0; color: var(--page-muted); }
+      header a.repo { margin-left: auto; color: var(--brand); text-decoration: none; font-weight: 600; white-space: nowrap; }
+      .controls { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: end; margin-bottom: 20px; }
+      .group { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+      .group > span { font-size: 12px; color: var(--page-muted); text-transform: uppercase; letter-spacing: .04em; }
+      .seg { display: inline-flex; flex-wrap: wrap; max-width: 100%; overflow: hidden;
+        border: 1px solid var(--page-line); border-radius: 8px; background: var(--control-bg); }
+      .seg button { border: 0; border-right: 1px solid var(--page-line); background: none; color: inherit;
+        font: inherit; padding: 6px 12px; cursor: pointer; }
+      .seg button:last-child { border-right: 0; }
+      .seg button[aria-pressed="true"] { background: var(--brand); color: #fff; }
+      .seg button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+      svg.mdi { width: 1em; height: 1em; fill: currentColor; flex: none; vertical-align: -0.125em; }
+      .banner { display: flex; gap: 10px; align-items: center; margin-bottom: 20px; padding: 10px 14px;
+        border-radius: 10px; border: 1px solid color-mix(in srgb, var(--accent) 60%, transparent);
+        background: color-mix(in srgb, var(--accent) 14%, var(--page-bg)); font-size: 14px; }
+      .banner svg.mdi { font-size: 22px; color: var(--accent); }
+
+      /* Dashboard: Home Assistant's sections view. */
+      .sections { display: grid; gap: 24px 16px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); }
+      .section { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+      .section.wide { grid-column: 1 / -1; }
+      @media (max-width: 720px) { header a.repo { display: none; } }
+      .heading { display: flex; align-items: center; gap: 8px; min-height: 36px; font-size: 16px; font-weight: 500;
+        color: var(--primary-text-color); }
+      .heading svg.mdi { font-size: 20px; color: var(--secondary-text-color); }
+      .card { background: var(--card-background-color); color: var(--primary-text-color);
+        border: 1px solid var(--divider-color); border-radius: 12px; overflow: hidden; }
+      .card-title { padding: 12px 16px 0; font-size: 16px; font-weight: 500; }
+      .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+      .stat { padding: 12px 14px; }
+      .stat .name { font-size: 13px; color: var(--secondary-text-color); }
+      .stat .value { font-size: 26px; line-height: 1.25; }
+      .stat .value span { font-size: 14px; color: var(--secondary-text-color); margin-left: 2px; }
+      .tile { display: flex; gap: 12px; align-items: center; padding: 10px 12px; }
+      .tile .shape { flex: none; width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center;
+        font-size: 20px; }
+      .tile .shape.paid { color: var(--paid); background: color-mix(in srgb, var(--paid) 18%, transparent); }
+      .tile .shape.unpaid { color: var(--unpaid); background: color-mix(in srgb, var(--unpaid) 18%, transparent); }
+      .tile b { display: block; font-size: 14px; font-weight: 500; }
+      .tile small { display: block; font-size: 13px; color: var(--secondary-text-color); }
+      .rows { padding: 4px 0; }
+      .row { display: flex; align-items: center; gap: 16px; padding: 7px 16px; font-size: 14px; }
+      .row svg.mdi { font-size: 24px; color: var(--state-icon-color); }
+      .row .value { margin-left: auto; text-align: right; }
+      .row small { display: block; color: var(--secondary-text-color); font-size: 12px; }
+      .device { padding: 10px 16px 0; font-size: 13px; color: var(--secondary-text-color); }
+      .note { padding: 8px 16px 12px; font-size: 13px; color: var(--secondary-text-color); }
+      svg.chart { display: block; width: 100%; height: auto; }
+      svg.chart text { fill: var(--secondary-text-color); font-size: 11px; }
+      svg.chart .grid { stroke: var(--divider-color); }
+      svg.chart .zero { stroke: var(--secondary-text-color); }
+      svg.chart .now { stroke: var(--secondary-text-color); stroke-dasharray: 3 3; }
+      .legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 14px; padding: 0 12px 10px; font-size: 12px; }
+      .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; }
+      .cal .day { display: flex; justify-content: space-between; padding: 8px 12px; font-size: 14px;
+        background: var(--secondary-background-color); }
+      .cal .item { display: grid; grid-template-columns: max-content 14px 1fr; gap: 0 10px; align-items: baseline; padding: 8px 12px;
+        font-size: 13px; border-bottom: 1px solid var(--divider-color); }
+      .cal .item i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+      .cal .item small { display: block; color: var(--secondary-text-color); }
+      .cal .empty { padding: 12px; font-size: 13px; color: var(--secondary-text-color); }
+      .phone { padding: 14px 12px; display: flex; flex-direction: column; gap: 8px;
+        background: linear-gradient(160deg, #0f3b2a, #1f6247 55%, #4f8f72); }
+      .push { background: rgba(255, 255, 255, 0.88); color: #1b1b1b; border-radius: 16px; padding: 9px 12px; font-size: 13px; }
+      :root[data-theme="dark"] .push { background: rgba(30, 30, 30, 0.88); color: #eee; }
+      .push .app { display: flex; gap: 6px; align-items: center; font-size: 11px; opacity: 0.75; }
+      .push .app span:last-child { margin-left: auto; }
+      .push b { display: block; }
+      .phone .quiet { color: #fff; opacity: 0.85; text-align: center; font-size: 13px; padding: 12px; }
+      .blueprint { padding: 10px 16px 12px; font-size: 13px; color: var(--secondary-text-color); }
+      details { padding: 0 16px 12px; }
+      summary { cursor: pointer; font-size: 14px; color: var(--brand); padding: 4px 0; }
+      pre { margin: 6px 0 0; padding: 10px 12px; border-radius: 8px; background: var(--secondary-background-color);
+        font: 12px/1.5 ui-monospace, Consolas, monospace; overflow: auto; max-height: 420px; }
+      table.year { width: 100%; border-collapse: collapse; font-size: 13px; }
+      table.year th, table.year td { padding: 6px 16px; text-align: right; border-bottom: 1px solid var(--divider-color); }
+      table.year th:first-child, table.year td:first-child { text-align: left; }
+      table.year th { font-weight: 500; color: var(--secondary-text-color); }
+      .below { margin-top: 28px; display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); }
+      .box { border: 1px solid var(--page-line); border-radius: 10px; padding: 12px 14px; background: var(--control-bg); }
+      .box h2 { margin: 0 0 6px; font-size: 14px; }
+      .box p, .box li { margin: 0 0 6px; color: var(--page-muted); font-size: 14px; }
+      .box ul { margin: 0; padding-left: 18px; }
+      a { color: var(--brand); }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <header>
+        <img src="../../custom_components/einspeisewacht/brand/icon.png" alt="" />
+        <div>
+          <h1>Einspeisewacht <span data-t="demo"></span></h1>
+          <p class="tagline" data-t="tagline"></p>
+        </div>
+        <a class="repo" href="https://github.com/einspeisewacht/integration">GitHub →</a>
+      </header>
+
+      <div class="controls">
+        <div class="group"><span data-t="plantLabel"></span><div class="seg" id="plant"></div></div>
+        <div class="group"><span data-t="time"></span><div class="seg" id="time"></div></div>
+        <div class="group"><span data-t="lang"></span><div class="seg" id="lang"></div></div>
+        <div class="group"><span data-t="theme"></span><div class="seg" id="dark"></div></div>
+      </div>
+
+      <div class="banner" id="banner"></div>
+      <main class="sections" id="dashboard"></main>
+
+      <div class="below">
+        <div class="box">
+          <h2 data-t="about"></h2>
+          <p data-t="data"></p>
+          <p data-t="advice"></p>
+          <p data-t="credits"></p>
+        </div>
+        <div class="box">
+          <h2 data-t="plantsTitle"></h2>
+          <ul id="plant-list"></ul>
+        </div>
+        <div class="box">
+          <h2 data-t="build"></h2>
+          <p data-t="cards"></p>
+          <p><a href="https://github.com/einspeisewacht/integration#dashboard-karte-mit-tages--und-jahreswerten" data-t="readme"></a></p>
+        </div>
+      </div>
+    </div>
+
+    <script type="module">
+      import { PATHS } from "./icons.js";
+
+      const PLANTS = ["dach", "garage"];
+      const MOMENTS = ["mai", "januar"];
+      const BLUEPRINT_URL =
+        "https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=" +
+        "https%3A%2F%2Fgithub.com%2Feinspeisewacht%2Fintegration%2Fblob%2Fmain%2Fblueprints%2Fautomation%2F" +
+        "einspeisewacht%2Fvergutung_aus_an.yaml";
+
+      const TEXT = {
+        de: {
+          demo: "Live-Demo",
+          tagline: "Wie viel deiner PV-Einspeisung wird wegen negativer Strompreise nicht vergütet? So zeigt es Einspeisewacht in Home Assistant.",
+          plantLabel: "Anlage",
+          time: "Zeitpunkt",
+          lang: "Sprache",
+          theme: "Darstellung",
+          plants: { dach: "Dach (mit Smart-Meter-Gateway)", garage: "Garage (noch ohne Gateway)" },
+          moments: { mai: "Sonniger Sonntag im Mai", januar: "Grauer Tag im Januar" },
+          auto: "Auto", light: "Hell", dark: "Dunkel",
+          banner: (time) => `Alle Anlagen, Erträge und Preise sind erfunden – nur zur Vorführung. Demo-Zeit: ${time} Uhr.`,
+          feedIn: "Einspeisung",
+          perDay: "Einspeisung je Tag",
+          paid: "Vergütet",
+          unpaid: "Unvergütet (0 ct)",
+          revenueToday: "Erlös heute",
+          lostToday: "Entgangen heute",
+          revenueYear: "Erlös Jahr",
+          lostYear: "Entgangen Jahr",
+          shadowToday: "Entgangen heute bei greifender Regel",
+          shadowYear: "Entgangen Jahr bei greifender Regel",
+          negativeTitle: "Negative Preise in diesem Jahr",
+          without: "Ohne Vergütung",
+          nowTile: "Jetzt",
+          states: { on: "Vergütet", off: "Unvergütet", unknown: "Unbekannt" },
+          entities: {
+            energy_paid: "Einspeisung vergütet",
+            energy_unpaid: "Einspeisung unvergütet",
+            revenue: "Erlös",
+            revenue_lost: "Entgangener Erlös",
+            negative_quarter_hours: "Viertelstunden ohne Vergütung",
+            shadow_energy_unpaid: "Unvergütet bei greifender Regel",
+            shadow_revenue_lost: "Entgangener Erlös bei greifender Regel",
+            shadow_negative_quarter_hours: "Viertelstunden ohne Vergütung bei greifender Regel",
+            active_rule: "Regel",
+            catch_up: "Nachholung",
+            remunerated_until: "Vergütung bis",
+            remunerated: "Vergütung aktiv",
+          },
+          rules: { quarter_hour: "Jede negative Viertelstunde", waiting_smart_meter: "Wartet auf iMSys" },
+          fullLoad: "Volllast-Viertelstunden",
+          ruleFrom: (d) => `gilt ab ${d}`,
+          rate: (r) => `Satz ${r} ct/kWh`,
+          shadowNote:
+            "Ohne Smart-Meter-Gateway greift die Regel noch nicht (§ 51 Abs. 2 EEG): alles wird vergütet. Die Werte „bei greifender Regel“ zeigen, was sonst entgangen wäre; Nachholung und „Vergütung bis“ entfallen.",
+          today: "Heute",
+          todayTitle: "Day-Ahead-Preis und Einspeisung",
+          priceLegend: "Preis (ct/kWh)",
+          kwhLegend: "Einspeisung je Viertelstunde",
+          nowMark: "jetzt",
+          calendar: "Kalender „Negative Preise“",
+          noWindows: "Keine negativen Preise heute und morgen.",
+          windowUnpaid: "Keine Einspeisevergütung",
+          windowPaid: "Negativer Preis (noch vergütet)",
+          lowest: (p) => `Niedrigster Day-Ahead-Preis: ${p} ct/kWh`,
+          notification: "Hinweis am Vortag",
+          quiet: "Keine Hinweise in den letzten 36 Stunden.",
+          pushTitle: "Negative Strompreise",
+          pushText: (a, b) => `${a}–${b} Uhr ohne Vergütung.`,
+          pushNote:
+            "So meldet die Automation „Hinweis am Vortag“ aus der README – 12 Stunden vor jedem Zeitfenster ohne Vergütung. Fertig zum Import gibt es den Blueprint, der beim Wegfall der Vergütung eigene Aktionen ausführt (z. B. Speicher laden):",
+          importBlueprint: "Blueprint „Bei negativem Preis umschalten“ →",
+          device: "Gerät",
+          year: "Jahr bisher",
+          yearTitle: "Einspeisung je Monat (Aktion „Bericht“)",
+          kwh: "kWh",
+          total: "Gesamt",
+          response: "Antwort der Aktion anzeigen",
+          about: "Erfunden, aber echt gerechnet",
+          data:
+            "Wetter, Anlagen, Einspeisung und Day-Ahead-Preise sind erfunden. Gebucht werden sie vom Code der Integration, Viertelstunde für Viertelstunde seit dem 1. Januar 2026 – genau wie in deinem Home Assistant.",
+          advice: "Keine Rechts- oder Abrechnungsberatung: maßgeblich sind Gesetz und Abrechnung deines Netzbetreibers.",
+          credits: "Symbole: Material Design Icons (Pictogrammers Free License).",
+          plantsTitle: "Die erfundenen Anlagen",
+          plantDesc: (p) =>
+            `${num(p.power_kw, 1)} kWp, in Betrieb seit ${dateFmt(p.commissioned, { day: "numeric", month: "long", year: "numeric" })}, ` +
+            (p.smart_meter_installed ? "mit Smart-Meter-Gateway" : "noch ohne Smart-Meter-Gateway") +
+            `, Beispielsatz ${num(p.rate_ct, 2)} ct/kWh`,
+          build: "Selbst bauen",
+          cards: "Die Karte „Einspeisung“ nutzt nur Bordmittel (Statistik-Diagramm, Statistik, Entitäten, Kachel); die README hat sie fertig zum Einfügen.",
+          readme: "Karte in der README →",
+        },
+        en: {
+          demo: "live demo",
+          tagline: "How much of your PV feed-in goes unpaid because of negative electricity prices? This is how Einspeisewacht shows it in Home Assistant.",
+          plantLabel: "Plant",
+          time: "Moment",
+          lang: "Language",
+          theme: "Theme",
+          plants: { dach: "Roof (with smart meter gateway)", garage: "Garage (no gateway yet)" },
+          moments: { mai: "Sunny Sunday in May", januar: "Grey day in January" },
+          auto: "Auto", light: "Light", dark: "Dark",
+          banner: (time) => `All plants, yields and prices are made up – for demonstration only. Demo time: ${time}.`,
+          feedIn: "Feed-in",
+          perDay: "Feed-in per day",
+          paid: "Remunerated",
+          unpaid: "Not remunerated (0 ct)",
+          revenueToday: "Revenue today",
+          lostToday: "Lost today",
+          revenueYear: "Revenue year",
+          lostYear: "Lost year",
+          shadowToday: "Lost today if the rule applied",
+          shadowYear: "Lost year if the rule applied",
+          negativeTitle: "Negative prices this year",
+          without: "Without remuneration",
+          nowTile: "Now",
+          states: { on: "Paid", off: "Unpaid", unknown: "Unknown" },
+          entities: {
+            energy_paid: "Feed-in remunerated",
+            energy_unpaid: "Feed-in not remunerated",
+            revenue: "Revenue",
+            revenue_lost: "Lost revenue",
+            negative_quarter_hours: "Quarter hours without remuneration",
+            shadow_energy_unpaid: "Not remunerated if the rule applied",
+            shadow_revenue_lost: "Lost revenue if the rule applied",
+            shadow_negative_quarter_hours: "Quarter hours without remuneration if the rule applied",
+            active_rule: "Rule",
+            catch_up: "Extension",
+            remunerated_until: "Remunerated until",
+            remunerated: "Remunerated",
+          },
+          rules: { quarter_hour: "Every negative quarter hour", waiting_smart_meter: "Waiting for iMSys" },
+          fullLoad: "full-load quarter hours",
+          ruleFrom: (d) => `applies from ${d}`,
+          rate: (r) => `rate ${r} ct/kWh`,
+          shadowNote:
+            "Without a smart meter gateway the rule does not apply yet (§ 51(2) EEG): everything is paid. The “if the rule applied” values show what would be lost otherwise; extension and “remunerated until” are left out.",
+          today: "Today",
+          todayTitle: "Day-ahead price and feed-in",
+          priceLegend: "Price (ct/kWh)",
+          kwhLegend: "Feed-in per quarter hour",
+          nowMark: "now",
+          calendar: "Calendar “Negative prices”",
+          noWindows: "No negative prices today or tomorrow.",
+          windowUnpaid: "No feed-in remuneration",
+          windowPaid: "Negative price (still remunerated)",
+          lowest: (p) => `Lowest day-ahead price: ${p} ct/kWh`,
+          notification: "Notice the day before",
+          quiet: "No notices in the last 36 hours.",
+          pushTitle: "Negative Strompreise",
+          pushText: (a, b) => `${a}–${b} Uhr ohne Vergütung.`,
+          pushNote:
+            "This is what the README automation “Hinweis am Vortag” sends (German text) – 12 hours before each window without remuneration. Ready to import is the blueprint that runs your own actions when remuneration stops (e.g. charge the battery):",
+          importBlueprint: "Blueprint “switch on negative price” →",
+          device: "Device",
+          year: "Year so far",
+          yearTitle: "Feed-in per month (action “Report”)",
+          kwh: "kWh",
+          total: "Total",
+          response: "Show the action's response",
+          about: "Made up, but computed for real",
+          data:
+            "Weather, plants, feed-in and day-ahead prices are made up. They are booked by the integration's own code, quarter hour by quarter hour since 1 January 2026 – just as in your Home Assistant.",
+          advice: "No legal or billing advice: the law and your grid operator's statement are what count.",
+          credits: "Icons: Material Design Icons (Pictogrammers Free License).",
+          plantsTitle: "The made-up plants",
+          plantDesc: (p) =>
+            `${num(p.power_kw, 1)} kWp, running since ${dateFmt(p.commissioned, { day: "numeric", month: "long", year: "numeric" })}, ` +
+            (p.smart_meter_installed ? "with smart meter gateway" : "no smart meter gateway yet") +
+            `, example rate ${num(p.rate_ct, 2)} ct/kWh`,
+          build: "Build it yourself",
+          cards: "The “Feed-in” card uses built-in cards only (statistics graph, statistic, entities, tile); the README has it ready to paste.",
+          readme: "Card in the README →",
+        },
+      };
+
+      const params = new URLSearchParams(location.search);
+      const pick = (value, allowed, fallback) => (allowed.includes(value) ? value : fallback);
+      const state = {
+        plant: pick(params.get("plant"), PLANTS, "dach"),
+        time: pick(params.get("time"), MOMENTS, "mai"),
+        lang: pick(params.get("lang"), ["de", "en"], navigator.language?.startsWith("de") ? "de" : "en"),
+        dark: pick(params.get("dark"), ["auto", "0", "1"], "auto"),
+      };
+      const t = () => TEXT[state.lang];
+      const saveState = () => history.replaceState(null, "", `?${new URLSearchParams(state)}`);
+      const systemDark = matchMedia("(prefers-color-scheme: dark)");
+      const isDark = () => (state.dark === "auto" ? systemDark.matches : state.dark === "1");
+
+      const escapeHtml = (value) =>
+        String(value ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+      const icon = (name) => `<svg class="mdi" viewBox="0 0 24 24" aria-hidden="true"><path d="${PATHS[name]}" /></svg>`;
+      const num = (value, digits) =>
+        new Intl.NumberFormat(state.lang, { minimumFractionDigits: digits, maximumFractionDigits: digits }).format(value);
+      const eur = (value) => new Intl.NumberFormat(state.lang, { style: "currency", currency: "EUR" }).format(value);
+      const dateFmt = (iso, opts) => new Date(iso).toLocaleDateString(state.lang, { timeZone: "Europe/Berlin", ...opts });
+      const clock = (iso) =>
+        new Date(iso).toLocaleTimeString("de", { timeZone: "Europe/Berlin", hour: "2-digit", minute: "2-digit" });
+      const timeFmt = (iso) =>
+        new Date(iso).toLocaleTimeString(state.lang, { timeZone: "Europe/Berlin", hour: "2-digit", minute: "2-digit" });
+
+      const cache = {};
+      async function load(key) {
+        cache[key] ??= await (await fetch(`data/${key}.json`)).json();
+        return cache[key];
+      }
+
+      function niceStep(max) {
+        const raw = max / 4;
+        const p = 10 ** Math.floor(Math.log10(raw));
+        return [1, 2, 2.5, 5, 10].map((m) => m * p).find((s) => s >= raw);
+      }
+
+      // Stacked bars (paid below, unpaid on top), like statistics-graph bar-stack.
+      function stackChart(groups, W = 400, H = 200) {
+        const L = 40, R = 8, T = 10, B = 24;
+        const max = Math.max(1, ...groups.map((g) => g.paid + g.unpaid));
+        const step = niceStep(max);
+        const top = Math.ceil(max / step) * step;
+        const y = (v) => T + (1 - v / top) * (H - T - B);
+        const slot = (W - L - R) / groups.length;
+        let svg = "";
+        for (let v = 0; v <= top + 1e-9; v += step) {
+          svg += `<line class="grid" x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" /><text x="${L - 6}" y="${y(v) + 4}" text-anchor="end">${num(v, 0)}</text>`;
+        }
+        groups.forEach((g, i) => {
+          const x = L + i * slot + slot * 0.15;
+          const w = slot * 0.7;
+          svg += `<rect x="${x}" y="${y(g.paid)}" width="${w}" height="${y(0) - y(g.paid)}" fill="var(--paid)"><title>${escapeHtml(g.title)}: ${num(g.paid, 1)} kWh</title></rect>`;
+          svg += `<rect x="${x}" y="${y(g.paid + g.unpaid)}" width="${w}" height="${y(g.paid) - y(g.paid + g.unpaid)}" fill="var(--unpaid)"><title>${escapeHtml(g.title)}: ${num(g.unpaid, 1)} kWh</title></rect>`;
+          if (g.label) svg += `<text x="${x + w / 2}" y="${H - 6}" text-anchor="middle">${g.label}</text>`;
+        });
+        return `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img">${svg}</svg>`;
+      }
+
+      const legend = (tx) =>
+        `<div class="legend"><span><i style="background:var(--paid)"></i>${tx.paid}</span><span><i style="background:var(--unpaid)"></i>${tx.unpaid}</span></div>`;
+
+      const stat = (name, value) =>
+        `<div class="card stat"><div class="name">${escapeHtml(name)}</div><div class="value">${num(value, 2)}<span>€</span></div></div>`;
+
+      const row = (mdi, name, value, note = "") =>
+        `<div class="row">${icon(mdi)}<span>${escapeHtml(name)}${note ? `<small>${escapeHtml(note)}</small>` : ""}</span><span class="value">${value}</span></div>`;
+
+      // The README's card "Dashboard-Karte mit Tages- und Jahreswerten".
+      function cardSection(view) {
+        const tx = t();
+        const days = view.days.map((d, i) => ({
+          title: dateFmt(d.date, { day: "numeric", month: "short" }),
+          label: i % 5 === 4 ? dateFmt(d.date, { day: "numeric", month: "numeric" }) : "",
+          paid: d.paid,
+          unpaid: d.unpaid,
+        }));
+        const stats = view.shadow
+          ? [stat(tx.revenueToday, view.today.revenue), stat(tx.shadowToday, view.today.shadow_revenue_lost),
+             stat(tx.revenueYear, view.year.revenue), stat(tx.shadowYear, view.year.shadow_revenue_lost)]
+          : [stat(tx.revenueToday, view.today.revenue), stat(tx.lostToday, view.today.revenue_lost),
+             stat(tx.revenueYear, view.year.revenue), stat(tx.lostYear, view.year.revenue_lost)];
+        const negative = view.shadow
+          ? row("timer-minus-outline", tx.entities.shadow_negative_quarter_hours, num(view.shadow_negative_quarter_hours, 0))
+          : row("timer-minus-outline", tx.without, num(view.negative_quarter_hours, 0)) +
+            row("calendar-plus", tx.entities.catch_up, `${num(view.catch_up.full_load_quarter_hours, 0)} ${tx.fullLoad}`) +
+            row("calendar-end", tx.entities.remunerated_until, dateFmt(view.catch_up.extended_end, { day: "numeric", month: "long", year: "numeric" }));
+        const paid = view.paid_now;
+        const nowState = paid === null ? tx.states.unknown : paid ? tx.states.on : tx.states.off;
+        return `
+          <section class="section">
+            <div class="heading">${icon("solar-power-variant")}<span>${tx.feedIn}</span></div>
+            <div class="card"><div class="card-title">${tx.perDay}</div>${stackChart(days)}${legend(tx)}</div>
+            <div class="grid">${stats.join("")}</div>
+            <div class="card"><div class="card-title">${tx.negativeTitle}</div><div class="rows">${negative}</div>
+              ${view.shadow ? `<div class="note">${tx.shadowNote}</div>` : ""}</div>
+            <div class="card tile"><div class="shape ${paid === false ? "unpaid" : "paid"}">${icon(paid === false ? "cash-remove" : "cash-check")}</div>
+              <div><b>${tx.nowTile}</b><small>${nowState}</small></div></div>
+          </section>`;
+      }
+
+      function todaySection(view) {
+        const tx = t();
+        const rows = view.curve;
+        const W = 400, H = 240, L = 30, R = 8, T = 14, B = 22;
+        const lo = Math.min(0, Math.floor(Math.min(...rows.map((r) => r.ct)) / 5) * 5);
+        const hi = Math.max(5, Math.ceil(Math.max(...rows.map((r) => r.ct)) / 5) * 5);
+        const kwhMax = Math.max(0.5, ...rows.map((r) => r.kwh ?? 0));
+        const x = (i) => L + (i / rows.length) * (W - L - R);
+        const y = (v) => T + (1 - (v - lo) / (hi - lo)) * (H - T - B);
+        const yk = (v) => H - B - (v / kwhMax) * (H - T - B) * 0.85;
+        let svg = "";
+        for (let v = lo; v <= hi; v += 5) {
+          svg += `<line class="${v === 0 ? "zero" : "grid"}" x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" /><text x="${L - 6}" y="${y(v) + 4}" text-anchor="end">${v}</text>`;
+        }
+        const bar = (W - L - R) / rows.length;
+        rows.forEach((r, i) => {
+          if (r.kwh) svg += `<rect x="${x(i)}" y="${yk(r.kwh)}" width="${bar - 0.5}" height="${H - B - yk(r.kwh)}" fill="var(--${r.paid ? "paid" : "unpaid"})" opacity=".55" />`;
+        });
+        let d = `M${x(0)},${y(rows[0].ct)}`;
+        rows.forEach((r, i) => (d += `H${x(i)}V${y(r.ct)}`));
+        svg += `<path d="${d}H${x(rows.length)}" fill="none" stroke="var(--price)" stroke-width="2" />`;
+        for (let h = 0; h <= 24; h += 4) svg += `<text x="${x(h * 4)}" y="${H - 6}" text-anchor="middle">${String(h).padStart(2, "0")}:00</text>`;
+        const nowIndex = rows.findIndex((r) => r.kwh === null);
+        if (nowIndex > 0) {
+          svg += `<line class="now" x1="${x(nowIndex)}" x2="${x(nowIndex)}" y1="${T}" y2="${H - B}" /><text x="${x(nowIndex) + 4}" y="${T + 10}">${tx.nowMark}</text>`;
+        }
+        return `
+          <section class="section">
+            <div class="heading">${icon("chart-line")}<span>${tx.today}</span></div>
+            <div class="card"><div class="card-title">${tx.todayTitle}</div>
+              <svg class="chart" viewBox="0 0 ${W} ${H}" role="img">${svg}</svg>
+              <div class="legend"><span><i style="background:var(--price)"></i>${tx.priceLegend}</span>
+                <span><i style="background:var(--paid)"></i>${tx.kwhLegend}: ${tx.paid}</span>
+                <span><i style="background:var(--unpaid)"></i>${tx.unpaid}</span></div></div>
+            ${calendarCard(view)}
+          </section>`;
+      }
+
+      function calendarCard(view) {
+        const tx = t();
+        const byDay = {};
+        for (const w of view.calendar) (byDay[dateFmt(w.start, { year: "numeric", month: "2-digit", day: "2-digit" })] ??= []).push(w);
+        const days = Object.values(byDay)
+          .map((items) => {
+            const head = `<div class="day"><span>${dateFmt(items[0].start, { weekday: "long" })}</span><span>${dateFmt(items[0].start, { day: "numeric", month: "long", year: "numeric" })}</span></div>`;
+            return head + items.map((w) => `<div class="item"><span>${timeFmt(w.start)} – ${timeFmt(w.end)}</span>
+              <i style="background:var(--${w.paid ? "paid" : "unpaid"})"></i>
+              <span>${w.paid ? tx.windowPaid : tx.windowUnpaid}<small>${tx.lowest(num(w.lowest_ct, 2))}</small></span></div>`).join("");
+          })
+          .join("");
+        return `<div class="heading">${icon("calendar-alert")}<span>${tx.calendar}</span></div>
+          <div class="card cal">${days || `<div class="empty">${tx.noWindows}</div>`}</div>`;
+      }
+
+      function notificationSection(view) {
+        const tx = t();
+        const pushes = view.pushes.length
+          ? view.pushes.map((p) => `<div class="push"><div class="app">${icon("bell-ring-outline")}<span>Home Assistant</span><span>${dateFmt(p.at, { weekday: "short" })}, ${timeFmt(p.at)}</span></div>
+              <b>${tx.pushTitle}</b>${tx.pushText(clock(p.start), clock(p.end))}</div>`).join("")
+          : `<div class="quiet">${tx.quiet}</div>`;
+        return `<div class="heading">${icon("bell-ring-outline")}<span>${tx.notification}</span></div>
+          <div class="card"><div class="phone">${pushes}</div>
+            <div class="blueprint">${tx.pushNote}<br /><a href="${BLUEPRINT_URL}" target="_blank" rel="noopener">${tx.importBlueprint}</a></div></div>`;
+      }
+
+      function deviceSection(data, view) {
+        const tx = t();
+        const e = tx.entities;
+        const tot = view.totals;
+        const kwh = (v) => `${num(v ?? 0, 2)} kWh`;
+        let rows =
+          row("transmission-tower-export", e.energy_paid, kwh(tot.energy_paid)) +
+          row("transmission-tower-off", e.energy_unpaid, kwh(tot.energy_unpaid)) +
+          row("cash-plus", e.revenue, eur(tot.revenue ?? 0)) +
+          row("cash-minus", e.revenue_lost, eur(tot.revenue_lost ?? 0)) +
+          row("timer-minus-outline", e.negative_quarter_hours, num(view.negative_quarter_hours, 0));
+        if (view.shadow) {
+          rows +=
+            row("transmission-tower-off", e.shadow_energy_unpaid, kwh(tot.shadow_energy_unpaid)) +
+            row("cash-minus", e.shadow_revenue_lost, eur(tot.shadow_revenue_lost ?? 0)) +
+            row("timer-minus-outline", e.shadow_negative_quarter_hours, num(view.shadow_negative_quarter_hours, 0));
+        } else {
+          rows +=
+            row("calendar-plus", e.catch_up, `${num(view.catch_up.full_load_quarter_hours, 0)} ${tx.fullLoad}`) +
+            row("calendar-end", e.remunerated_until, dateFmt(view.catch_up.extended_end, { day: "numeric", month: "long", year: "numeric" }));
+        }
+        const paid = view.paid_now;
+        rows += row(paid === false ? "cash-remove" : "cash-check", e.remunerated, paid === null ? tx.states.unknown : paid ? tx.states.on : tx.states.off);
+        const ruleNote = [view.applies_from ? tx.ruleFrom(dateFmt(view.applies_from, { day: "numeric", month: "numeric", year: "numeric" })) : "", tx.rate(num(data.plant.rate_ct, 2))]
+          .filter(Boolean)
+          .join(" · ");
+        rows += row("scale-balance", e.active_rule, escapeHtml(tx.rules[view.rule] ?? view.rule), ruleNote);
+        return `
+          <section class="section">
+            ${notificationSection(view)}
+            <div class="heading">${icon("solar-power-variant")}<span>${tx.device}</span></div>
+            <div class="card"><div class="device">${escapeHtml(view.device)}</div><div class="rows">${rows}</div></div>
+          </section>`;
+      }
+
+      function yaml(value, indent = "") {
+        if (Array.isArray(value)) {
+          if (!value.length) return "[]";
+          return value.map((item) => {
+            const body = yaml(item, indent + "  ");
+            return typeof item === "object" && item ? `\n${indent}- ${body.trimStart()}` : `\n${indent}- ${body}`;
+          }).join("");
+        }
+        if (value && typeof value === "object") {
+          return Object.entries(value).map(([k, v]) => {
+            const inner = yaml(v, indent + "  ");
+            return typeof v === "object" && v !== null && !(Array.isArray(v) && !v.length) ? `\n${indent}${k}:${inner}` : `\n${indent}${k}: ${inner}`;
+          }).join("");
+        }
+        return value === null ? "null" : String(value);
+      }
+
+      function yearSection(data) {
+        const tx = t();
+        const r = data.report;
+        const groups = r.months.map((m) => ({
+          title: m.month,
+          label: dateFmt(`${m.month}-15`, { month: "short" }),
+          paid: m.energy_paid_kwh,
+          unpaid: m.energy_unpaid_kwh,
+        }));
+        const table = `<table class="year"><tr><th></th><th>${tx.entities.energy_paid}</th><th>${tx.entities.energy_unpaid}</th><th>${tx.entities.revenue}</th><th>${tx.entities.revenue_lost}</th><th>${tx.entities.negative_quarter_hours}</th></tr>
+          <tr><td>${tx.total}</td><td>${num(r.energy_paid_kwh, 0)} kWh</td><td>${num(r.energy_unpaid_kwh, 0)} kWh</td><td>${eur(r.revenue_eur)}</td><td>${eur(r.revenue_lost_eur)}</td><td>${num(r.negative_quarter_hours, 0)}</td></tr></table>`;
+        return `
+          <section class="section wide">
+            <div class="heading">${icon("calendar-month-outline")}<span>${tx.year}</span></div>
+            <div class="card"><div class="card-title">${tx.yearTitle}</div>${stackChart(groups, 1240, 280)}${legend(tx)}${table}
+              <details><summary>${tx.response}</summary><pre>${escapeHtml(yaml(r).trimStart())}</pre></details></div>
+          </section>`;
+      }
+
+      async function render() {
+        const tx = t();
+        const data = await load(state.plant);
+        const view = data.moments[state.time];
+        const when = new Date(view.now).toLocaleString(state.lang, {
+          timeZone: "Europe/Berlin", weekday: "long", day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit",
+        });
+        document.getElementById("banner").innerHTML = `${icon("information-outline")}<span>${tx.banner(when)}</span>`;
+        document.getElementById("dashboard").innerHTML = cardSection(view) + todaySection(view) + deviceSection(data, view) + yearSection(data);
+        const list = [];
+        for (const key of PLANTS) {
+          const d = await load(key);
+          list.push(`<li><b>${escapeHtml(d.name)}:</b> ${escapeHtml(tx.plantDesc(d.plant))}</li>`);
+        }
+        document.getElementById("plant-list").innerHTML = list.join("");
+      }
+
+      const applyTheme = () => (document.documentElement.dataset.theme = isDark() ? "dark" : "light");
+
+      function applyText() {
+        const tx = t();
+        document.documentElement.lang = state.lang;
+        for (const el of document.querySelectorAll("[data-t]")) el.textContent = tx[el.dataset.t];
+        segment("plant", PLANTS, (v) => tx.plants[v], render);
+        segment("time", MOMENTS, (v) => tx.moments[v], render);
+        segment("lang", ["de", "en"], (v) => v.toUpperCase(), () => (applyText(), render()));
+        segment("dark", ["auto", "0", "1"], (v) => tx[{ auto: "auto", 0: "light", 1: "dark" }[v]], applyTheme);
+      }
+
+      function segment(id, values, label, onChange) {
+        const box = document.getElementById(id);
+        box.replaceChildren(...values.map((value) => {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.textContent = label(value);
+          button.setAttribute("aria-pressed", String(state[id] === value));
+          button.addEventListener("click", () => {
+            if (state[id] === value) return;
+            state[id] = value;
+            for (const b of box.children) b.setAttribute("aria-pressed", String(b === button));
+            saveState();
+            onChange();
+          });
+          return button;
+        }));
+      }
+
+      systemDark.addEventListener("change", () => state.dark === "auto" && applyTheme());
+      applyText();
+      applyTheme();
+      saveState();
+      await render();
+    </script>
+  </body>
+</html>

@@ -1,5 +1,10 @@
 # Changelog
 
+## Unveröffentlicht
+
+- **Live-Demo zum Ausprobieren ohne Installation:** [einspeisewacht.github.io/integration](https://einspeisewacht.github.io/integration/) zeigt Dashboard-Karte, Tageskurve, Kalender „Negative Preise“, den Hinweis am Vortag, das Gerät und den Bericht – für eine Anlage mit und eine ohne Smart-Meter-Gateway, an einem sonnigen Maisonntag und einem grauen Januartag. Anlagen, Erträge und Preise sind erfunden und so gekennzeichnet; gebucht werden sie vom Code der Integration.
+- Intern: `tools/make_demo.py` erzeugt die Daten der Demo, der Workflow „Live-Demo“ veröffentlicht sie über GitHub Pages.
+
 ## 0.1.5 – 2026-11-02
 
 - **Fehler behoben:** Lief beim Neuladen eines Eintrags (z. B. nach „Neu konfigurieren“) gerade ein Abruf von SMARD.de, konnte er danach noch fertig werden und Sekunden später einen alten Stand über die gespeicherten Daten des neu geladenen Eintrags schreiben. Abrufe im Hintergrund werden jetzt beim Entladen abgebrochen und abgewartet, bevor gespeichert wird.
