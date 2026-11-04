@@ -230,6 +230,10 @@
       "title": "Einspeisezähler fehlt ({name})",
       "description": "Den Einspeisezähler {entity} gibt es in Home Assistant nicht mehr. Einspeisewacht bucht nichts, bis er wieder da ist. Wurde die Entität umbenannt, während Einspeisewacht nicht geladen war, unter „Neu konfigurieren“ die neue wählen; die bisherigen Summen bleiben erhalten. Nach „Neu konfigurieren“ mit der neuen ID beginnt der Zähler wie bei einem Zählertausch mit eigenem Ausgangswert: Einspeisung aus der Zeit, in der der alte Zähler fehlte, wird nicht gebucht. Umbenennungen im laufenden Betrieb zieht Einspeisewacht selbst nach. Die Meldung verschwindet, sobald der Zähler wieder da ist."
     },
+    "own_entity": {
+      "title": "Sensor von Einspeisewacht als Quelle ({name})",
+      "description": "Die Anlage {name} nutzt Sensoren von Einspeisewacht selbst als Quelle: {entities}. Sie würde damit ihre eigenen Ergebnisse (oder die einer anderen Anlage) lesen, deshalb liest Einspeisewacht sie nicht. Ist es der Einspeisezähler, wird nichts gebucht; ist es der Preissensor, fehlen die Preise: Die Einspeisung gilt nach 24 Stunden als vergütet, mit der SMARD-Option rechnet Einspeisewacht mit den Day-Ahead-Preisen von SMARD.de. Unter Einstellungen → Geräte & Dienste → Einspeisewacht → ⋮ → Neu konfigurieren den echten Einspeisezähler bzw. Preissensor wählen. Was schon gebucht wurde, bleibt."
+    },
     "rule_changed": {
       "title": "Summen teils nach alter Regel ({name})",
       "description": "Die Regel wurde geändert. Die Summen „Einspeisung vergütet/unvergütet“, „Erlös“ und „Entgangener Erlös“ folgen bis zur Änderung am {date} der alten Regel: {count} schon gebuchte negative Viertelstunden beurteilt die neue Regel anders. Einspeisewacht bucht sie nicht um, weil Home Assistant eine sinkende Summe für einen Zählerwechsel hielte. Die richtigen Werte für die Zeit davor liefert die Aktion „Bericht“. Die Meldung verschwindet, wenn die Regel zurückgeändert wird; sonst kannst du sie ignorieren."
@@ -275,6 +279,9 @@
     },
     "entry_not_loaded": {
       "message": "Die Anlage ist nicht geladen. Bitte unter Einstellungen → Geräte & Dienste prüfen."
+    },
+    "own_meter": {
+      "message": "Der Einspeisezähler dieser Anlage ist ein Sensor von Einspeisewacht selbst ({entity}); seine Statistik sind die eigenen Ergebnisse. Bitte zuerst unter „Neu konfigurieren“ den echten Zähler wählen."
     },
     "end_before_start": {
       "message": "Das Ende des Zeitraums liegt vor dem Anfang."

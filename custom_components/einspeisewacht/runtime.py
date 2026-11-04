@@ -59,6 +59,7 @@ from .const import (
     USER_AGENT,
 )
 from .engine import Engine
+from .entity import own_entities
 from .ledger import FeedInValuation
 from .meter import MeterTracker, to_kwh
 from .prices import ParsedPrices, parse_interval_prices
@@ -159,6 +160,9 @@ class PlantRuntime:
         self.name: str = config[CONF_NAME]
         self.meter_entity: str = config[CONF_METER]
         self.price_entity: str = config[CONF_PRICE]
+        # Sensors of Einspeisewacht itself (an entry from before the form
+        # refused them) are not read: a repair issue until reconfigured.
+        self.own_entities = own_entities(hass, (self.meter_entity, self.price_entity))
         self.commissioned = date.fromisoformat(config[CONF_COMMISSIONED])
         self.backfill_enabled = bool(config.get(CONF_BACKFILL))
         self.derived = derived_from_config(config)
@@ -219,16 +223,20 @@ class PlantRuntime:
                 # A new change shows again even if an earlier one was ignored.
                 ir.async_delete_issue(self.hass, DOMAIN, self._issue("rule_changed"))
         self._update_rule_issue()
+        self._update_own_issue()
         now = dt_util.utcnow()
-        if state := self.hass.states.get(self.price_entity):
+        if not self.price_own and (state := self.hass.states.get(self.price_entity)):
             self._handle_price(state, now)
-        if state := self.hass.states.get(self.meter_entity):
+        if not self.meter_own and (state := self.hass.states.get(self.meter_entity)):
             self._handle_meter(state, now)
         self.engine.tick(now)
+        sources = [
+            e
+            for e in (self.meter_entity, self.price_entity)
+            if e not in self.own_entities
+        ]
         self._unsubscribe = [
-            async_track_state_change_event(
-                self.hass, [self.meter_entity, self.price_entity], self._on_state_change
-            ),
+            async_track_state_change_event(self.hass, sources, self._on_state_change),
             async_track_utc_time_change(
                 self.hass, self._on_tick, minute=[0, 15, 30, 45], second=1
             ),
@@ -281,11 +289,45 @@ class PlantRuntime:
             self._issue("meter_unit"),
             self._issue("meter_missing"),
             self._issue("rule_changed"),
+            self._issue("own_entity"),
         ):
             ir.async_delete_issue(self.hass, DOMAIN, issue)
 
     def _issue(self, key: str) -> str:
         return f"{key}_{self.entry_id}"
+
+    @property
+    def meter_own(self) -> bool:
+        return self.meter_entity in self.own_entities
+
+    @property
+    def price_own(self) -> bool:
+        return self.price_entity in self.own_entities
+
+    def _update_own_issue(self) -> None:
+        """Say while a source is a sensor of Einspeisewacht itself (not read)."""
+        issue_id = self._issue("own_entity")
+        if not self.own_entities:
+            ir.async_delete_issue(self.hass, DOMAIN, issue_id)
+            return
+        _LOGGER.warning(
+            "%s: %s belong to Einspeisewacht itself and are not read; "
+            "please reconfigure",
+            self.name,
+            ", ".join(self.own_entities),
+        )
+        ir.async_create_issue(
+            self.hass,
+            DOMAIN,
+            issue_id,
+            is_fixable=False,
+            severity=ir.IssueSeverity.WARNING,
+            translation_key="own_entity",
+            translation_placeholders={
+                "name": self.name,
+                "entities": ", ".join(self.own_entities),
+            },
+        )
 
     def _update_rule_issue(self) -> None:
         """Say while the totals hold quarter hours booked under an earlier rule.
@@ -530,7 +572,7 @@ class PlantRuntime:
     @callback
     def _on_tick(self, now: datetime) -> None:
         # A price sensor without forecast keeps its value into the new quarter hour.
-        if state := self.hass.states.get(self.price_entity):
+        if not self.price_own and (state := self.hass.states.get(self.price_entity)):
             self._handle_price(state, now)
         self.engine.tick(now)
         self._maybe_fill_prices(now)
@@ -583,7 +625,11 @@ class PlantRuntime:
         from SMARD.de keep the booking right, but the sensor is still broken.
         """
         parsed = self.engine.last_parse
-        if parsed is None or parsed.prices.get(slot_start(now)) is None:
+        if self.price_own:
+            # Not read at all: the issue "own_entity" says so.
+            self._price_missing_since = None
+            ir.async_delete_issue(self.hass, DOMAIN, self._issue("price_missing"))
+        elif parsed is None or parsed.prices.get(slot_start(now)) is None:
             self._price_missing_since = self._price_missing_since or now
             if now - self._price_missing_since >= PRICE_MISSING_ISSUE_AFTER:
                 ir.async_create_issue(

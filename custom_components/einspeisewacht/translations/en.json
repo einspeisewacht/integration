@@ -230,6 +230,10 @@
       "title": "Feed-in meter missing ({name})",
       "description": "The feed-in meter {entity} no longer exists in Home Assistant. Einspeisewacht books nothing until it is back. If the entity was renamed while Einspeisewacht was not loaded, choose the new one under Reconfigure; the totals so far are kept. After Reconfigure with the new ID, the meter starts from its own baseline as with a replaced meter: feed-in during the time the old meter was missing is not booked. Renames while it is loaded are followed automatically. This message disappears once the meter is there again."
     },
+    "own_entity": {
+      "title": "Sensor of Einspeisewacht as a source ({name})",
+      "description": "The plant {name} uses sensors of Einspeisewacht itself as a source: {entities}. It would read its own results (or those of another plant), so Einspeisewacht does not read them. If it is the feed-in meter, nothing is booked; if it is the price sensor, prices are missing: feed-in counts as remunerated after 24 hours, with the SMARD option Einspeisewacht uses the day-ahead prices from SMARD.de. Choose the real feed-in meter or price sensor under Settings → Devices & services → Einspeisewacht → ⋮ → Reconfigure. What has already been booked stays."
+    },
     "rule_changed": {
       "title": "Totals partly follow the previous rule ({name})",
       "description": "The rule was changed. Up to the change on {date}, the totals “Feed-in remunerated/not remunerated”, “Revenue” and “Lost revenue” follow the previous rule: the new one judges {count} negative quarter hours already booked differently. Einspeisewacht does not rebook them, because Home Assistant would take a falling total for a meter replacement. The Report action gives the correct values for the time before. This message disappears if the rule is changed back; otherwise you can ignore it."
@@ -275,6 +279,9 @@
     },
     "entry_not_loaded": {
       "message": "The plant is not loaded. Check it under Settings → Devices & services."
+    },
+    "own_meter": {
+      "message": "The feed-in meter of this plant is a sensor of Einspeisewacht itself ({entity}); its statistics are Einspeisewacht's own results. Choose the real meter under Reconfigure first."
     },
     "end_before_start": {
       "message": "The end of the period is before its start."

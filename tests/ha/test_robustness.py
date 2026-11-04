@@ -8,6 +8,7 @@ from typing import Any
 import pytest
 from freezegun.api import FrozenDateTimeFactory
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import issue_registry as ir
 from pytest_homeassistant_custom_component.common import (
     MockConfigEntry,
@@ -17,7 +18,7 @@ from pytest_homeassistant_custom_component.common import (
 from custom_components.einspeisewacht.const import DOMAIN
 
 from .conftest import METER, METER_ATTRIBUTES, PRICE, entry_data, price_attributes
-from .test_init import START, setup, value
+from .test_init import START, entity_id, setup, value
 
 
 def issue(
@@ -111,6 +112,63 @@ async def test_meter_unavailable_is_not_missing(
         async_fire_time_changed(hass, tick)
         await hass.async_block_till_done()
     assert issue(hass, "meter_missing", entry) is None
+
+
+@pytest.mark.freeze_time(START)
+async def test_own_sensor_as_source_is_ignored_with_an_issue(
+    hass: HomeAssistant, freezer: FrozenDateTimeFactory
+) -> None:
+    """An entry from before the form refused them reads another plant's
+    totals (seen in Wärmewacht, 2026-11): not read, an issue until fixed."""
+    first = await setup(hass)
+    own_meter = entity_id(hass, first, "energy_paid")
+    own_price = entity_id(hass, first, "revenue")
+    garage = MockConfigEntry(
+        domain=DOMAIN,
+        unique_id=own_meter,
+        title="Garage",
+        data=entry_data(name="Garage", meter_entity=own_meter, price_entity=own_price),
+    )
+    garage.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(garage.entry_id)
+    await hass.async_block_till_done()
+
+    found = issue(hass, "own_entity", garage)
+    assert found.translation_key == "own_entity"
+    assert found.translation_placeholders["entities"] == ", ".join(
+        sorted((own_meter, own_price))
+    )
+    assert issue(hass, "own_entity", first) is None
+    # Neither is read: no meter reading, no price.
+    freezer.move_to(START + timedelta(minutes=5))
+    hass.states.async_set(own_meter, "12.5", METER_ATTRIBUTES)
+    hass.states.async_set(own_price, "0.5", {"unit_of_measurement": "EUR"})
+    await hass.async_block_till_done()
+    engine = garage.runtime_data.engine
+    assert engine.meter.last_time is None
+    assert engine.last_parse is None
+    assert issue(hass, "price_missing", garage) is None
+    # The report would read Einspeisewacht's own statistics.
+    with pytest.raises(ServiceValidationError) as err:
+        await hass.services.async_call(
+            DOMAIN,
+            "report",
+            {"config_entry_id": garage.entry_id, "start": "2026-10-01"},
+            blocking=True,
+            return_response=True,
+        )
+    assert err.value.translation_key == "own_meter"
+
+    # Reconfigured with the real sources: the issue is gone.
+    hass.states.async_set("sensor.garage_export", "500", METER_ATTRIBUTES)
+    hass.config_entries.async_update_entry(
+        garage,
+        data=entry_data(name="Garage", meter_entity="sensor.garage_export"),
+    )
+    assert await hass.config_entries.async_reload(garage.entry_id)
+    await hass.async_block_till_done()
+    assert issue(hass, "own_entity", garage) is None
+    assert garage.runtime_data.engine.meter.last_time is not None
 
 
 @pytest.mark.freeze_time(START)

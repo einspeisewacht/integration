@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from typing import TYPE_CHECKING
 
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
 from homeassistant.helpers.entity import Entity
 
@@ -12,6 +15,20 @@ from .const import DOMAIN, VERSION
 if TYPE_CHECKING:
     from . import EinspeisewachtConfigEntry
     from .runtime import PlantRuntime
+
+
+def own_entities(hass: HomeAssistant, entity_ids: Iterable[str]) -> list[str]:
+    """Those of Einspeisewacht itself: an entry reading one would read its own
+    results or another plant's (seen 2026-11 in Wärmewacht: an entry's own
+    sensor mapped as its source). The form refuses them; older entries do not
+    read them and show a repair issue."""
+    registry = er.async_get(hass)
+    return sorted(
+        entity_id
+        for entity_id in set(entity_ids)
+        if (entry := registry.async_get(entity_id)) is not None
+        and entry.platform == DOMAIN
+    )
 
 
 class PlantEntity(Entity):

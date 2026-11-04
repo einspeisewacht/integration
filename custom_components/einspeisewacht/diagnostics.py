@@ -28,6 +28,7 @@ async def async_get_config_entry_diagnostics(
         if runtime.derived.applies_from
         else None,
         "rate_ct_per_kwh": runtime.rate_ct,
+        "own_entities": runtime.own_entities,
         "prices": {
             "known_quarter_hours": len(engine.prices.prices),
             "first": min(engine.prices.prices).isoformat()

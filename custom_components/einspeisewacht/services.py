@@ -61,6 +61,10 @@ def _loaded_entry(call: ServiceCall) -> EinspeisewachtConfigEntry:
         raise _error("entry_not_found")
     if entry.state is not ConfigEntryState.LOADED:
         raise _error("entry_not_loaded")
+    runtime = entry.runtime_data
+    if runtime.meter_own:
+        # Report and import read the meter's statistics: Einspeisewacht's own.
+        raise _error("own_meter", {"entity": runtime.meter_entity})
     return entry
 
 
