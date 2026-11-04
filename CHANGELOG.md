@@ -3,6 +3,7 @@
 ## Unveröffentlicht
 
 - **Demo zum Ausprobieren ohne Installation:** [einspeisewacht.github.io/integration](https://einspeisewacht.github.io/integration/) zeigt Dashboard-Karte, Tageskurve, Kalender „Negative Preise“, den Hinweis am Vortag, das Gerät und den Bericht – für eine Anlage mit und eine ohne Smart-Meter-Gateway, an einem sonnigen Maisonntag und einem grauen Januartag. Anlagen, Erträge und Preise sind erfunden und so gekennzeichnet; gebucht werden sie vom Code der Integration.
+- **Eigene Sensoren sind als Quelle gesperrt:** Einrichten und „Neu konfigurieren“ lehnen jetzt einen Sensor von Einspeisewacht selbst als Einspeisezähler oder Preissensor ab. Bisher ging das durch – die eigenen Energie-Summen bestehen die Prüfung des Zählers, jeder Zahlenwert die des Preissensors –, und der Eintrag hätte seine eigenen Ergebnisse oder die einer anderen Anlage gelesen. Anlass war eine Rückmeldung aus der Schwester Wärmewacht, wo ein Nutzer genau das getan hatte.
 - Intern: `tools/make_demo.py` erzeugt die Daten der Demo, der Workflow „Demo“ veröffentlicht sie über GitHub Pages.
 
 ## 0.1.5 – 2026-11-02

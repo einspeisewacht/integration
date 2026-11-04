@@ -94,6 +94,7 @@
       "power_invalid": "The capacity must be greater than 0.",
       "smart_meter_date_required": "Please enter when the iMSys was installed.",
       "rate_required": "Please enter the remuneration rate.",
+      "own_entity": "A sensor of Einspeisewacht itself is chosen as a source: the entry would read its own results. Choose the feed-in meter (grid connection point or inverter) and the price sensor of a price integration (e.g. EPEX Spot).",
       "meter_in_use": "This meter is already used by another plant.",
       "entity_missing": "The entity does not exist or has no state yet.",
       "meter_unit": "The meter must report Wh, kWh or MWh.",

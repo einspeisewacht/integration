@@ -94,6 +94,7 @@
       "power_invalid": "Die Leistung muss größer als 0 sein.",
       "smart_meter_date_required": "Bitte angeben, wann das iMSys eingebaut wurde.",
       "rate_required": "Bitte den Vergütungssatz eingeben.",
+      "own_entity": "Als Quelle ist ein Sensor von Einspeisewacht selbst gewählt: Der Eintrag würde seine eigenen Ergebnisse lesen. Bitte den Einspeisezähler (Netzanschluss oder Wechselrichter) bzw. den Preissensor einer Preis-Integration (z. B. EPEX Spot) wählen.",
       "meter_in_use": "Dieser Zähler wird schon von einer anderen Anlage verwendet.",
       "entity_missing": "Die Entität existiert nicht oder hat noch keinen Zustand.",
       "meter_unit": "Der Zähler muss Wh, kWh oder MWh liefern.",

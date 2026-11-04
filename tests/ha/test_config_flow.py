@@ -9,6 +9,7 @@ import pytest
 from homeassistant.config_entries import SOURCE_USER
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
+from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.einspeisewacht.const import (
@@ -190,6 +191,61 @@ async def test_meter_already_in_use(hass: HomeAssistant) -> None:
         hass, result, {"meter_entity": METER, "price_entity": PRICE}
     )
     assert result["errors"] == {"meter_entity": "meter_in_use"}
+
+
+async def test_own_sensors_as_sources_are_refused(hass: HomeAssistant) -> None:
+    """A sensor of Einspeisewacht itself (seen in Wärmewacht, 2026-11): the
+    energy total passes the meter checks, the money total the price check."""
+    registry = er.async_get(hass)
+    energy = registry.async_get_or_create(
+        "sensor", DOMAIN, "01JZ_energy_paid", suggested_object_id="dach_energy_paid"
+    )
+    hass.states.async_set(energy.entity_id, "12.5", METER_ATTRIBUTES)
+    money = registry.async_get_or_create(
+        "sensor", DOMAIN, "01JZ_revenue", suggested_object_id="dach_revenue"
+    )
+    hass.states.async_set(money.entity_id, "3.21", {"unit_of_measurement": "EUR"})
+    result = await configure(hass, await start(hass), PLANT)
+    result = await configure(
+        hass, result, {"rate_mode": "single", "feed_in_type": "partial", "rate": 7.94}
+    )
+    result = await configure(
+        hass,
+        result,
+        {"meter_entity": energy.entity_id, "price_entity": money.entity_id},
+    )
+    assert result["errors"] == {
+        "meter_entity": "own_entity",
+        "price_entity": "own_entity",
+    }
+    result = await configure(
+        hass, result, {"meter_entity": METER, "price_entity": PRICE}
+    )
+    assert result["step_id"] == "summary"
+
+
+async def test_reconfigure_refuses_the_entrys_own_sensor(hass: HomeAssistant) -> None:
+    entry = MockConfigEntry(
+        domain=DOMAIN, unique_id=METER, title="Dach", data=entry_data()
+    )
+    entry.add_to_hass(hass)
+    own = er.async_get(hass).async_get_or_create(
+        "sensor",
+        DOMAIN,
+        f"{entry.entry_id}_energy_paid",
+        config_entry=entry,
+        suggested_object_id="dach_energy_paid",
+    )
+    hass.states.async_set(own.entity_id, "12.5", METER_ATTRIBUTES)
+    result = await entry.start_reconfigure_flow(hass)
+    result = await configure(hass, result, PLANT)
+    result = await configure(
+        hass, result, {"rate_mode": "single", "feed_in_type": "partial", "rate": 7.94}
+    )
+    result = await configure(
+        hass, result, {"meter_entity": own.entity_id, "price_entity": PRICE}
+    )
+    assert result["errors"] == {"meter_entity": "own_entity"}
 
 
 async def test_reconfigure(hass: HomeAssistant) -> None:

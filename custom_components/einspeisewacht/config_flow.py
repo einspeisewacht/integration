@@ -16,6 +16,8 @@ from homeassistant.config_entries import (
     ConfigFlowResult,
 )
 from homeassistant.const import ATTR_UNIT_OF_MEASUREMENT
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers import selector
 from homeassistant.helpers.translation import async_get_translations
 from homeassistant.util import dt as dt_util
@@ -81,6 +83,15 @@ def _number(unit: str, step: float, maximum: float) -> selector.NumberSelector:
 
 
 RATE_NUMBER = _number("ct/kWh", 0.001, 100)
+
+
+def _own_entity(hass: HomeAssistant, entity_id: str) -> bool:
+    """Whether it belongs to Einspeisewacht itself: the entry would read its
+    own results (seen 2026-11 in Wärmewacht: an entry's own sensor mapped as
+    its source). Its energy sensors pass the meter checks, every numeric one
+    the price check."""
+    entry = er.async_get(hass).async_get(entity_id)
+    return entry is not None and entry.platform == DOMAIN
 
 
 class EinspeisewachtConfigFlow(ConfigFlow, domain=DOMAIN):
@@ -265,7 +276,9 @@ class EinspeisewachtConfigFlow(ConfigFlow, domain=DOMAIN):
             else None
         )
         meter_state = self.hass.states.get(meter)
-        if any(
+        if _own_entity(self.hass, meter):
+            errors[CONF_METER] = "own_entity"
+        elif any(
             e.unique_id == meter and e.entry_id != current
             for e in self._async_current_entries()
         ):
@@ -280,7 +293,9 @@ class EinspeisewachtConfigFlow(ConfigFlow, domain=DOMAIN):
         ):
             errors[CONF_METER] = "meter_state_class"
         price_state = self.hass.states.get(price)
-        if price_state is None:
+        if _own_entity(self.hass, price):
+            errors[CONF_PRICE] = "own_entity"
+        elif price_state is None:
             errors[CONF_PRICE] = "entity_missing"
         else:
             parsed = parse_price_state(price_state)
