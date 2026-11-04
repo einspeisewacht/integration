@@ -7,7 +7,7 @@
 [![Release](https://img.shields.io/github/v/release/einspeisewacht/integration?color=008351)](https://github.com/einspeisewacht/integration/releases)
 [![CI](https://github.com/einspeisewacht/integration/actions/workflows/ci.yml/badge.svg)](https://github.com/einspeisewacht/integration/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-F5A623.svg)](LICENSE)
-[![Live-Demo](https://img.shields.io/badge/Live--Demo-ausprobieren-F5A623.svg)](https://einspeisewacht.github.io/integration/?lang=de)
+[![Demo](https://img.shields.io/badge/Demo-erfundene_Daten-F5A623.svg)](https://einspeisewacht.github.io/integration/?lang=de)
 
 🇩🇪 **Deutsch** · 🇬🇧 [English](https://github.com/einspeisewacht/integration/blob/main/README.en.md)
 
@@ -15,7 +15,7 @@
 
 **Wie viel deiner PV-Einspeisung wird wegen negativer Strompreise nicht vergütet?** Seit dem Solarspitzengesetz verlieren neue PV-Anlagen die Einspeisevergütung in jeder Viertelstunde mit negativem Börsenpreis. Einspeisewacht rechnet das in Home Assistant für dich mit: Viertelstunde für Viertelstunde, mit dem Preis genau dieser Viertelstunde – und zeigt, was dich das kostet und wie viel Förderzeit dafür am Ende angehängt wird.
 
-**Ausprobieren ohne Installation:** Die [Live-Demo](https://einspeisewacht.github.io/integration/?lang=de) zeigt Dashboard-Karte, Kalender, Hinweis am Vortag, Gerät und Bericht für eine Anlage mit und eine ohne Smart-Meter-Gateway – mit erfundenen Erträgen und Preisen, aber gerechnet vom Code der Integration.
+**Ausprobieren ohne Installation:** Die [Demo](https://einspeisewacht.github.io/integration/?lang=de) zeigt Dashboard-Karte, Kalender, Hinweis am Vortag, Gerät und Bericht für eine Anlage mit und eine ohne Smart-Meter-Gateway – mit erfundenen Erträgen und Preisen, aber gerechnet vom Code der Integration.
 
 > **Keine Rechts- oder Abrechnungsberatung.** Die Werte sind eine Orientierung. Maßgeblich ist die Abrechnung deines Netzbetreibers – er rechnet mit den Messwerten seines Zählers, Home Assistant meist mit Wechselrichter- oder Lesekopfwerten.
 
@@ -328,12 +328,12 @@ Pull Requests sind willkommen. Wie, steht in [CONTRIBUTING.md](CONTRIBUTING.md).
 Vom selben Autor und nach demselben Muster gebaut: Einrichtung über die Oberfläche, deutsch und englisch, schonend für SD-Karten.
 
 - **Energie**
-  - [Tarifwacht](https://github.com/tarifwacht/integration) – was der eigene Strombezug mit anderen Tarifen gekostet hätte, auch dynamisch und mit Modul 3 · [Live-Demo](https://tarifwacht.github.io/integration/?lang=de)
-  - [Speicherwacht](https://github.com/speicherwacht/integration) – Wirkungsgrad, Zyklen und Kapazität des Batteriespeichers · [Live-Demo](https://speicherwacht.github.io/integration/?lang=de)
+  - [Tarifwacht](https://github.com/tarifwacht/integration) – was der eigene Strombezug mit anderen Tarifen gekostet hätte, auch dynamisch und mit Modul 3 · [Demo](https://tarifwacht.github.io/integration/?lang=de)
+  - [Speicherwacht](https://github.com/speicherwacht/integration) – Wirkungsgrad, Zyklen und Kapazität des Batteriespeichers · [Demo](https://speicherwacht.github.io/integration/?lang=de)
   - [Wärmewacht](https://github.com/waermewacht/integration) – Arbeitszahlen und Gesundheits-Check der Wärmepumpe
 - **Alltag**
-  - [Eilwacht](https://github.com/eilwacht/integration) – Tagesschau-Eilmeldungen und Regionalnachrichten als Auslöser für Automationen · [Live-Demo](https://eilwacht.github.io/integration/?lang=de)
-  - [Streckenwacht](https://github.com/streckenwacht/integration) – Baustellen, Sperrungen und Staus auf den eigenen Strecken · [Live-Demo](https://streckenwacht.github.io/integration/?lang=de)
+  - [Eilwacht](https://github.com/eilwacht/integration) – Tagesschau-Eilmeldungen und Regionalnachrichten als Auslöser für Automationen · [Demo](https://eilwacht.github.io/integration/?lang=de)
+  - [Streckenwacht](https://github.com/streckenwacht/integration) – Baustellen, Sperrungen und Staus auf den eigenen Strecken · [Demo](https://streckenwacht.github.io/integration/?lang=de)
 
 ## Lizenz und Quellen
 

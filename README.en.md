@@ -7,7 +7,7 @@
 [![Release](https://img.shields.io/github/v/release/einspeisewacht/integration?color=008351)](https://github.com/einspeisewacht/integration/releases)
 [![CI](https://github.com/einspeisewacht/integration/actions/workflows/ci.yml/badge.svg)](https://github.com/einspeisewacht/integration/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-F5A623.svg)](LICENSE)
-[![Live demo](https://img.shields.io/badge/Live_demo-try_it-F5A623.svg)](https://einspeisewacht.github.io/integration/?lang=en)
+[![Demo](https://img.shields.io/badge/Demo-sample_data-F5A623.svg)](https://einspeisewacht.github.io/integration/?lang=en)
 
 🇩🇪 [Deutsch](https://github.com/einspeisewacht/integration/blob/main/README.md) · 🇬🇧 **English**
 
@@ -15,7 +15,7 @@
 
 **How much of your PV feed-in goes unpaid because of negative electricity prices?** Under Germany's Solarspitzengesetz, new PV plants lose their feed-in tariff in every quarter hour with a negative day-ahead price. Einspeisewacht tracks this in Home Assistant, quarter hour by quarter hour, with the price of exactly that quarter hour – and shows what it costs you and how much remuneration time is added at the end in return.
 
-**Try it without installing:** the [live demo](https://einspeisewacht.github.io/integration/?lang=en) shows the dashboard card, calendar, day-before notice, device and report for a plant with and one without a smart meter gateway – with made-up yields and prices, but computed by the integration's own code.
+**Try it without installing:** the [demo](https://einspeisewacht.github.io/integration/?lang=en) shows the dashboard card, calendar, day-before notice, device and report for a plant with and one without a smart meter gateway – with made-up yields and prices, but computed by the integration's own code.
 
 > **Not legal or billing advice.** The values are a guide. What counts is your grid operator's statement – it uses its meter's readings, Home Assistant usually inverter or optical-reader values.
 
@@ -277,12 +277,12 @@ Pull requests are welcome, see [CONTRIBUTING.md](CONTRIBUTING.md) (with an Engli
 By the same author and built the same way: set up in the UI, in German and English, gentle on SD cards.
 
 - **Energy**
-  - [Tarifwacht](https://github.com/tarifwacht/integration) – what your grid consumption would have cost with other tariffs, including dynamic ones and Modul 3 · [live demo](https://tarifwacht.github.io/integration/?lang=en)
-  - [Speicherwacht](https://github.com/speicherwacht/integration) – efficiency, cycles and capacity of your home battery · [live demo](https://speicherwacht.github.io/integration/?lang=en)
+  - [Tarifwacht](https://github.com/tarifwacht/integration) – what your grid consumption would have cost with other tariffs, including dynamic ones and Modul 3 · [demo](https://tarifwacht.github.io/integration/?lang=en)
+  - [Speicherwacht](https://github.com/speicherwacht/integration) – efficiency, cycles and capacity of your home battery · [demo](https://speicherwacht.github.io/integration/?lang=en)
   - [Wärmewacht](https://github.com/waermewacht/integration) – performance factors and health check for your heat pump
 - **Everyday**
-  - [Eilwacht](https://github.com/eilwacht/integration) – Tagesschau breaking news and regional news as automation triggers (German) · [live demo](https://eilwacht.github.io/integration/?lang=en)
-  - [Streckenwacht](https://github.com/streckenwacht/integration) – roadworks, closures and traffic jams on your own routes (Germany, Luxembourg) · [live demo](https://streckenwacht.github.io/integration/?lang=en)
+  - [Eilwacht](https://github.com/eilwacht/integration) – Tagesschau breaking news and regional news as automation triggers (German) · [demo](https://eilwacht.github.io/integration/?lang=en)
+  - [Streckenwacht](https://github.com/streckenwacht/integration) – roadworks, closures and traffic jams on your own routes (Germany, Luxembourg) · [demo](https://streckenwacht.github.io/integration/?lang=en)
 
 ## License and sources
 
