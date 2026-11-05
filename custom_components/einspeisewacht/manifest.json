@@ -4,6 +4,10 @@
   "after_dependencies": [
     "recorder"
   ],
+  "categories": [
+    "energy.solar_batteries",
+    "energy.energy_prices"
+  ],
   "codeowners": [
     "@n42net"
   ],
