@@ -110,6 +110,7 @@ Benennst du Einspeisezähler oder Preissensor in Home Assistant um (neue Entity-
 | Vergütung aktiv | vergütet/unvergütet | ob die laufende Viertelstunde vergütet wird; unbekannt ohne Preis |
 | Negative Preise | Kalender | Zeitfenster mit negativem Preis |
 | Regel | Diagnose | die angewandte Regel, Attribute `applies_from` und `rate_ct_per_kwh` |
+| Bericht für Fehlermeldung | Schaltfläche (Diagnose) | zeigt einen kurzen Bericht zum Kopieren in ein Issue, siehe [Fehler melden](#fehler-melden) |
 
 Solange die Regel noch nicht greift (z. B. ohne iMSys), kommen „Unvergütet bei greifender Regel“, „Entgangener Erlös bei greifender Regel“ und „Viertelstunden ohne Vergütung bei greifender Regel“ dazu; Nachholung und „Vergütung bis“ entfallen dann.
 
@@ -291,7 +292,7 @@ Die Entitäts-IDs hängen vom Namen deiner Anlage ab (hier „Dach“).
 
 ## Datenschutz
 
-Einspeisewacht rechnet lokal und liest nur die Entitäten, die du auswählst. Einzige Ausnahme, nur wenn du sie einschaltest: Die SMARD-Option lädt öffentliche Day-Ahead-Preise von smard.de (Bundesnetzagentur) – einmalig für die Zeit vor der Einrichtung und danach nur, wenn dein Preissensor länger als eine Stunde keine Preise liefert (höchstens einmal je Stunde). Dabei wird nichts über dich oder deine Anlage übertragen – nur der Abruf der Preisdateien mit der Kennung `Einspeisewacht/<Version>`. Die Diagnose-Datei enthält weder den Anlagennamen noch Zählerstände, Energie- oder Erlössummen.
+Einspeisewacht rechnet lokal und liest nur die Entitäten, die du auswählst. Einzige Ausnahme, nur wenn du sie einschaltest: Die SMARD-Option lädt öffentliche Day-Ahead-Preise von smard.de (Bundesnetzagentur) – einmalig für die Zeit vor der Einrichtung und danach nur, wenn dein Preissensor länger als eine Stunde keine Preise liefert (höchstens einmal je Stunde). Dabei wird nichts über dich oder deine Anlage übertragen – nur der Abruf der Preisdateien mit der Kennung `Einspeisewacht/<Version>`. Die Diagnose-Datei enthält weder den Anlagennamen noch Zählerstände, Energie- oder Erlössummen; der [Bericht für Fehlermeldung](#fehler-melden) auch nicht, dazu keine Entity-IDs.
 
 ## Was Einspeisewacht nicht kann
 
@@ -309,7 +310,7 @@ Einspeisewacht rechnet lokal und liest nur die Entitäten, die du auswählst. Ei
 - **Hinweis „Einspeisezähler fehlt“ unter Reparaturen:** Die Zähler-Entität gibt es nicht mehr (gelöscht oder umbenannt, während Einspeisewacht nicht geladen war). Bis sie wieder da ist, bucht Einspeisewacht nichts. Unter *Neu konfigurieren* den richtigen Zähler wählen; die bisherigen Summen bleiben erhalten. Der gewählte Zähler beginnt dann wie bei einem Zählertausch mit eigenem Ausgangswert: Einspeisung aus der Zeit, in der der alte Zähler fehlte, wird nicht gebucht.
 - **Hinweis „Sensor von Einspeisewacht als Quelle“ unter Reparaturen:** Der Eintrag nutzt einen Sensor von Einspeisewacht selbst (seine eigenen Summen oder die einer anderen Anlage) als Einspeisezähler oder Preissensor – das ließ das Formular früher zu. Einspeisewacht liest ihn nicht: Ohne Zähler wird nichts gebucht, ohne Preis gilt die Einspeisung nach 24 Stunden als vergütet (mit der SMARD-Option: Preise von SMARD.de). Unter *Einspeisewacht → ⋮ → Neu konfigurieren* den echten Zähler bzw. Preissensor wählen; schon Gebuchtes bleibt.
 - **Hinweis „SMARD.de nicht erreichbar“ unter Reparaturen:** Der Abruf früherer Preise ist fehlgeschlagen; beim nächsten Start von Home Assistant wird es erneut versucht. Die laufende Buchung ist nicht betroffen.
-- **Diagnose:** *Einspeisewacht → Eintrag → ⋮ → Diagnose herunterladen*. **Debug-Protokoll:** *Einspeisewacht → ⋮ → Debug-Protokollierung aktivieren*.
+- **Bericht für Fehlermeldung:** Schaltfläche am Gerät unter *Diagnose*, siehe [Fehler melden](#fehler-melden). **Diagnose:** *Einspeisewacht → Eintrag → ⋮ → Diagnose herunterladen*. **Debug-Protokoll:** *Einspeisewacht → ⋮ → Debug-Protokollierung aktivieren*.
 
 ## Entfernen
 
@@ -320,7 +321,16 @@ Die Langzeitstatistik der gelöschten Sensoren bleibt in Home Assistant erhalten
 
 ## Fehler melden
 
-Bitte als [Issue](https://github.com/einspeisewacht/integration/issues) – am besten mit Diagnose-Datei und den Versionen von Home Assistant und Einspeisewacht. Sicherheitslücken bitte vertraulich, siehe [SECURITY.md](SECURITY.md).
+Bitte als [Issue](https://github.com/einspeisewacht/integration/issues), mit dem **Bericht für Fehlermeldung**: *Einspeisewacht → Eintrag → Gerät → Diagnose → Bericht für Fehlermeldung* drücken. Der Bericht erscheint als Benachrichtigung (Glocke unten links) zum Kopieren. Er enthält die Versionen, Regel und Beginn, den Vergütungssatz, den Stand von Preisen, Zähler und Buchung (Zeitpunkte und Anzahlen), die Zuordnung nach Rolle (Integration, Einheit, Zustandsklasse, Zustand – beim Zähler ohne Zählerstand), die Einstellungen (Inbetriebnahme und Smart-Meter-Datum nur mit Monat), welche Sensoren unbekannt sind und warum, und offene Reparaturhinweise. Entity-IDs, der Name der Anlage und Bereiche stehen nicht darin. Lies ihn trotzdem vor dem Teilen und lösche, was du nicht zeigen willst. Sicherheitslücken bitte vertraulich, siehe [SECURITY.md](SECURITY.md).
+
+### Was steht in der Diagnose-Datei?
+
+Reicht der Bericht nicht, kommt im Issue die Bitte um die Diagnose-Datei (*⋮ → Diagnose herunterladen*). Sie ist ausführlicher, und nicht alles darin kommt von Einspeisewacht:
+
+- **Von Home Assistant** (jede Integration hat diesen Kopf, Einspeisewacht kann ihn nicht ändern): Version und Installationsart, Betriebssystem, Zeitzone und unter `custom_components` die Liste **aller** installierten benutzerdefinierten Integrationen mit Versionen. Diese Blöcke darfst du vor dem Hochladen löschen, sie werden nicht gebraucht.
+- **Von Einspeisewacht** (unter `data`): die Einstellungen ohne den Namen der Anlage – also mit den Entity-IDs von Einspeisezähler und Preissensor, Inbetriebnahme- und Smart-Meter-Datum auf den Tag, Leistung und Vergütungssatz –, die Regel, der Stand von Preisen, Zähler und Buchung, die Zahl negativer Viertelstunden je Jahr, Lücken und der SMARD-Abruf. Zählerstände, Energie- und Erlössummen stehen nicht darin.
+
+Willst du die Datei nicht öffentlich teilen, ist das in Ordnung: Dann reichen meist der Bericht und gezielte Angaben, nach denen im Issue gefragt wird.
 
 Pull Requests sind willkommen. Wie, steht in [CONTRIBUTING.md](CONTRIBUTING.md).
 

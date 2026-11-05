@@ -18,7 +18,7 @@ from pytest_homeassistant_custom_component.common import (
 from custom_components.einspeisewacht.const import DOMAIN
 
 from .conftest import METER, METER_ATTRIBUTES, PRICE, entry_data, price_attributes
-from .test_init import START, entity_id, setup, value
+from .test_init import START, entity_id, press_issue_report, setup, value
 
 
 def issue(
@@ -139,6 +139,16 @@ async def test_own_sensor_as_source_is_ignored_with_an_issue(
         sorted((own_meter, own_price))
     )
     assert issue(hass, "own_entity", first) is None
+    # The report names the issue and shows both sources as Einspeisewacht's.
+    message = await press_issue_report(hass, garage)
+    assert "open: own_entity" in message
+    assert (
+        "meter: einspeisewacht, kWh, energy, total_increasing, state a number"
+        in message
+    )
+    assert "price: einspeisewacht, EUR, monetary, total, state " in message
+    for private in (own_meter, own_price, "Garage"):
+        assert private not in message, private
     # Neither is read: no meter reading, no price.
     freezer.move_to(START + timedelta(minutes=5))
     hass.states.async_set(own_meter, "12.5", METER_ATTRIBUTES)

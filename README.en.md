@@ -108,6 +108,7 @@ If you rename the feed-in meter or the price sensor in Home Assistant (new entit
 | Remunerated | paid/unpaid | whether the running quarter hour is remunerated; unknown without a price |
 | Negative prices | calendar | windows with a negative price |
 | Rule | diagnostic | the rule applied, attributes `applies_from` and `rate_ct_per_kwh` |
+| Report for a bug report | button (diagnostic) | shows a short report to copy into an issue, see [Reporting issues](#reporting-issues) |
 
 While the rule does not apply yet (e.g. no iMSys), "… if the rule applied" sensors are added and the extension sensors are left out.
 
@@ -240,7 +241,7 @@ Entity IDs depend on your plant's name and Home Assistant language.
 
 ## Privacy
 
-Einspeisewacht computes locally and reads only the entities you choose. The single exception, only if you turn it on: the SMARD option downloads public day-ahead prices from smard.de (German Federal Network Agency) – once for the time before setup, and afterwards only while your price sensor delivers no prices for more than an hour (at most once an hour). Nothing about you or your plant is sent – only requests for the price files, identified as `Einspeisewacht/<version>`. The diagnostics file contains neither the plant's name nor meter readings, energy or revenue totals.
+Einspeisewacht computes locally and reads only the entities you choose. The single exception, only if you turn it on: the SMARD option downloads public day-ahead prices from smard.de (German Federal Network Agency) – once for the time before setup, and afterwards only while your price sensor delivers no prices for more than an hour (at most once an hour). Nothing about you or your plant is sent – only requests for the price files, identified as `Einspeisewacht/<version>`. The diagnostics file contains neither the plant's name nor meter readings, energy or revenue totals; neither does the [report for a bug report](#reporting-issues), which also leaves out entity ids.
 
 ## What Einspeisewacht does not do
 
@@ -258,7 +259,7 @@ Einspeisewacht computes locally and reads only the entities you choose. The sing
 - **Repair "Feed-in meter missing":** the meter entity no longer exists (deleted, or renamed while Einspeisewacht was not loaded). Nothing is booked until it is back. Choose the right meter under *Reconfigure*; the totals so far are kept. As with a replaced meter, the chosen meter then starts from its own baseline: feed-in during the time the old meter was missing is not booked.
 - **Repair "Sensor of Einspeisewacht as a source":** the entry uses a sensor of Einspeisewacht itself (its own totals or those of another plant) as feed-in meter or price sensor – the form used to allow that. Einspeisewacht does not read it: without a meter nothing is booked, without a price feed-in counts as remunerated after 24 hours (with the SMARD option: prices from SMARD.de). Choose the real meter or price sensor under *Einspeisewacht → ⋮ → Reconfigure*; what has been booked stays.
 - **Repair "SMARD.de unreachable":** downloading earlier prices failed; it is retried at the next Home Assistant start. Live booking is not affected.
-- **Diagnostics:** *Einspeisewacht → entry → ⋮ → Download diagnostics*. **Debug log:** *Einspeisewacht → ⋮ → Enable debug logging*.
+- **Report for a bug report:** button on the device under *Diagnostic*, see [Reporting issues](#reporting-issues). **Diagnostics:** *Einspeisewacht → entry → ⋮ → Download diagnostics*. **Debug log:** *Einspeisewacht → ⋮ → Enable debug logging*.
 
 ## Removal
 
@@ -269,7 +270,16 @@ Long-term statistics of the deleted sensors stay until you remove them under *De
 
 ## Reporting issues
 
-Please open an [issue](https://github.com/einspeisewacht/integration/issues), ideally with the diagnostics file and your Home Assistant and Einspeisewacht versions. Security issues privately, see [SECURITY.md](SECURITY.md).
+Please open an [issue](https://github.com/einspeisewacht/integration/issues) with the **report for a bug report**: press *Einspeisewacht → entry → device → Diagnostic → Report for a bug report*. The report shows up as a notification (bell at the bottom left) to copy. It holds the versions, the rule and its start, the rate, the state of prices, meter and bookings (times and counts), the mapping by role (integration, unit, state class, state – for the meter without its reading), the settings (commissioning and smart meter date to the month only), which sensors are unknown and why, and open repair issues. Entity ids, the plant's name and areas are not in it. Still read it before sharing and delete what you would rather not show. Security issues privately, see [SECURITY.md](SECURITY.md).
+
+### What is in the diagnostics file?
+
+If the report is not enough, the issue will ask for the diagnostics file (*⋮ → Download diagnostics*). It is more detailed, and not all of it comes from Einspeisewacht:
+
+- **From Home Assistant** (every integration gets this header, Einspeisewacht cannot change it): version and installation type, operating system, time zone and under `custom_components` the list of **all** installed custom integrations with versions. You may delete these blocks before uploading; they are not needed.
+- **From Einspeisewacht** (under `data`): the settings without the plant's name – that is, with the entity ids of feed-in meter and price sensor, commissioning and smart meter date to the day, capacity and rate –, the rule, the state of prices, meter and bookings, the number of negative quarter hours per year, gaps and the SMARD download. Meter readings, energy and revenue totals are not in it.
+
+If you would rather not share the file publicly, that is fine: the report and the specific details asked for in the issue are usually enough.
 
 Pull requests are welcome, see [CONTRIBUTING.md](CONTRIBUTING.md) (with an English summary at the end).
 

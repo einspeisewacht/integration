@@ -8,6 +8,11 @@
         }
       }
     },
+    "button": {
+      "issue_report": {
+        "default": "mdi:clipboard-text-outline"
+      }
+    },
     "calendar": {
       "unpaid_windows": {
         "default": "mdi:calendar-alert"

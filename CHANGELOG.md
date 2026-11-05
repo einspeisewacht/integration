@@ -1,5 +1,9 @@
 # Changelog
 
+## Unveröffentlicht
+
+- **Neu: Schaltfläche „Bericht für Fehlermeldung“** am Gerät (unter *Diagnose*). Sie zeigt einen kurzen Bericht als Benachrichtigung zum Kopieren in ein Issue: Versionen, Regel und Beginn, Vergütungssatz, Stand von Preisen, Zähler und Buchung, die Zuordnung nach Rolle (Integration, Einheit, Zustandsklasse, Zustand; beim Zähler ohne Zählerstand), die Einstellungen (Inbetriebnahme und Smart-Meter-Datum nur mit Monat), unbekannte Sensoren mit Grund und offene Reparaturhinweise – ohne Entity-IDs, Anlagennamen und Bereiche. Viele wollen die Diagnose-Datei nicht öffentlich teilen, weil Home Assistant ihr unter anderem die Liste aller installierten Integrationen voranstellt. Die README erklärt jetzt unter „Fehler melden“, was in der Diagnose-Datei steht und welche Teile man vor dem Teilen löschen darf; die Issue-Vorlage fragt nach dem Bericht.
+
 ## 0.1.6 – 2026-11-05
 
 - **Demo zum Ausprobieren ohne Installation:** [einspeisewacht.github.io/integration](https://einspeisewacht.github.io/integration/) zeigt Dashboard-Karte, Tageskurve, Kalender „Negative Preise“, den Hinweis am Vortag, das Gerät und den Bericht – für eine Anlage mit und eine ohne Smart-Meter-Gateway, an einem sonnigen Maisonntag und einem grauen Januartag. Anlagen, Erträge und Preise sind erfunden und so gekennzeichnet; gebucht werden sie vom Code der Integration.

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from unittest.mock import patch
 
 import pytest
 from freezegun.api import FrozenDateTimeFactory
@@ -50,6 +51,24 @@ def value(hass: HomeAssistant, entry: MockConfigEntry, key: str) -> str:
     state = hass.states.get(entity_id(hass, entry, key) or "")
     assert state is not None, key
     return state.state
+
+
+async def press_issue_report(hass: HomeAssistant, entry: MockConfigEntry) -> str:
+    """Press "Report for a bug report"; the text of the notification."""
+    button = er.async_get(hass).async_get_entity_id(
+        "button", DOMAIN, f"{entry.entry_id}_issue_report"
+    )
+    assert button is not None
+    with patch(
+        "custom_components.einspeisewacht.issue_report.persistent_notification.async_create"
+    ) as create:
+        await hass.services.async_call(
+            "button", "press", {"entity_id": button}, blocking=True
+        )
+    assert create.call_args.kwargs["notification_id"] == (
+        f"einspeisewacht_issue_report_{entry.entry_id}"
+    )
+    return create.call_args.args[1]
 
 
 async def setup(hass: HomeAssistant, **changes) -> MockConfigEntry:
@@ -100,6 +119,25 @@ async def test_booking_and_restart(
     diagnostics = await async_get_config_entry_diagnostics(hass, entry)
     assert "name" not in diagnostics["config"]
     assert diagnostics["prices"]["resolution_minutes"] == 15
+
+    # The report for a bug report: roles and properties, no entity ids, no
+    # name, no meter reading, the dates of the plant to the month.
+    message = await press_issue_report(hass, entry)
+    assert "regime: quarter_hour" in message
+    assert "applies from: 2026-01-01" in message
+    assert "rate: 7.94 ct/kWh" in message
+    assert "price sensor: resolution 15 min, 0 entries skipped" in message
+    assert (
+        "meter: no registry entry, Wh, energy, total_increasing, state a number"
+        in message
+    )
+    assert "price: no registry entry, €/kWh, measurement, state -0.00001" in message
+    assert "commissioned: 2025-06" in message
+    assert "rates: [7.94]" in message
+    assert "SMARD.de: off" in message
+    assert "open: none" in message
+    for private in (METER, PRICE, "Dach", "2025-06-15", "1550"):
+        assert private not in message, private
 
 
 @pytest.mark.freeze_time(START)
