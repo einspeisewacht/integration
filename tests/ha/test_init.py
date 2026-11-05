@@ -128,7 +128,7 @@ async def test_booking_and_restart(
     assert "rate: 7.94 ct/kWh" in message
     assert "price sensor: resolution 15 min, 0 entries skipped" in message
     assert (
-        "meter: no registry entry, Wh, energy, total_increasing, state a number"
+        "meter: no registry entry, Wh, energy, total_increasing, numeric state"
         in message
     )
     assert "price: no registry entry, €/kWh, measurement, state -0.00001" in message

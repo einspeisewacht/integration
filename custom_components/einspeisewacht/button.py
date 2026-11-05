@@ -28,6 +28,7 @@ from .const import (
 )
 from .entity import PlantEntity
 from .issue_report import Lines, build, show
+from .issue_report import settings as format_settings
 from .prices import ParsedPrices
 from .runtime import PlantRuntime
 
@@ -81,8 +82,8 @@ class IssueReport(PlantEntity, ButtonEntity):
             mapping={"meter": runtime.meter_entity, "price": runtime.price_entity},
             extra=entry_lines(runtime),
             # No meter reading, as in the diagnostics.
-            hide=("meter",),
-            options=settings(entry.data),
+            private=("meter",),
+            setting_lines=format_settings(settings(entry.data)),
         )
         show(self.hass, DOMAIN, NAME, entry, report)
 

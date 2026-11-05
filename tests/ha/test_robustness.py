@@ -143,8 +143,7 @@ async def test_own_sensor_as_source_is_ignored_with_an_issue(
     message = await press_issue_report(hass, garage)
     assert "open: own_entity" in message
     assert (
-        "meter: einspeisewacht, kWh, energy, total_increasing, state a number"
-        in message
+        "meter: einspeisewacht, kWh, energy, total_increasing, numeric state" in message
     )
     assert "price: einspeisewacht, EUR, monetary, total, state " in message
     for private in (own_meter, own_price, "Garage"):
