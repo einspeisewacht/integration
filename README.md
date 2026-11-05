@@ -24,7 +24,7 @@ Die Oberfläche gibt es auf Deutsch und Englisch; sie folgt der Sprache deines H
 ## Inhalt
 
 - [Was Einspeisewacht kann](#was-einspeisewacht-kann) · [Welche Regel gilt](#welche-regel-gilt--51-eeg) · [Was Einspeisewacht nicht kann](#was-einspeisewacht-nicht-kann)
-- **Loslegen:** [Voraussetzungen](#voraussetzungen) · [Installation](#installation-hacs) · [Einrichtung](#einrichtung)
+- **Loslegen:** [Voraussetzungen](#voraussetzungen) · [Installation](#installation) · [Einrichtung](#einrichtung)
 - **Nutzen:** [Entitäten](#entitäten) · [Bericht für einen Zeitraum](#bericht-für-einen-zeitraum) · [Statistik nachtragen](#statistik-nachtragen)
 - **[Was du damit bauen kannst](#was-du-damit-bauen-kannst):** [Dashboard-Karte](#dashboard-karte-mit-tages--und-jahreswerten) · [Blueprint](#fertiger-blueprint) · [Speicher laden](#speicher-laden-solange-es-keine-vergütung-gibt-als-eigene-automation) · [Hinweis am Vortag](#hinweis-am-vortag)
 - **Mehr:** [Datenschutz](#datenschutz) · [Fehlerbehebung](#fehlerbehebung) · [Entfernen](#entfernen) · [Fehler melden](#fehler-melden) · [Weitere Wachten](#weitere-wachten) · [Lizenz und Quellen](#lizenz-und-quellen)
@@ -66,16 +66,16 @@ Fundstellen und Details: [docs/ENTWICKLUNG.md](docs/ENTWICKLUNG.md), Abschnitt 2
 
 <img src="https://raw.githubusercontent.com/einspeisewacht/integration/main/assets/screenshots/integration.png" alt="Einspeisewacht mit zwei Einträgen" width="620">
 
-## Installation (HACS)
+## Installation
 
-**Mit einem Klick:** [![In HACS öffnen](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=einspeisewacht&repository=integration&category=integration) → herunterladen, Home Assistant neu starten → [![Integration hinzufügen](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=einspeisewacht)
+**Mit einem Klick:** [![Im Marketplace öffnen](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=einspeisewacht&repository=integration&category=integration) → installieren, Home Assistant neu starten → [![Integration hinzufügen](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=einspeisewacht)
 
-Oder von Hand – Einspeisewacht ist seit November 2026 in der Standardliste von HACS, ein benutzerdefiniertes Repository ist nicht mehr nötig:
+Oder von Hand:
 
-1. In HACS nach Einspeisewacht suchen und herunterladen. Home Assistant neu starten.
+1. *Einstellungen → Marketplace → Durchstöbern*, nach Einspeisewacht suchen und installieren (vor Home Assistant 2026.11: in HACS suchen und herunterladen). Home Assistant neu starten.
 2. *Einstellungen → Geräte & Dienste → Integration hinzufügen → Einspeisewacht*.
 
-Hinweis: Im HACS-Dashboard fehlt das Icon derzeit ([HACS-Issue #5171](https://github.com/hacs/integration/issues/5171)); in den Home-Assistant-Einstellungen wird es angezeigt.
+Hinweis: Im alten HACS-Dashboard (vor Home Assistant 2026.11) fehlt das Icon ([HACS-Issue #5171](https://github.com/hacs/integration/issues/5171)); im Marketplace und in den Einstellungen wird es angezeigt.
 
 ## Einrichtung
 
@@ -314,7 +314,7 @@ Einspeisewacht rechnet lokal und liest nur die Entitäten, die du auswählst. Ei
 ## Entfernen
 
 1. *Einstellungen → Geräte & Dienste → Einspeisewacht* → bei jedem Eintrag ⋮ → *Löschen*. Die gespeicherten Buchungen dieses Eintrags werden mit gelöscht.
-2. Optional: HACS → Einspeisewacht → ⋮ → *Entfernen*, dann Home Assistant neu starten.
+2. Optional: *Einstellungen → Marketplace → Installiert* → Einspeisewacht → ⋮ → *Deinstallieren* (vor Home Assistant 2026.11: HACS → Einspeisewacht → ⋮ → *Entfernen*), dann Home Assistant neu starten.
 
 Die Langzeitstatistik der gelöschten Sensoren bleibt in Home Assistant erhalten, bis du sie unter *Entwicklerwerkzeuge → Statistik* entfernst.
 
@@ -331,7 +331,7 @@ Vom selben Autor und nach demselben Muster gebaut: Einrichtung über die Oberfl�
 - **Energie**
   - [Tarifwacht](https://github.com/tarifwacht/integration) – was der eigene Strombezug mit anderen Tarifen gekostet hätte, auch dynamisch und mit Modul 3 · [Demo](https://tarifwacht.github.io/integration/?lang=de)
   - [Speicherwacht](https://github.com/speicherwacht/integration) – Wirkungsgrad, Zyklen und Kapazität des Batteriespeichers · [Demo](https://speicherwacht.github.io/integration/?lang=de)
-  - [Wärmewacht](https://github.com/waermewacht/integration) – Arbeitszahlen und Gesundheits-Check der Wärmepumpe
+  - [Wärmewacht](https://github.com/waermewacht/integration) – Arbeitszahlen und Gesundheits-Check der Wärmepumpe · [Demo](https://waermewacht.github.io/integration/?lang=de)
 - **Alltag**
   - [Eilwacht](https://github.com/eilwacht/integration) – Tagesschau-Eilmeldungen und Regionalnachrichten als Auslöser für Automationen · [Demo](https://eilwacht.github.io/integration/?lang=de)
   - [Streckenwacht](https://github.com/streckenwacht/integration) – Baustellen, Sperrungen und Staus auf den eigenen Strecken · [Demo](https://streckenwacht.github.io/integration/?lang=de)

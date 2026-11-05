@@ -24,7 +24,7 @@ The integration's UI is available in German and English and follows your Home As
 ## Contents
 
 - [What Einspeisewacht does](#what-einspeisewacht-does) · [Which rule applies](#which-rule-applies--51-eeg) · [What Einspeisewacht does not do](#what-einspeisewacht-does-not-do)
-- **Getting started:** [Requirements](#requirements) · [Installation](#installation-hacs) · [Setup](#setup)
+- **Getting started:** [Requirements](#requirements) · [Installation](#installation) · [Setup](#setup)
 - **Using it:** [Entities](#entities) · [Report for a period](#report-for-a-period) · [Import statistics](#import-statistics)
 - **[Examples](#examples):** [Dashboard card](#dashboard-card-with-daily-and-yearly-values)
 - **More:** [Privacy](#privacy) · [Troubleshooting](#troubleshooting) · [Removal](#removal) · [Reporting issues](#reporting-issues) · [Sister integrations](#sister-integrations) · [License and sources](#license-and-sources)
@@ -64,16 +64,16 @@ Sources and details (German): [docs/ENTWICKLUNG.md](docs/ENTWICKLUNG.md), sectio
 - A **feed-in meter**: cumulative energy sensor (Wh, kWh or MWh, `state_class` `total` or `total_increasing`) – ideally the meter at the grid connection point.
 - A **price sensor** with a day-ahead forecast per quarter hour, e.g. from the [EPEX Spot](https://github.com/mampfes/ha_epex_spot) integration (source SMARD.de, market DE-LU). The `data` attribute of EPEX Spot is tested. Without a forecast attribute the current state counts as the price of the running quarter hour – prices are then missing for times Home Assistant was off, and if the sensor updates only minutes after the quarter-hour boundary, the old value applies until then.
 
-## Installation (HACS)
+## Installation
 
-**One click:** [![Open in HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=einspeisewacht&repository=integration&category=integration) → download, restart Home Assistant → [![Add integration](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=einspeisewacht)
+**One click:** [![Open in the Marketplace](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=einspeisewacht&repository=integration&category=integration) → install, restart Home Assistant → [![Add integration](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=einspeisewacht)
 
-Or by hand – Einspeisewacht has been in the HACS default list since November 2026, no custom repository needed:
+Or by hand:
 
-1. Search for Einspeisewacht in HACS and download it. Restart Home Assistant.
+1. *Settings → Marketplace → Browse*, search for Einspeisewacht and install it (before Home Assistant 2026.11: search for it in HACS and download it). Restart Home Assistant.
 2. *Settings → Devices & services → Add integration → Einspeisewacht*.
 
-Note: the icon is currently missing in the HACS dashboard ([HACS issue #5171](https://github.com/hacs/integration/issues/5171)); it is shown in the Home Assistant settings.
+Note: the old HACS dashboard (before Home Assistant 2026.11) does not show the icon ([HACS issue #5171](https://github.com/hacs/integration/issues/5171)); the Marketplace and the settings do.
 
 ## Setup
 
@@ -263,7 +263,7 @@ Einspeisewacht computes locally and reads only the entities you choose. The sing
 ## Removal
 
 1. *Settings → Devices & services → Einspeisewacht* → ⋮ on each entry → *Delete*. The entry's stored bookings are deleted with it.
-2. Optional: HACS → Einspeisewacht → ⋮ → *Remove*, then restart Home Assistant.
+2. Optional: *Settings → Marketplace → Installed* → Einspeisewacht → ⋮ → *Uninstall* (before Home Assistant 2026.11: HACS → Einspeisewacht → ⋮ → *Remove*), then restart Home Assistant.
 
 Long-term statistics of the deleted sensors stay until you remove them under *Developer tools → Statistics*.
 
@@ -280,7 +280,7 @@ By the same author and built the same way: set up in the UI, in German and Engli
 - **Energy**
   - [Tarifwacht](https://github.com/tarifwacht/integration) – what your grid consumption would have cost with other tariffs, including dynamic ones and Modul 3 · [demo](https://tarifwacht.github.io/integration/?lang=en)
   - [Speicherwacht](https://github.com/speicherwacht/integration) – efficiency, cycles and capacity of your home battery · [demo](https://speicherwacht.github.io/integration/?lang=en)
-  - [Wärmewacht](https://github.com/waermewacht/integration) – performance factors and health check for your heat pump
+  - [Wärmewacht](https://github.com/waermewacht/integration) – performance factors and health check for your heat pump · [demo](https://waermewacht.github.io/integration/?lang=en)
 - **Everyday**
   - [Eilwacht](https://github.com/eilwacht/integration) – Tagesschau breaking news and regional news as automation triggers (German) · [demo](https://eilwacht.github.io/integration/?lang=en)
   - [Streckenwacht](https://github.com/streckenwacht/integration) – roadworks, closures and traffic jams on your own routes (Germany, Luxembourg) · [demo](https://streckenwacht.github.io/integration/?lang=en)
