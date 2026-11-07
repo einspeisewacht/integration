@@ -133,7 +133,7 @@ async def test_booking_and_restart(
     )
     assert "price: no registry entry, €/kWh, measurement, state -0.00001" in message
     assert "commissioned: 2025-06" in message
-    assert "rates: [7.94]" in message
+    assert "rates: 7.94" in message
     assert "SMARD.de: off" in message
     assert "open: none" in message
     for private in (METER, PRICE, "Dach", "2025-06-15", "1550"):

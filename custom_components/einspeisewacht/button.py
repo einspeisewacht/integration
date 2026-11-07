@@ -27,7 +27,7 @@ from .const import (
     VERSION,
 )
 from .entity import PlantEntity
-from .issue_report import Lines, build, show
+from .issue_report import Lines, build, show, utc
 from .issue_report import settings as format_settings
 from .prices import ParsedPrices
 from .runtime import PlantRuntime
@@ -113,19 +113,19 @@ def entry_lines(runtime: PlantRuntime) -> Lines:
             "meter",
             "no reading yet"
             if engine.meter.last_time is None
-            else f"last reading {engine.meter.last_time.isoformat()}",
+            else f"last reading {utc(engine.meter.last_time)}",
         ),
         ("meter events", _counts(engine.meter_events)),
         ("waiting for a price", f"{len(engine.ledger.pending)} quarter hours"),
         ("booked without a price", str(engine.ledger.booked_without_price)),
-        ("negative quarter hours", _counts(engine.counts())),
+        ("negative quarter hours", _years(engine.counts())),
     ]
     if not derived.applies:
-        lines.append(("if the rule applied", _counts(engine.shadow_counts())))
+        lines.append(("if the rule applied", _years(engine.shadow_counts())))
     lines += [
         (
             "counting since",
-            quarters.started.isoformat() if quarters.started else "-",
+            utc(quarters.started),
         ),
         (
             "without a price",
@@ -152,7 +152,7 @@ def _applies_from(runtime: PlantRuntime) -> str:
 def _prices(prices: Mapping[datetime, float]) -> str:
     if not prices:
         return "none"
-    return f"{len(prices)} quarter hours until {max(prices).isoformat()}"
+    return f"{len(prices)} quarter hours until {utc(max(prices))}"
 
 
 def _price_sensor(parsed: ParsedPrices | None) -> str:
@@ -164,9 +164,17 @@ def _price_sensor(parsed: ParsedPrices | None) -> str:
 
 
 def _counts(counts: Mapping[Any, int]) -> str:
-    """`2025 12, 2026 340` (years) or `first 1, reset 2` (events)."""
+    """Events: `first 1, reset 2`."""
     return (
         ", ".join(f"{key} {count}" for key, count in sorted(counts.items())) or "none"
+    )
+
+
+def _years(counts: Mapping[Any, int]) -> str:
+    """Quarter hours per year: `2025: 12, 2026: 340`."""
+    return (
+        ", ".join(f"{year}: {count}" for year, count in sorted(counts.items()))
+        or "none"
     )
 
 

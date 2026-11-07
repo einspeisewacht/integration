@@ -1,5 +1,9 @@
 # Changelog
 
+## Unveröffentlicht
+
+- **Bericht für Fehlermeldung lesbarer:** Einstellungen ohne Python-Schreibweise – `yes`/`no` statt `True`/`False`, `none` statt `None`, Listen ohne Klammern, Zeitpunkte als `2026-11-07 12:39 UTC`. Auch Zählerstand, Zählbeginn und Preise bis … stehen jetzt so (bisher ISO mit Mikrosekunden), die negativen Viertelstunden als `2026: 1860` statt `2026 1860`.
+
 ## 0.1.7 – 2026-11-07
 
 - **Neu: Schaltfläche „Bericht für Fehlermeldung“** am Gerät (unter *Diagnose*). Sie zeigt einen kurzen Bericht als Benachrichtigung zum Kopieren in ein Issue: Versionen, Regel und Beginn, Vergütungssatz, Stand von Preisen, Zähler und Buchung, die Zuordnung nach Rolle (Integration, Einheit, Zustandsklasse, Zustand; beim Zähler ohne Zählerstand), die Einstellungen (Inbetriebnahme und Smart-Meter-Datum nur mit Monat), unbekannte Sensoren mit Grund und offene Reparaturhinweise – ohne Entity-IDs, Anlagennamen und Bereiche. Viele wollen die Diagnose-Datei nicht öffentlich teilen, weil Home Assistant ihr unter anderem die Liste aller installierten Integrationen voranstellt. Die README erklärt jetzt unter „Fehler melden“, was in der Diagnose-Datei steht und welche Teile man vor dem Teilen löschen darf; die Issue-Vorlage fragt nach dem Bericht.
