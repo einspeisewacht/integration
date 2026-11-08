@@ -22,6 +22,7 @@ from custom_components.einspeisewacht.const import DOMAIN
 from custom_components.einspeisewacht.regime import local_midnight
 from custom_components.einspeisewacht.runtime import PlantRuntime
 from custom_components.einspeisewacht.smard import parse_week
+from custom_components.einspeisewacht.statistics_import import async_recalculate
 from tests.conftest import load_fixture
 
 from .test_init import START, entity_id, setup
@@ -200,3 +201,79 @@ async def test_import_statistics_refuses_start_after_setup(
             return_response=True,
         )
     assert err.value.translation_key == "import_start_after_setup"
+
+
+@pytest.mark.freeze_time(START)
+async def test_import_recalculate_import_earlier_without_jump(
+    recorder_mock: Recorder, hass: HomeAssistant
+) -> None:
+    """Import, recalculate with a new rate, import again from an earlier day:
+    the first row of the first import gets the second import's total plus its
+    own change (seen in Tarifwacht: a jump at that boundary), and a second
+    recalculation finds nothing to change."""
+    entry = await setup(hass)
+    ids = {key: entity_id(hass, entry, key) for key in KEYS}
+    for key, statistic_id in ids.items():
+        energy = key.startswith("energy")
+        value = 0.5 if energy else 0.5 * RATE
+        async_import_statistics(
+            hass,
+            {
+                "has_sum": True,
+                "mean_type": StatisticMeanType.NONE,
+                "name": None,
+                "source": "recorder",
+                "statistic_id": statistic_id,
+                "unit_class": "energy" if energy else None,
+                "unit_of_measurement": "kWh" if energy else "EUR",
+            },
+            [{"start": LIVE_START, "state": value, "sum": value}],
+        )
+    await async_wait_recording_done(hass)
+    runtime = entry.runtime_data
+    earlier = date(2026, 10, 22)
+    week = parse_week(load_fixture("smard_week_2026-10-19.json"))
+    runtime.engine.add_backfill(week, local_midnight(earlier), LIVE_START)
+
+    async def import_from(day: date) -> None:
+        with patch.object(
+            PlantRuntime,
+            "async_hourly_energy",
+            return_value=(hourly(local_midnight(day), LIVE_START), []),
+        ):
+            await hass.services.async_call(
+                DOMAIN,
+                "import_statistics",
+                {"config_entry_id": entry.entry_id, "start": day.isoformat()},
+                blocking=True,
+                return_response=True,
+            )
+        await async_wait_recording_done(hass)
+
+    await import_from(IMPORT_FROM)
+    new_rate = 0.10
+    with patch.object(runtime, "rate_ct", new_rate * 100):
+        result = await async_recalculate(hass, entry)
+        assert result["rows_written"] > 0
+        await async_wait_recording_done(hass)
+        await import_from(earlier)
+        # Recalculated once more: every row already holds the current rate.
+        again = await async_recalculate(hass, entry)
+        assert again["rows_written"] == 0
+
+    paid, unpaid = (
+        await sums(hass, ids["energy_paid"]),
+        await sums(hass, ids["energy_unpaid"]),
+    )
+    assert paid[0][0] == local_midnight(earlier)
+    totals = [p + u for (_, p), (_, u) in zip(paid, unpaid, strict=True)]
+    # 1 kWh in every imported hour, 0.5 in the compiled one: no jump anywhere,
+    # also not at the start of the first import (24.10. 00:00).
+    steps = [b - a for a, b in zip([0.0, *totals], totals, strict=False)]
+    assert steps[:-1] == pytest.approx([1.0] * (len(steps) - 1))
+    assert steps[-1] == pytest.approx(0.5)
+    for money, energy in (("revenue", paid), ("revenue_lost", unpaid)):
+        money_sums = await sums(hass, ids[money])
+        assert [s for _, s in money_sums] == pytest.approx(
+            [new_rate * s for _, s in energy], abs=0.0005
+        ), money
