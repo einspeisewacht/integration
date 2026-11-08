@@ -77,14 +77,15 @@ Note: the old HACS dashboard (before Home Assistant 2026.11) does not show the i
 
 ## Setup
 
-1. **Plant:** name, commissioning date, installed capacity (kWp), iMSys and its installation date.
-2. **Remuneration:** the rate from your grid operator's statement in ct/kWh (after the 0.4 ct deduction) – single or tiered by capacity band; for tiered rates Einspeisewacht forms the blended rate (§ 23c EEG).
-3. **Data sources:** feed-in meter and price sensor. If you have set up [Tarifwacht](https://github.com/tarifwacht/integration), Einspeisewacht proposes the feed-in meter and the exchange price from there.
-4. **Rule:** shows the derived rule, when it starts and the rate; override it if your grid operator settles differently. Optional: **count earlier negative quarter hours from SMARD.de**, so the extension covers the time before setup too; if your price sensor fails, Einspeisewacht also fetches the missing prices from there (public price data, see [Privacy](#privacy)).
+Three steps; what few people need is collapsed.
+
+1. **Plant:** name, commissioning date, installed capacity (kWp), whether an iMSys is installed and since when.
+2. **Remuneration:** the rate from your grid operator's statement in ct/kWh (after the 0.4 ct deduction). Plants above 10 kWp with several rates open "Several rates by capacity band" and then enter the rate per band; Einspeisewacht forms the blended rate (§ 23c EEG).
+3. **Data sources and rule:** on top the rule that follows from your details, when it starts and the rate. Below the feed-in meter and the price sensor – if you have set up [Tarifwacht](https://github.com/tarifwacht/integration), Einspeisewacht proposes both from there – and the option **Use SMARD.de**: it counts earlier negative quarter hours so the extension covers the time before setup too, and stands in when the price sensor fails (public price data, see [Privacy](#privacy)). If your grid operator settles differently, override the rule under "Does your grid operator settle differently?" ("every negative quarter hour from …" or "not affected").
 
 <img src="https://raw.githubusercontent.com/einspeisewacht/integration/main/assets/screenshots/einrichtung_regel.png" alt="Last setup step with the derived rule (German UI)" width="420">
 
-Several plants or meters: one entry each. To change: *Einspeisewacht → entry → ⋮ → Reconfigure*.
+Several plants or meters: one entry each. To change: *Einspeisewacht → entry → ⋮ → Reconfigure*. It starts with a short overview – plant, rate, which rule applies today, meter, price, SMARD.de – and below it what is missing and what that costs (e.g. "Feed-in meter not found – nothing is booked until it is back").
 
 What a change means for the time before it:
 
@@ -107,7 +108,7 @@ If you rename the feed-in meter or the price sensor in Home Assistant (new entit
 | Remunerated until | date | end of remuneration including the extension |
 | Remunerated | paid/unpaid | whether the running quarter hour is remunerated; unknown without a price |
 | Negative prices | calendar | windows with a negative price |
-| Rule | diagnostic | the rule applied, attributes `applies_from` and `rate_ct_per_kwh` |
+| Rule | diagnostic | the rule applied, attributes `applies_from`, `applies_today` (whether the rule applies today – `false` e.g. before 1 January after the iMSys installation) and `rate_ct_per_kwh` |
 | Recalculate statistics | button (configuration) | recalculates the statistics of revenue and lost revenue with the current rate, see [Recalculate statistics](#recalculate-statistics) |
 | Report for a bug report | button (diagnostic) | shows a short report to copy into an issue, see [Reporting issues](#reporting-issues) |
 

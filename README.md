@@ -79,14 +79,15 @@ Hinweis: Im alten HACS-Dashboard (vor Home Assistant 2026.11) fehlt das Icon ([H
 
 ## Einrichtung
 
-1. **Anlage:** Name, Inbetriebnahme, installierte Leistung (kWp), iMSys und Einbaudatum.
-2. **Vergütung:** der Satz aus der Abrechnung deines Netzbetreibers in ct/kWh (nach Abzug der 0,4 ct) – einheitlich oder gestaffelt nach Leistungsstufen. Bei gestaffelter Vergütung bildet Einspeisewacht den Mischsatz nach § 23c EEG.
-3. **Datenquellen:** Einspeisezähler und Preissensor. Hast du [Tarifwacht](https://github.com/tarifwacht/integration) eingerichtet, schlägt Einspeisewacht den Einspeisezähler und den Börsenpreis von dort vor.
-4. **Regel:** zeigt die abgeleitete Regel, ab wann sie gilt, und den Vergütungssatz. Rechnet dein Netzbetreiber anders ab, kannst du sie übersteuern („jede negative Viertelstunde ab …“ oder „nicht betroffen“). Optional: **frühere negative Viertelstunden von SMARD.de nachzählen** – dann enthält die Nachholung auch die Zeit vor der Einrichtung, und fällt dein Preissensor aus, holt Einspeisewacht die fehlenden Preise ebenfalls von dort (öffentliche Preisdaten, siehe [Datenschutz](#datenschutz)).
+Drei Schritte; was nur wenige brauchen, ist eingeklappt.
+
+1. **Anlage:** Name, Inbetriebnahme, installierte Leistung (kWp), ob ein iMSys eingebaut ist und seit wann.
+2. **Vergütung:** der Satz aus der Abrechnung deines Netzbetreibers in ct/kWh (nach Abzug der 0,4 ct). Anlagen über 10 kWp mit mehreren Sätzen öffnen „Mehrere Sätze nach Leistungsstufe“ und tragen danach den Satz je Stufe ein; Einspeisewacht bildet den Mischsatz (§ 23c EEG).
+3. **Datenquellen und Regel:** oben die Regel, die sich aus deinen Angaben ergibt, ab wann sie gilt, und der Satz. Darunter Einspeisezähler und Preissensor – hast du [Tarifwacht](https://github.com/tarifwacht/integration) eingerichtet, schlägt Einspeisewacht beide von dort vor – und die Option **SMARD.de nutzen**: Sie zählt frühere negative Viertelstunden nach, damit die Nachholung auch die Zeit vor der Einrichtung enthält, und springt ein, wenn der Preissensor ausfällt (öffentliche Preisdaten, siehe [Datenschutz](#datenschutz)). Rechnet dein Netzbetreiber anders ab, übersteuerst du die Regel unter „Rechnet dein Netzbetreiber anders ab?“ („jede negative Viertelstunde ab …“ oder „nicht betroffen“).
 
 <img src="https://raw.githubusercontent.com/einspeisewacht/integration/main/assets/screenshots/einrichtung_regel.png" alt="Letzter Einrichtungsschritt mit der abgeleiteten Regel" width="420">
 
-Mehrere Anlagen oder Zähler: je einen Eintrag anlegen. Ändern: *Einspeisewacht → Eintrag → ⋮ → Neu konfigurieren*.
+Mehrere Anlagen oder Zähler: je einen Eintrag anlegen. Ändern: *Einspeisewacht → Eintrag → ⋮ → Neu konfigurieren*. Dort steht oben eine kurze Übersicht – Anlage, Satz, welche Regel heute gilt, Zähler, Preis, SMARD.de – und darunter, was fehlt und was das kostet (z. B. „Einspeisezähler nicht gefunden – bis er wieder da ist, wird nichts gebucht“).
 
 Was eine Änderung für die Zeit davor bedeutet:
 
@@ -109,7 +110,7 @@ Benennst du Einspeisezähler oder Preissensor in Home Assistant um (neue Entity-
 | Vergütung bis | Datum | Ende der Förderung einschließlich Nachholung |
 | Vergütung aktiv | vergütet/unvergütet | ob die laufende Viertelstunde vergütet wird; unbekannt ohne Preis |
 | Negative Preise | Kalender | Zeitfenster mit negativem Preis |
-| Regel | Diagnose | die angewandte Regel, Attribute `applies_from` und `rate_ct_per_kwh` |
+| Regel | Diagnose | die angewandte Regel, Attribute `applies_from`, `applies_today` (greift die Regel heute – `false` z. B. vor dem 1. Januar nach dem iMSys-Einbau) und `rate_ct_per_kwh` |
 | Statistik neu berechnen | Schaltfläche (Konfiguration) | rechnet die Statistik von Erlös und entgangenem Erlös mit dem aktuellen Satz neu, siehe [Statistik neu berechnen](#statistik-neu-berechnen) |
 | Bericht für Fehlermeldung | Schaltfläche (Diagnose) | zeigt einen kurzen Bericht zum Kopieren in ein Issue, siehe [Fehler melden](#fehler-melden) |
 
