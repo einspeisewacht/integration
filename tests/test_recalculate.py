@@ -8,6 +8,7 @@ import pytest
 
 from custom_components.einspeisewacht.recalculate import (
     HOUR,
+    ROW_TOLERANCE,
     EnergyRowsMissing,
     plan_money,
 )
@@ -84,6 +85,49 @@ def test_recalculating_again_changes_nothing() -> None:
     assert again.hourly == first.hourly
     assert again.short == first.short
     assert again.shift == pytest.approx(0.0)
+    # Nothing to write, nothing to shift.
+    assert first.rows_written == 6
+    assert (again.hourly_written, again.short_written) == ([], [])
+    assert again.rows_written == 0
+    assert not again.shifted
+
+
+def test_only_changed_rows_are_written() -> None:
+    """Rows within the tolerance stay; without energy nothing changes."""
+    first = plan()
+    assert first is not None
+    nudged = [(t, s, v + ROW_TOLERANCE / 2) for t, s, v in first.hourly]
+    nudged[2] = (at(2), 0.05, 0.25 + 3 * ROW_TOLERANCE)
+    again = plan(money_hours=nudged, money_short=first.short)
+    assert again is not None
+    assert [row[0] for row in again.hourly_written] == [at(2)]
+    assert again.short_written == []
+
+    # A sensor without energy (lost revenue, all paid): 0 at any rate.
+    zero_energy = [(t, 0.0, 0.0) for t, _, _ in ENERGY_HOURS]
+    zero_short = [(t, 0.0, 0.0) for t, _, _ in ENERGY_SHORT]
+    idle = plan(
+        money_hours=zero_energy,
+        energy_hours=zero_energy,
+        money_short=zero_short,
+        energy_short=zero_short,
+    )
+    assert idle is not None
+    assert len(idle.hourly) == 4
+    assert idle.rows_written == 0
+    assert not idle.shifted
+
+
+def test_latest_row_kept_nothing_shifted() -> None:
+    """The latest short-term row already right: the recorder continues from
+    it as stored, later rows are not shifted."""
+    first = plan()
+    assert first is not None
+    short = [MONEY_SHORT[0], first.short[1]]
+    again = plan(money_hours=first.hourly, money_short=short)
+    assert again is not None
+    assert [row[0] for row in again.short_written] == [at(4, 0)]
+    assert not again.shifted
 
 
 def test_from_a_day_on_the_rows_before_stay() -> None:

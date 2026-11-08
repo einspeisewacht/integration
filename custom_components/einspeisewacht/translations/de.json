@@ -357,7 +357,10 @@
       "message": "Einspeisewacht: Statistik neu berechnet ({name})"
     },
     "recalculated": {
-      "message": "Die Statistik von {count} Sensoren wurde vom {start} bis {end} mit dem aktuellen Satz von {rate} ct/kWh neu berechnet. Die nächsten Werte schließen daran an."
+      "message": "Die Statistik von {count} Sensoren wurde vom {start} bis {end} mit dem aktuellen Satz von {rate} ct/kWh neu berechnet. Zeilen geschrieben: {rows} (Zeilen, die schon stimmten, bleiben, wie sie sind). Die nächsten Werte schließen daran an."
+    },
+    "recalculated_unchanged": {
+      "message": "Die Statistik stimmt schon mit dem aktuellen Satz von {rate} ct/kWh überein. Zeilen geschrieben: 0."
     },
     "recalculated_changes": {
       "message": "Änderung der Summe:"

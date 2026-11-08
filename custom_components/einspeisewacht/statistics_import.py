@@ -14,7 +14,9 @@ Recalculation (button "Recalculate statistics", the action with `replace`):
 revenue, lost revenue and the shadow value are energy times the current
 rate. After a corrected rate their statistics of past hours still hold the
 old one; this rewrites them from the energy sensors' statistics
-(recalculate.py, docs/ENTWICKLUNG.md "Statistik neu berechnen").
+(recalculate.py, docs/ENTWICKLUNG.md "Statistik neu berechnen"). Only rows
+whose values change are written: a sensor without changes is not touched,
+and a second press writes nothing.
 """
 
 from __future__ import annotations
@@ -329,19 +331,21 @@ async def _async_recalculate(
         "rate_ct_per_kwh": round(runtime.rate_ct, 4),
         "sensors": {},
         "skipped": skipped,
+        "rows_written": 0,
     }
     from_first = not skipped
     for money_id, plan in plans.items():
         if money_id not in metadata:
             continue
         meta = metadata[money_id][1]
-        if plan.hourly:
-            async_import_statistics(hass, meta, _data(plan.hourly))
-        if plan.short:
+        # Only rows whose values change: no needless writes (SD cards).
+        if plan.hourly_written:
+            async_import_statistics(hass, meta, _data(plan.hourly_written))
+        if plan.short_written:
             instance.async_import_statistics(
-                meta, _data(plan.short), StatisticsShortTerm
+                meta, _data(plan.short_written), StatisticsShortTerm
             )
-        if plan.shift_from is not None and plan.shift:
+        if plan.shift_from is not None and plan.shifted:
             # Rows written after the latest one read continue from it.
             instance.async_adjust_statistics(
                 money_id,
@@ -351,6 +355,7 @@ async def _async_recalculate(
             )
         from_first &= plan.from_first
         result["sensors"][money_id] = _sensor_result(plan)
+        result["rows_written"] += plan.rows_written
     # Written before the next press reads them.
     await instance.async_block_till_done()
     if from_first:
@@ -376,5 +381,7 @@ def _sensor_result(plan: MoneyPlan) -> Mapping[str, Any]:
         "until": plan.until.astimezone(BERLIN).isoformat() if plan.until else None,
         "hours": len(plan.hourly),
         "short_term": len(plan.short),
+        "hours_written": len(plan.hourly_written),
+        "short_term_written": len(plan.short_written),
         "change": change,
     }

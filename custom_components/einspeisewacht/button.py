@@ -137,22 +137,29 @@ def recalculated_message(
     texts: Mapping[str, str],
     german: bool,
 ) -> str:
-    """What was recalculated: the period, the rate, each sensor's change of
-    its sum, sensors left out."""
+    """What was recalculated: the period, the rate, the rows written, each
+    changed sensor's change of its sum, sensors left out."""
     sensors: Mapping[str, Mapping[str, Any]] = result["sensors"]
     rate = f"{result['rate_ct_per_kwh']:.4g}"
-    parts = [
-        _fill(
+    rate = rate.replace(".", ",") if german else rate
+    written = int(result.get("rows_written", 0))
+    if written:
+        text = _fill(
             texts["recalculated"],
             count=str(len(sensors)),
             start=_moment(result["start"], german),
             end=_moment(result["end"], german) if result["end"] else "-",
-            rate=rate.replace(".", ",") if german else rate,
+            rate=rate,
+            rows=str(written),
         )
-    ]
+    else:
+        text = _fill(texts["recalculated_unchanged"], rate=rate)
+    parts = [text]
     lines = []
     for entity_id, info in sensors.items():
-        if info.get("change") is None:
+        if info.get("change") is None or not (
+            info.get("hours_written") or info.get("short_term_written")
+        ):
             continue
         state = hass.states.get(entity_id)
         label = state.name if state is not None else entity_id

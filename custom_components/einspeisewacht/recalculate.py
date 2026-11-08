@@ -24,6 +24,15 @@ rewritten, and rows the recorder writes after that latest one (in the
 moment between reading and writing) are shifted by `shift`, chosen so their
 `sum - state` matches the new rows: the next compile continues without a
 jump and counts nothing twice.
+
+Only rows whose value changes are written (`hourly_written`,
+`short_written`): rows that already hold the target within ROW_TOLERANCE
+stay, so a sensor whose values do not change (no energy, or a second press)
+is not touched at all, and small hardware (an SD card) gets no needless
+writes. The rate has no date of its own (it applies from the commissioning),
+so every row from the first one is checked. Later rows are shifted only if
+the latest short-term row is rewritten: otherwise the recorder continues
+from that stored row as before.
 """
 
 from __future__ import annotations
@@ -34,6 +43,9 @@ from datetime import datetime, timedelta
 
 FIVE_MINUTES = timedelta(minutes=5)
 HOUR = timedelta(hours=1)
+# A recalculated row differing from the stored one by less (EUR, in state
+# and in sum) is not written.
+ROW_TOLERANCE = 0.0005
 
 # (start, state, sum) as read from the statistics.
 Row = tuple[datetime, float | None, float]
@@ -57,6 +69,18 @@ class MoneyPlan:
     until: datetime | None = None
     # From the sensor's first row on (no old rows left before).
     from_first: bool = True
+    # The rows of `hourly` and `short` whose values change: written.
+    hourly_written: list[Row] = field(default_factory=list)
+    short_written: list[Row] = field(default_factory=list)
+
+    @property
+    def rows_written(self) -> int:
+        return len(self.hourly_written) + len(self.short_written)
+
+    @property
+    def shifted(self) -> bool:
+        """Whether rows after the latest one read are shifted."""
+        return self.shift_from is not None and abs(self.shift) > 1e-12
 
 
 class EnergyRowsMissing(Exception):
@@ -71,6 +95,20 @@ def _before(rows: Sequence[Row], moment: datetime) -> float:
             break
         total = value
     return total
+
+
+def _differs(new: Row, old: Row) -> bool:
+    """Whether a recalculated row differs from the stored one (a row
+    without state is written with its sum as state)."""
+    _, state, total = new
+    _, old_state, old_total = old
+    if old_state is None:
+        return True
+    written = total if state is None else state
+    return (
+        abs(written - old_state) > ROW_TOLERANCE
+        or abs(total - old_total) > ROW_TOLERANCE
+    )
 
 
 def plan_money(
@@ -104,13 +142,16 @@ def plan_money(
 
     plan = MoneyPlan(start=begin, from_first=from_first)
     energy = {row[0]: row for row in energy_hours}
-    for moment, _state, old in money_hours:
+    for stored in money_hours:
+        moment, _state, old = stored
         if moment < begin:
             continue
         if moment not in energy:
             raise EnergyRowsMissing(moment)
         state, total = money(energy[moment][1], energy[moment][2])
         plan.hourly.append((moment, state, total))
+        if _differs(plan.hourly[-1], stored):
+            plan.hourly_written.append(plan.hourly[-1])
         plan.old_end, plan.new_end, plan.until = old, total, moment + HOUR
 
     energy_5 = {row[0]: row for row in energy_short}
@@ -121,13 +162,16 @@ def plan_money(
             continue
         state, total = money(energy_5[moment][1], energy_5[moment][2])
         plan.short.append((moment, state, total))
+        if _differs(plan.short[-1], row):
+            plan.short_written.append(plan.short[-1])
         latest = (row, energy_5[moment])
     if latest is not None:
         (moment, old_state, old_sum), (_, energy_state, energy_sum) = latest
         plan.shift_from = moment + FIVE_MINUTES
         plan.old_end, plan.new_end = old_sum, plan.short[-1][2]
         plan.until = moment + FIVE_MINUTES
-        if old_state is not None and energy_state is not None:
+        rewritten = bool(plan.short_written) and plan.short_written[-1][0] == moment
+        if rewritten and old_state is not None and energy_state is not None:
             # Later rows: sum = state + old offset; wanted: the new offset.
             new_offset = base_money + rate * (energy_sum - energy_state - base_energy)
             plan.shift = new_offset - (old_sum - old_state)

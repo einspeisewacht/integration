@@ -147,8 +147,9 @@ It computes like the report and writes the hours **before** the first existing s
 If you correct the rate (under *Reconfigure*; also tiers, capacity or full/partial feed-in when they change the rate), revenue and lost revenue show the new totals at once. The long-term statistics of past hours – statistics graphs, values per day and month, the [dashboard card](#dashboard-card-with-daily-and-yearly-values) – keep the old rate, imported ones too; Home Assistant books the whole difference into the hour of the change. *Repairs* reminds you with "Statistics with the old rate". The plant's device has the button **Recalculate statistics** for this (under *Configuration*):
 
 - It recalculates the statistics of revenue, lost revenue and – while the rule does not apply yet – "Lost revenue if the rule applied" from their first value to the latest with the current rate: from the energy sensors' statistics, so exactly from what is booked per hour. The statistics after it continue without a jump.
-- The result shows up as a notification: period, rate and how much each sensor's total changed. The repair issue goes away afterwards (or when you change the rate back).
-- Pressing twice gives the same result. Sensors without statistics stay as they are.
+- Only rows whose value changes are written; sensors without a change are left alone. That spares the SD card of a Raspberry Pi.
+- The result shows up as a notification: period, rate, how many rows were written and how much each sensor's total changed. The repair issue goes away afterwards (or when you change the rate back).
+- Pressing twice gives the same result and writes nothing the second time. Sensors without statistics stay as they are.
 - The 5-minute statistics of the last 10 days are recalculated too; older ones (with a longer `purge_keep_days`) stay, only 5-minute graphs show them.
 - From a given day on: the action **Import statistics** with **Replace existing statistics** (`replace: true`). Before that day the statistics stay unchanged; if the day is before the setup, the time before is imported first.
 - Not recalculated: the split remunerated/not remunerated after a rule change (see [Setup](#setup)). The total sensors keep it on purpose, the statistics follow them.

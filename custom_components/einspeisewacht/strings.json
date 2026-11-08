@@ -357,7 +357,10 @@
       "message": "Einspeisewacht: statistics recalculated ({name})"
     },
     "recalculated": {
-      "message": "The statistics of {count} sensors were recalculated from {start} to {end} with the current rate of {rate} ct/kWh. The next values continue from them."
+      "message": "The statistics of {count} sensors were recalculated from {start} to {end} with the current rate of {rate} ct/kWh. Rows written: {rows} (rows that were already right stay as they are). The next values continue from them."
+    },
+    "recalculated_unchanged": {
+      "message": "The statistics already match the current rate of {rate} ct/kWh. Rows written: 0."
     },
     "recalculated_changes": {
       "message": "Change of the total:"

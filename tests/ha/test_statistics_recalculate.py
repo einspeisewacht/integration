@@ -26,10 +26,17 @@ from pytest_homeassistant_custom_component.components.recorder.common import (
     async_wait_recording_done,
 )
 
-from custom_components.einspeisewacht.const import CONF_RATES, DOMAIN
+from custom_components.einspeisewacht import statistics_import
+from custom_components.einspeisewacht.const import (
+    CONF_RATES,
+    CONF_SMART_METER,
+    CONF_SMART_METER_DATE,
+    DOMAIN,
+)
 from custom_components.einspeisewacht.regime import local_midnight
 from custom_components.einspeisewacht.runtime import PlantRuntime
 from custom_components.einspeisewacht.smard import parse_week
+from custom_components.einspeisewacht.statistics_import import async_recalculate
 from tests.conftest import load_fixture
 
 from .conftest import METER, METER_ATTRIBUTES, entry_data
@@ -134,12 +141,45 @@ def outdated(hass: HomeAssistant, entry: MockConfigEntry) -> bool:
     return ir.async_get(hass).async_get_issue(DOMAIN, issue) is not None
 
 
+async def recalculate(
+    hass: HomeAssistant, entry: MockConfigEntry
+) -> tuple[dict[str, Any], dict[str, int]]:
+    """The recalculation's result, and the rows really handed to the
+    recorder (hourly and short-term) per statistic id."""
+    instance = get_instance(hass)
+    written: dict[str, int] = {}
+    hourly, short = (
+        statistics_import.async_import_statistics,
+        instance.async_import_statistics,
+    )
+
+    def count(metadata: Any, data: Any) -> None:
+        key = metadata["statistic_id"]
+        written[key] = written.get(key, 0) + len(data)
+
+    def hourly_counted(hass: HomeAssistant, metadata: Any, data: Any) -> None:
+        count(metadata, data)
+        hourly(hass, metadata, data)
+
+    def short_counted(metadata: Any, data: Any, table: Any) -> Any:
+        count(metadata, data)
+        return short(metadata, data, table)
+
+    with (
+        patch.object(statistics_import, "async_import_statistics", hourly_counted),
+        patch.object(instance, "async_import_statistics", short_counted),
+    ):
+        result = await async_recalculate(hass, entry)
+    await async_wait_recording_done(hass)
+    return result, written
+
+
 async def booked_hour_and_new_rate(
-    hass: HomeAssistant, freezer: FrozenDateTimeFactory
+    hass: HomeAssistant, freezer: FrozenDateTimeFactory, **changes: Any
 ) -> MockConfigEntry:
     """An hour booked at 7.94 ct (03:00 UTC, compiled), then the rate
     corrected to 10 ct at 04:02 and the next 5 minutes compiled."""
-    entry = await setup(hass)
+    entry = await setup(hass, **changes)
     await at(hass, freezer, 3, 5, 10)
     await compile_period(hass, utc(2026, 10, 25, 3, 0))
     # 0.25 kWh at a negative price, then 0.3 kWh mostly at price 0.
@@ -155,7 +195,7 @@ async def booked_hour_and_new_rate(
 
     await at(hass, freezer, 4, 2)
     hass.config_entries.async_update_entry(
-        entry, data=entry_data(**{CONF_RATES: [NEW_RATE * 100]})
+        entry, data=entry_data(**{**changes, CONF_RATES: [NEW_RATE * 100]})
     )
     assert await hass.config_entries.async_reload(entry.entry_id)
     await hass.async_block_till_done()
@@ -184,14 +224,21 @@ async def test_recalculate_after_a_rate_change(
     title, message = await press(hass, entry)
     assert title == "Einspeisewacht: statistics recalculated (Dach)"
     assert "with the current rate of 10 ct/kWh" in message
+    assert "Rows written: " in message
+    assert "Rows written: 0" not in message
     assert "Change of the total:" in message
     await assert_money_follows_energy(hass, entry, NEW_RATE)
     assert not outdated(hass, entry)
     hours = await rows(hass, revenue, "hour")
     short = await rows(hass, revenue, "5minute")
 
-    # Idempotent: pressing again changes nothing.
-    await press(hass, entry)
+    # Idempotent: pressing again changes nothing, and writes nothing.
+    title, message = await press(hass, entry)
+    assert title == "Einspeisewacht: statistics recalculated (Dach)"
+    assert (
+        message
+        == "The statistics already match the current rate of 10 ct/kWh. Rows written: 0."
+    )
     assert await rows(hass, revenue, "hour") == hours
     assert await rows(hass, revenue, "5minute") == short
 
@@ -210,6 +257,61 @@ async def test_recalculate_after_a_rate_change(
     assert hours[-1][2] - hours[-2][2] == pytest.approx(
         NEW_RATE * (paid_hours[-1][2] - paid_hours[-2][2])
     )
+
+
+@pytest.mark.freeze_time(START)
+async def test_only_changed_rows_are_written(
+    hass: HomeAssistant, freezer: FrozenDateTimeFactory
+) -> None:
+    """Write load (SD cards): only rows whose value changes. Without an
+    iMSys the rule does not apply yet: lost revenue stays 0 at any rate and
+    is not touched at all; a second press writes nothing."""
+    no_imsys = {CONF_SMART_METER: False, CONF_SMART_METER_DATE: None}
+    entry = await booked_hour_and_new_rate(hass, freezer, **no_imsys)
+    keys = ("revenue", "revenue_lost", "shadow_revenue_lost")
+    ids = {key: entity_id(hass, entry, key) for key in keys}
+    assert all(ids.values())
+
+    async def snapshot() -> dict[str, tuple[Rows, Rows]]:
+        return {
+            key: (await rows(hass, i, "hour"), await rows(hass, i, "5minute"))
+            for key, i in ids.items()
+            if i
+        }
+
+    before = await snapshot()
+    # One hour, short-term rows of 03:00, 03:30, 03:55 and 04:00.
+    assert all((len(h), len(s)) == (1, 4) for h, s in before.values())
+
+    result, written = await recalculate(hass, entry)
+    sensors = result["sensors"]
+    lost = sensors[ids["revenue_lost"]]
+    assert (lost["hours"], lost["short_term"]) == (1, 4)
+    assert (lost["hours_written"], lost["short_term_written"]) == (0, 0)
+    assert ids["revenue_lost"] not in written
+    after = await snapshot()
+    assert after["revenue_lost"] == before["revenue_lost"]
+    for key in ("revenue", "shadow_revenue_lost"):
+        info = sensors[ids[key]]
+        # The 03:00 row before any feed-in stays 0 at any rate.
+        assert (info["hours_written"], info["short_term_written"]) == (1, 3), key
+        assert written[ids[key]] == 4, key
+        old_rows = before[key][0] + before[key][1]
+        new_rows = after[key][0] + after[key][1]
+        changed = [n for o, n in zip(old_rows, new_rows, strict=True) if o != n]
+        assert len(changed) == 4, key
+    assert result["rows_written"] == 8 == sum(written.values())
+    await assert_money_follows_energy(hass, entry, NEW_RATE)
+    assert not outdated(hass, entry)
+
+    # A second press: not a single row, the notification says so.
+    _title, message = await press(hass, entry)
+    assert "Rows written: 0." in message
+    assert "Change of the total:" not in message
+    result, written = await recalculate(hass, entry)
+    assert result["rows_written"] == 0
+    assert written == {}
+    assert await snapshot() == after
 
 
 @pytest.mark.freeze_time(START)
