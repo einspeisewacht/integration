@@ -293,14 +293,18 @@ async def test_only_changed_rows_are_written(
     assert after["revenue_lost"] == before["revenue_lost"]
     for key in ("revenue", "shadow_revenue_lost"):
         info = sensors[ids[key]]
-        # The 03:00 row before any feed-in stays 0 at any rate.
-        assert (info["hours_written"], info["short_term_written"]) == (1, 3), key
-        assert written[ids[key]] == 4, key
+        # The rows of 03:00 and 03:30, before anything was booked, stay 0
+        # at any rate; the hour and the rows of 03:55 and 04:00 change.
+        assert (info["hours_written"], info["short_term_written"]) == (1, 2), key
+        assert written[ids[key]] == 3, key
         old_rows = before[key][0] + before[key][1]
         new_rows = after[key][0] + after[key][1]
         changed = [n for o, n in zip(old_rows, new_rows, strict=True) if o != n]
-        assert len(changed) == 4, key
-    assert result["rows_written"] == 8 == sum(written.values())
+        assert len(changed) == 3, key
+        kept = [o for o, n in zip(old_rows, new_rows, strict=True) if o == n]
+        assert all(state == total == 0 for _, state, total in kept), key
+    # 6 of 15 rows of the three money sensors.
+    assert result["rows_written"] == 6 == sum(written.values())
     await assert_money_follows_energy(hass, entry, NEW_RATE)
     assert not outdated(hass, entry)
 
