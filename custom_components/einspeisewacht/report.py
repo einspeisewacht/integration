@@ -56,17 +56,29 @@ def _ranges(slots: list[datetime]) -> list[tuple[datetime, datetime]]:
 def plausible_hours(
     rows: Iterable[tuple[datetime, float, float | None]], max_power_kw: float
 ) -> tuple[list[tuple[datetime, float]], list[datetime]]:
-    """Hourly changes of the meter (start, change in kWh, state of the row)
-    split into plausible ones and the hours left out.
+    """Hourly changes of a meter (start, change in kWh, state of the row)
+    split into the plausible ones and the hours left out.
 
     The bound is the live meter's (meter.py, MeterEvent.JUMP): the plant's
-    power x POWER_MARGIN per hour since the previous row (Home Assistant was
-    off in between: the first row after it holds the whole gap). Left out:
-    more than that (a unit glitch, e.g. Wh reported as kWh: 107 -> 109851.5),
-    less than 0 (meter replaced or the statistics adjusted), and the hour
-    after a jump in which the state falls again (109851.5 -> 110.131): Home
-    Assistant takes that for a new cycle and adds the whole reading (110 kWh)
-    to the sum.
+    power x POWER_MARGIN (+ 2 Wh rounding) per hour since the previous row:
+    while Home Assistant was off, the recorder writes no rows, and the first
+    row afterwards holds the whole gap (the first row of the series: one
+    hour). Left out:
+
+    - more than the bound: a unit glitch of the source, e.g. Wh reported as
+      kWh for a moment (state 107 -> 109851.5);
+    - less than 0: the sum restarted (meter replaced or reset in the
+      statistics);
+    - the fall back after such a jump (109851.5 -> 110.131): Home Assistant
+      takes the fall for a new meter cycle and adds the whole reading to the
+      sum, which can stay under the bound. Also when the wrong reading lasted
+      a few hours: until the state falls below the jump's, the fall back is
+      still expected (a row without a state ends the wait).
+
+    A state that falls without a jump before (meter reset to 0) stays. Same
+    rule in Tarifwacht (lookback.plausible_hours), Wärmewacht
+    (plausible.plausible_hours) and Einspeisewacht (report.plausible_hours);
+    only the bound per hour differs.
     """
     kept: list[tuple[datetime, float]] = []
     left_out: list[datetime] = []
@@ -82,7 +94,9 @@ def plausible_hours(
             jump_state = state if change > bound else None
         else:
             kept.append((hour, change))
-            jump_state = None
+            # A wrong reading may last a few hours: the fall back comes later.
+            if state is None:
+                jump_state = None
     return kept, left_out
 
 

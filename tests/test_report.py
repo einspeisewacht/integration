@@ -208,6 +208,23 @@ def test_plausible_hours_after_home_assistant_was_off() -> None:
     assert plausible_hours(rows, 9.0) == ([(hour, 2.0), (hour + 4 * HOUR, 30.0)], [])
 
 
+@pytest.mark.parametrize("max_power_kw", [9.0, 100.0])
+def test_a_wrong_reading_lasting_hours_is_still_caught(max_power_kw: float) -> None:
+    """The wrong reading stays two hours before the state falls back: the
+    fall back (a new cycle of 110 kWh, under the bound of a 100 kWp plant)
+    is still left out."""
+    hour = datetime(2025, 9, 24, 13, tzinfo=UTC)
+    rows = [
+        (hour, 109_744.5, 109_851.5),
+        (hour + HOUR, 0.0, 109_851.5),
+        (hour + 2 * HOUR, 110.131, 110.131),
+        (hour + 3 * HOUR, 1.914, 112.045),
+    ]
+    kept, left_out = plausible_hours(rows, max_power_kw)
+    assert left_out == [hour, hour + 2 * HOUR]
+    assert kept == [(hour + HOUR, 0.0), (hour + 3 * HOUR, 1.914)]
+
+
 def test_a_new_cycle_without_a_jump_stays() -> None:
     """A state that falls without a jump before (meter replaced, starts at
     0): Home Assistant adds the new reading, which stays."""
