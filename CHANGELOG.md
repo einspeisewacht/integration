@@ -2,6 +2,7 @@
 
 ## Unveröffentlicht
 
+- **Zähler und Preis aus Tarifwacht:** Hast du die Schwester [Tarifwacht](https://github.com/tarifwacht/integration) eingerichtet, schlägt der Schritt „Datenquellen“ beim Einrichten den Einspeisezähler aus „PV und Speicher“ und den Börsenpreis vor (aus „PV und Speicher“ oder einem Tarif „Börsenpreis plus Aufschläge“ – nie einen Gesamtpreis mit Aufschlägen). Ein Satz unter der Beschreibung sagt, aus welchem Eintrag sie stammen; ohne passende Werte in Tarifwacht steht dort ein kurzer Tipp. Nur ein Vorschlag, Einspeisewacht hängt danach nicht von Tarifwacht ab. Neu konfigurieren bleibt, wie es ist.
 - **Bericht für Fehlermeldung lesbarer:** Einstellungen ohne Python-Schreibweise – `yes`/`no` statt `True`/`False`, `none` statt `None`, Listen ohne Klammern, Zeitpunkte als `2026-11-07 12:39 UTC`. Auch Zählerstand, Zählbeginn und Preise bis … stehen jetzt so (bisher ISO mit Mikrosekunden), die negativen Viertelstunden als `2026: 1860` statt `2026 1860`.
 
 ## 0.1.7 – 2026-11-07

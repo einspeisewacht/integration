@@ -1,8 +1,9 @@
-"""Tests for the config flow and reconfiguration."""
+"""Tests for the config flow and reconfiguration, suggestions from Tarifwacht."""
 
 from __future__ import annotations
 
 from collections.abc import Iterator
+from typing import Any
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -68,7 +69,8 @@ async def test_full_flow_single_rate(hass: HomeAssistant) -> None:
     result = await configure(
         hass, result, {"rate_mode": "single", "feed_in_type": "partial", "rate": 7.94}
     )
-    assert result["step_id"] == "sources"
+    # Without Tarifwacht: the tip.
+    assert result["step_id"] == "sources_tarifwacht_tip"
     result = await configure(
         hass, result, {"meter_entity": METER, "price_entity": PRICE}
     )
@@ -91,7 +93,8 @@ async def test_tiered_rates(hass: HomeAssistant) -> None:
     assert result["step_id"] == "tier_rates"
     assert [str(k) for k in result["data_schema"].schema] == ["band_0_10", "band_10_40"]
     result = await configure(hass, result, {"band_0_10": 8.51, "band_10_40": 7.43})
-    assert result["step_id"] == "sources"
+    # Without Tarifwacht: the tip.
+    assert result["step_id"] == "sources_tarifwacht_tip"
     result = await configure(
         hass, result, {"meter_entity": METER, "price_entity": PRICE}
     )
@@ -267,6 +270,106 @@ async def test_reconfigure(hass: HomeAssistant) -> None:
     assert result["reason"] == "reconfigure_successful"
     assert entry.title == "Dach Süd"
     assert entry.data[CONF_RATES] == [8.0]
+
+
+def suggested(result: dict) -> dict[str, Any]:
+    """Prefilled values of a form."""
+    return {
+        str(key): key.description["suggested_value"]
+        for key in result["data_schema"].schema
+        if "suggested_value" in (key.description or {})
+    }
+
+
+def add_tarifwacht(hass: HomeAssistant, *subentries: dict[str, Any]) -> None:
+    """A Tarifwacht entry (not set up; only its data is read)."""
+    MockConfigEntry(
+        domain="tarifwacht",
+        title="Haus",
+        data={"name": "Haus", "meter_entity": "sensor.grid_import"},
+        version=2,
+        subentries_data=[
+            {
+                "data": {k: v for k, v in data.items() if k != "type"},
+                "subentry_id": f"sub{i}",
+                "subentry_type": data["type"],
+                "title": data["type"],
+                "unique_id": None,
+            }
+            for i, data in enumerate(subentries)
+        ],
+    ).add_to_hass(hass)
+
+
+FIXED_TARIFF = {"type": "tariff", "kind": "fixed", "price": 30.0, "current": True}
+MARKET_TARIFF = {
+    "type": "tariff",
+    "kind": "dynamic_market",
+    "price_entity": PRICE,
+    "current": False,
+}
+SOLAR = {
+    "type": "solar",
+    "feed_in_entity": METER,
+    "pv_entity": "sensor.pv",
+    "feed_in_rate": 7.94,
+    "negative_unpaid": True,
+    "same_inverter": False,
+}
+
+
+async def to_sources(hass: HomeAssistant) -> dict:
+    result = await configure(hass, await start(hass), PLANT)
+    return await configure(
+        hass, result, {"rate_mode": "single", "feed_in_type": "partial", "rate": 7.94}
+    )
+
+
+async def test_tarifwacht_without_pv_subentry(hass: HomeAssistant) -> None:
+    """Only a fixed price: nothing to suggest, the tip stays."""
+    add_tarifwacht(hass, FIXED_TARIFF)
+    result = await to_sources(hass)
+    assert result["step_id"] == "sources_tarifwacht_tip"
+    assert result["description_placeholders"] == {
+        "tarifwacht_url": "https://github.com/tarifwacht/integration"
+    }
+    assert not any(suggested(result).values())
+
+
+async def test_sources_suggested_from_tarifwacht(hass: HomeAssistant) -> None:
+    add_tarifwacht(hass, FIXED_TARIFF, MARKET_TARIFF, SOLAR)
+    result = await to_sources(hass)
+    assert result["step_id"] == "sources_tarifwacht"
+    assert result["description_placeholders"] == {"tarifwacht": "Haus"}
+    assert suggested(result) == {"meter_entity": METER, "price_entity": PRICE}
+    result = await configure(
+        hass, result, {"meter_entity": METER, "price_entity": PRICE}
+    )
+    assert result["step_id"] == "summary"
+    result = await configure(hass, result, {CONF_OVERRIDE: OVERRIDE_AUTO})
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+
+    # A second entry: the meter belongs to the first one, the price is kept.
+    result = await to_sources(hass)
+    assert result["step_id"] == "sources_tarifwacht"
+    assert suggested(result) == {"price_entity": PRICE}
+
+
+async def test_reconfigure_suggests_nothing_from_tarifwacht(
+    hass: HomeAssistant,
+) -> None:
+    add_tarifwacht(hass, MARKET_TARIFF, {**SOLAR, "feed_in_entity": "sensor.other"})
+    entry = MockConfigEntry(
+        domain=DOMAIN, unique_id=METER, title="Dach", data=entry_data()
+    )
+    entry.add_to_hass(hass)
+    result = await entry.start_reconfigure_flow(hass)
+    result = await configure(hass, result, PLANT)
+    result = await configure(
+        hass, result, {"rate_mode": "single", "feed_in_type": "partial", "rate": 8.0}
+    )
+    assert result["step_id"] == "sources"
+    assert suggested(result)["meter_entity"] == METER
 
 
 async def test_note_above_100_kw(hass: HomeAssistant) -> None:

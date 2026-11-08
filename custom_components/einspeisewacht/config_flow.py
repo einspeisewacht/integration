@@ -48,12 +48,17 @@ from .entity import own_entities
 from .meter import UNIT_FACTORS
 from .regime import Derived
 from .runtime import derived_from_config, parse_price_state, rate_from_config
+from .sisters import TARIFWACHT, TARIFWACHT_URL, tarifwacht_sources
 from .tariff import bands
 
 CONF_RATE = "rate"
 # § 21 Abs. 1 Nr. 1 EEG: the fixed feed-in tariff exists up to 100 kW; larger
 # plants sell directly, and negative prices cost them the market premium.
 FEED_IN_TARIFF_LIMIT_KW = 100
+# Hint of the sources step at setup: values taken from Tarifwacht, or a tip
+# when it has none (own step ids, own texts).
+HINT_TARIFWACHT = "tarifwacht"
+HINT_TARIFWACHT_TIP = "tarifwacht_tip"
 
 
 def band_key(lower: float, upper: float) -> str:
@@ -94,6 +99,11 @@ class EinspeisewachtConfigFlow(ConfigFlow, domain=DOMAIN):
         self._data: dict[str, Any] = {}
         # The entry data when a reconfigure flow started.
         self._initial: dict[str, Any] = {}
+        # Sources suggested from Tarifwacht at setup (read once), the hint
+        # of the sources step and the Tarifwacht entry they came from.
+        self._suggested: dict[str, str] | None = None
+        self._hint: str | None = None
+        self._tarifwacht_title = ""
 
     @property
     def _full_feed_in(self) -> bool:
@@ -238,6 +248,8 @@ class EinspeisewachtConfigFlow(ConfigFlow, domain=DOMAIN):
                 self._data[CONF_PRICE] = price
                 return await self.async_step_summary()
 
+        if self.source != SOURCE_RECONFIGURE and self._suggested is None:
+            self._suggest_from_tarifwacht()
         schema = vol.Schema(
             {
                 vol.Required(CONF_METER): selector.EntitySelector(
@@ -250,13 +262,51 @@ class EinspeisewachtConfigFlow(ConfigFlow, domain=DOMAIN):
                 ),
             }
         )
+        placeholders: dict[str, str] = {}
+        if self._hint == HINT_TARIFWACHT:
+            placeholders["tarifwacht"] = self._tarifwacht_title
+        elif self._hint == HINT_TARIFWACHT_TIP:
+            placeholders["tarifwacht_url"] = TARIFWACHT_URL
         return self.async_show_form(
-            step_id="sources",
+            step_id=f"sources_{self._hint}" if self._hint else "sources",
             data_schema=self.add_suggested_values_to_schema(
-                schema, user_input or self._data
+                schema, user_input or {**(self._suggested or {}), **self._data}
             ),
             errors=errors,
+            description_placeholders=placeholders,
         )
+
+    async def async_step_sources_tarifwacht(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Step 3, with the sources taken from Tarifwacht."""
+        return await self.async_step_sources(user_input)
+
+    async def async_step_sources_tarifwacht_tip(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Step 3, with the tip on Tarifwacht."""
+        return await self.async_step_sources(user_input)
+
+    def _suggest_from_tarifwacht(self) -> None:
+        """Feed-in meter and exchange price sensor of a Tarifwacht entry as
+        suggestions; copied once, no dependency at runtime. A meter that
+        already belongs to an entry is not suggested."""
+        self._suggested = {}
+        found = tarifwacht_sources(
+            self.hass.config_entries.async_entries(TARIFWACHT, include_ignore=False)
+        )
+        if found is None:
+            self._hint = HINT_TARIFWACHT_TIP
+            return
+        title, values = found
+        meter = values.get(CONF_METER)
+        if meter and any(e.unique_id == meter for e in self._async_current_entries()):
+            values.pop(CONF_METER)
+        if values:
+            self._suggested = values
+            self._hint = HINT_TARIFWACHT
+            self._tarifwacht_title = title
 
     def _validate_sources(self, meter: str, price: str) -> dict[str, str]:
         errors: dict[str, str] = {}

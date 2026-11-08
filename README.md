@@ -81,7 +81,7 @@ Hinweis: Im alten HACS-Dashboard (vor Home Assistant 2026.11) fehlt das Icon ([H
 
 1. **Anlage:** Name, Inbetriebnahme, installierte Leistung (kWp), iMSys und Einbaudatum.
 2. **Vergütung:** der Satz aus der Abrechnung deines Netzbetreibers in ct/kWh (nach Abzug der 0,4 ct) – einheitlich oder gestaffelt nach Leistungsstufen. Bei gestaffelter Vergütung bildet Einspeisewacht den Mischsatz nach § 23c EEG.
-3. **Datenquellen:** Einspeisezähler und Preissensor.
+3. **Datenquellen:** Einspeisezähler und Preissensor. Hast du [Tarifwacht](https://github.com/tarifwacht/integration) eingerichtet, schlägt Einspeisewacht den Einspeisezähler und den Börsenpreis von dort vor.
 4. **Regel:** zeigt die abgeleitete Regel, ab wann sie gilt, und den Vergütungssatz. Rechnet dein Netzbetreiber anders ab, kannst du sie übersteuern („jede negative Viertelstunde ab …“ oder „nicht betroffen“). Optional: **frühere negative Viertelstunden von SMARD.de nachzählen** – dann enthält die Nachholung auch die Zeit vor der Einrichtung, und fällt dein Preissensor aus, holt Einspeisewacht die fehlenden Preise ebenfalls von dort (öffentliche Preisdaten, siehe [Datenschutz](#datenschutz)).
 
 <img src="https://raw.githubusercontent.com/einspeisewacht/integration/main/assets/screenshots/einrichtung_regel.png" alt="Letzter Einrichtungsschritt mit der abgeleiteten Regel" width="420">

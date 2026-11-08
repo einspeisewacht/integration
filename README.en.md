@@ -79,7 +79,7 @@ Note: the old HACS dashboard (before Home Assistant 2026.11) does not show the i
 
 1. **Plant:** name, commissioning date, installed capacity (kWp), iMSys and its installation date.
 2. **Remuneration:** the rate from your grid operator's statement in ct/kWh (after the 0.4 ct deduction) – single or tiered by capacity band; for tiered rates Einspeisewacht forms the blended rate (§ 23c EEG).
-3. **Data sources:** feed-in meter and price sensor.
+3. **Data sources:** feed-in meter and price sensor. If you have set up [Tarifwacht](https://github.com/tarifwacht/integration), Einspeisewacht proposes the feed-in meter and the exchange price from there.
 4. **Rule:** shows the derived rule, when it starts and the rate; override it if your grid operator settles differently. Optional: **count earlier negative quarter hours from SMARD.de**, so the extension covers the time before setup too; if your price sensor fails, Einspeisewacht also fetches the missing prices from there (public price data, see [Privacy](#privacy)).
 
 <img src="https://raw.githubusercontent.com/einspeisewacht/integration/main/assets/screenshots/einrichtung_regel.png" alt="Last setup step with the derived rule (German UI)" width="420">

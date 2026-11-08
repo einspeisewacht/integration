@@ -75,6 +75,30 @@
           "price_entity": "Ein Sensor mit der Day-Ahead-Preisprognose je Viertelstunde, z. B. aus der Integration EPEX Spot."
         }
       },
+      "sources_tarifwacht": {
+        "title": "Datenquellen",
+        "description": "Einspeisewacht liest diese Entitäten nur.\n\nVorbelegt aus Tarifwacht „{tarifwacht}“ – bitte prüfen.",
+        "data": {
+          "meter_entity": "Einspeisezähler",
+          "price_entity": "Day-Ahead-Preis"
+        },
+        "data_description": {
+          "meter_entity": "Ins Netz eingespeiste Energie (Wh, kWh oder MWh, fortlaufend). Am besten der Zähler am Netzanschlusspunkt.",
+          "price_entity": "Ein Sensor mit der Day-Ahead-Preisprognose je Viertelstunde, z. B. aus der Integration EPEX Spot."
+        }
+      },
+      "sources_tarifwacht_tip": {
+        "title": "Datenquellen",
+        "description": "Einspeisewacht liest diese Entitäten nur.\n\nTipp: Nutzt du auch [Tarifwacht]({tarifwacht_url}) für den Vergleich deiner Stromtarife, sind diese Felder schon ausgefüllt.",
+        "data": {
+          "meter_entity": "Einspeisezähler",
+          "price_entity": "Day-Ahead-Preis"
+        },
+        "data_description": {
+          "meter_entity": "Ins Netz eingespeiste Energie (Wh, kWh oder MWh, fortlaufend). Am besten der Zähler am Netzanschlusspunkt.",
+          "price_entity": "Ein Sensor mit der Day-Ahead-Preisprognose je Viertelstunde, z. B. aus der Integration EPEX Spot."
+        }
+      },
       "summary": {
         "title": "Regel",
         "description": "Abgeleitete Regel: **{rule}**\nGilt ab: {applies_from}\nVergütung: {rate} ct/kWh\n\n{note}\n\nRechnet dein Netzbetreiber anders ab, kannst du die Regel hier übersteuern.",

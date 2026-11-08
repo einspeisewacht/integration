@@ -75,6 +75,30 @@
           "price_entity": "A sensor with the day-ahead price forecast per quarter hour, e.g. from the EPEX Spot integration."
         }
       },
+      "sources_tarifwacht": {
+        "title": "Data sources",
+        "description": "Einspeisewacht only reads these entities.\n\nPrefilled from Tarifwacht '{tarifwacht}' – please check.",
+        "data": {
+          "meter_entity": "Grid feed-in meter",
+          "price_entity": "Day-ahead price"
+        },
+        "data_description": {
+          "meter_entity": "Energy exported to the grid (Wh, kWh or MWh, cumulative). Best: the meter at the grid connection point.",
+          "price_entity": "A sensor with the day-ahead price forecast per quarter hour, e.g. from the EPEX Spot integration."
+        }
+      },
+      "sources_tarifwacht_tip": {
+        "title": "Data sources",
+        "description": "Einspeisewacht only reads these entities.\n\nTip: if you also use [Tarifwacht]({tarifwacht_url}) to compare your electricity tariffs, these fields are filled in already.",
+        "data": {
+          "meter_entity": "Grid feed-in meter",
+          "price_entity": "Day-ahead price"
+        },
+        "data_description": {
+          "meter_entity": "Energy exported to the grid (Wh, kWh or MWh, cumulative). Best: the meter at the grid connection point.",
+          "price_entity": "A sensor with the day-ahead price forecast per quarter hour, e.g. from the EPEX Spot integration."
+        }
+      },
       "summary": {
         "title": "Rule",
         "description": "Derived rule: **{rule}**\nApplies from: {applies_from}\nRemuneration: {rate} ct/kWh\n\n{note}\n\nIf your grid operator settles differently, override the rule here.",
