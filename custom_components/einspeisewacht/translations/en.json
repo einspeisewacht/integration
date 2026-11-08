@@ -89,7 +89,7 @@
       },
       "sources_tarifwacht_tip": {
         "title": "Data sources",
-        "description": "Einspeisewacht only reads these entities.\n\nTip: if you also use [Tarifwacht]({tarifwacht_url}) to compare your electricity tariffs, these fields are filled in already.",
+        "description": "Einspeisewacht only reads these entities.\n\nTip: [Tarifwacht]({tarifwacht_url}) compares your electricity tariffs using the same meters. Once it is set up, Einspeisewacht takes these fields from there.",
         "data": {
           "meter_entity": "Grid feed-in meter",
           "price_entity": "Day-ahead price"

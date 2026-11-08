@@ -89,7 +89,7 @@
       },
       "sources_tarifwacht_tip": {
         "title": "Datenquellen",
-        "description": "Einspeisewacht liest diese Entitäten nur.\n\nTipp: Nutzt du auch [Tarifwacht]({tarifwacht_url}) für den Vergleich deiner Stromtarife, sind diese Felder schon ausgefüllt.",
+        "description": "Einspeisewacht liest diese Entitäten nur.\n\nTipp: [Tarifwacht]({tarifwacht_url}) vergleicht deine Stromtarife mit denselben Zählern. Ist es eingerichtet, übernimmt Einspeisewacht die Felder von dort.",
         "data": {
           "meter_entity": "Einspeisezähler",
           "price_entity": "Day-Ahead-Preis"
