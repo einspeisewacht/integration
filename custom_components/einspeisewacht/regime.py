@@ -94,6 +94,17 @@ def manual(from_date: date | None) -> Derived:
     return Derived(Regime.MANUAL_FROM_DATE, from_date)
 
 
+def applies_on(derived: Derived, day: date) -> bool:
+    """Whether negative prices cost remuneration on `day` (local date).
+
+    False before the start date (e.g. iMSys installed this year: from
+    1 January) and for every regime that never costs remuneration.
+    """
+    if not derived.applies:
+        return False
+    return derived.applies_from is None or derived.applies_from <= day
+
+
 def local_midnight(day: date) -> datetime:
     """Start of a local calendar day as an aware datetime."""
     return datetime(day.year, day.month, day.day, tzinfo=BERLIN)

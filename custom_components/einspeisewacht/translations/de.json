@@ -21,7 +21,7 @@
       },
       "reconfigure": {
         "title": "PV-Anlage",
-        "description": "Einspeisewacht erfasst Einspeisung, die wegen negativer Day-Ahead-Preise nicht vergütet wird (§ 51 EEG). Die Werte sind eine Orientierung – maßgeblich ist die Abrechnung deines Netzbetreibers.",
+        "description": "{overview}\n\nUnten änderst du die Anlage; danach folgen Vergütung, Datenquellen und Regel.",
         "data": {
           "name": "Name",
           "commissioned": "Inbetriebnahme",
@@ -41,14 +41,23 @@
         "title": "Vergütung",
         "description": "Den Satz findest du in der Abrechnung deines Netzbetreibers (nach Abzug von 0,4 ct/kWh).",
         "data": {
-          "rate_mode": "Vergütungssatz",
-          "feed_in_type": "Einspeiseart",
           "rate": "Vergütungssatz"
         },
         "data_description": {
-          "rate_mode": "Anlagen über 10 kWp erhalten einen nach Leistung gewichteten Mischsatz aus mehreren Sätzen (§ 23c EEG).",
-          "feed_in_type": "Nur bei gestaffelter Vergütung: Bei Volleinspeisung gelten andere Leistungsstufen.",
-          "rate": "Nur bei einem einheitlichen Satz."
+          "rate": "Anlagen über 10 kWp mit mehreren Sätzen: leer lassen und unten „Gestaffelt nach Leistungsstufen“ wählen."
+        },
+        "sections": {
+          "tiers": {
+            "name": "Mehrere Sätze nach Leistungsstufe (über 10 kWp)",
+            "description": "Anlagen über 10 kWp erhalten einen nach Leistung gewichteten Mischsatz aus den Sätzen der einzelnen Stufen (§ 23c EEG). Steht in deiner Abrechnung nur ein Satz, trag ihn oben ein.",
+            "data": {
+              "rate_mode": "Vergütungssatz",
+              "feed_in_type": "Einspeiseart"
+            },
+            "data_description": {
+              "feed_in_type": "Bei Volleinspeisung gelten andere Leistungsstufen."
+            }
+          }
         }
       },
       "tier_rates": {
@@ -64,52 +73,84 @@
         }
       },
       "sources": {
-        "title": "Datenquellen",
-        "description": "Einspeisewacht liest diese Entitäten nur.",
+        "title": "Datenquellen und Regel",
+        "description": "**Regel nach deinen Angaben:** {rule}\n**Vergütung:** {rate} ct/kWh\n\n{note}\n\nEinspeisewacht liest die Entitäten unten nur.",
         "data": {
           "meter_entity": "Einspeisezähler",
-          "price_entity": "Day-Ahead-Preis"
+          "price_entity": "Day-Ahead-Preis",
+          "backfill_smard": "SMARD.de nutzen: frühere Viertelstunden nachzählen, fehlende Preise ersetzen"
         },
         "data_description": {
           "meter_entity": "Ins Netz eingespeiste Energie (Wh, kWh oder MWh, fortlaufend). Am besten der Zähler am Netzanschlusspunkt.",
-          "price_entity": "Ein Sensor mit der Day-Ahead-Preisprognose je Viertelstunde, z. B. aus der Integration EPEX Spot."
+          "price_entity": "Ein Sensor mit der Day-Ahead-Preisprognose je Viertelstunde, z. B. aus der Integration EPEX Spot.",
+          "backfill_smard": "Über das Internet, öffentliche Day-Ahead-Preise der Bundesnetzagentur (SMARD.de, CC BY 4.0): einmalig seit der Inbetriebnahme, damit die Nachholung (§ 51a EEG) auch die Zeit vor der Einrichtung erfasst – und für Viertelstunden, die der Preissensor länger als eine Stunde schuldig bleibt. Ohne diese Option beginnt die Zählung jetzt."
+        },
+        "sections": {
+          "rule": {
+            "name": "Rechnet dein Netzbetreiber anders ab?",
+            "description": "Nur nötig, wenn die Abrechnung nicht der Regel oben folgt.",
+            "data": {
+              "override": "Regel",
+              "override_date": "Jede negative Viertelstunde ab"
+            },
+            "data_description": {
+              "override_date": "Nur für „Jede negative Viertelstunde ab einem Datum“."
+            }
+          }
         }
       },
       "sources_tarifwacht": {
-        "title": "Datenquellen",
-        "description": "Einspeisewacht liest diese Entitäten nur.\n\nVorbelegt aus Tarifwacht „{tarifwacht}“ – bitte prüfen.",
+        "title": "Datenquellen und Regel",
+        "description": "**Regel nach deinen Angaben:** {rule}\n**Vergütung:** {rate} ct/kWh\n\n{note}\n\nEinspeisewacht liest die Entitäten unten nur.\n\nVorbelegt aus Tarifwacht „{tarifwacht}“ – bitte prüfen.",
         "data": {
           "meter_entity": "Einspeisezähler",
-          "price_entity": "Day-Ahead-Preis"
+          "price_entity": "Day-Ahead-Preis",
+          "backfill_smard": "SMARD.de nutzen: frühere Viertelstunden nachzählen, fehlende Preise ersetzen"
         },
         "data_description": {
           "meter_entity": "Ins Netz eingespeiste Energie (Wh, kWh oder MWh, fortlaufend). Am besten der Zähler am Netzanschlusspunkt.",
-          "price_entity": "Ein Sensor mit der Day-Ahead-Preisprognose je Viertelstunde, z. B. aus der Integration EPEX Spot."
+          "price_entity": "Ein Sensor mit der Day-Ahead-Preisprognose je Viertelstunde, z. B. aus der Integration EPEX Spot.",
+          "backfill_smard": "Über das Internet, öffentliche Day-Ahead-Preise der Bundesnetzagentur (SMARD.de, CC BY 4.0): einmalig seit der Inbetriebnahme, damit die Nachholung (§ 51a EEG) auch die Zeit vor der Einrichtung erfasst – und für Viertelstunden, die der Preissensor länger als eine Stunde schuldig bleibt. Ohne diese Option beginnt die Zählung jetzt."
+        },
+        "sections": {
+          "rule": {
+            "name": "Rechnet dein Netzbetreiber anders ab?",
+            "description": "Nur nötig, wenn die Abrechnung nicht der Regel oben folgt.",
+            "data": {
+              "override": "Regel",
+              "override_date": "Jede negative Viertelstunde ab"
+            },
+            "data_description": {
+              "override_date": "Nur für „Jede negative Viertelstunde ab einem Datum“."
+            }
+          }
         }
       },
       "sources_tarifwacht_tip": {
-        "title": "Datenquellen",
-        "description": "Einspeisewacht liest diese Entitäten nur.\n\nTipp: [Tarifwacht]({tarifwacht_url}) vergleicht deine Stromtarife mit denselben Zählern. Ist es eingerichtet, übernimmt Einspeisewacht die Felder von dort.",
+        "title": "Datenquellen und Regel",
+        "description": "**Regel nach deinen Angaben:** {rule}\n**Vergütung:** {rate} ct/kWh\n\n{note}\n\nEinspeisewacht liest die Entitäten unten nur.\n\nTipp: [Tarifwacht]({tarifwacht_url}) vergleicht deine Stromtarife mit denselben Zählern. Ist es eingerichtet, übernimmt Einspeisewacht die Felder von dort.",
         "data": {
           "meter_entity": "Einspeisezähler",
-          "price_entity": "Day-Ahead-Preis"
+          "price_entity": "Day-Ahead-Preis",
+          "backfill_smard": "SMARD.de nutzen: frühere Viertelstunden nachzählen, fehlende Preise ersetzen"
         },
         "data_description": {
           "meter_entity": "Ins Netz eingespeiste Energie (Wh, kWh oder MWh, fortlaufend). Am besten der Zähler am Netzanschlusspunkt.",
-          "price_entity": "Ein Sensor mit der Day-Ahead-Preisprognose je Viertelstunde, z. B. aus der Integration EPEX Spot."
-        }
-      },
-      "summary": {
-        "title": "Regel",
-        "description": "Abgeleitete Regel: **{rule}**\nGilt ab: {applies_from}\nVergütung: {rate} ct/kWh\n\n{note}\n\nRechnet dein Netzbetreiber anders ab, kannst du die Regel hier übersteuern.",
-        "data": {
-          "override": "Regel",
-          "override_date": "Jede negative Viertelstunde ab",
-          "backfill_smard": "Frühere negative Viertelstunden von SMARD.de nachzählen"
+          "price_entity": "Ein Sensor mit der Day-Ahead-Preisprognose je Viertelstunde, z. B. aus der Integration EPEX Spot.",
+          "backfill_smard": "Über das Internet, öffentliche Day-Ahead-Preise der Bundesnetzagentur (SMARD.de, CC BY 4.0): einmalig seit der Inbetriebnahme, damit die Nachholung (§ 51a EEG) auch die Zeit vor der Einrichtung erfasst – und für Viertelstunden, die der Preissensor länger als eine Stunde schuldig bleibt. Ohne diese Option beginnt die Zählung jetzt."
         },
-        "data_description": {
-          "override_date": "Nur für „Ab einem Datum“.",
-          "backfill_smard": "Über das Internet, von SMARD.de (Bundesnetzagentur, CC BY 4.0): einmalig die Day-Ahead-Preise seit der Inbetriebnahme, damit die Nachholung (§ 51a EEG) auch die Zeit vor der Einrichtung erfasst – und Preise, die der Preissensor länger als eine Stunde schuldig bleibt. Ohne diese Option beginnt die Zählung jetzt."
+        "sections": {
+          "rule": {
+            "name": "Rechnet dein Netzbetreiber anders ab?",
+            "description": "Nur nötig, wenn die Abrechnung nicht der Regel oben folgt.",
+            "data": {
+              "override": "Regel",
+              "override_date": "Jede negative Viertelstunde ab"
+            },
+            "data_description": {
+              "override_date": "Nur für „Jede negative Viertelstunde ab einem Datum“."
+            }
+          }
         }
       }
     },
@@ -124,7 +165,7 @@
       "meter_unit": "Der Zähler muss Wh, kWh oder MWh liefern.",
       "meter_state_class": "Der Zähler muss fortlaufend zählen (state_class total oder total_increasing).",
       "price_invalid": "Kein Preis gefunden: Der Sensor hat weder ein Prognose-Attribut `data` noch einen Zahlenwert.",
-      "override_date_required": "Bitte ein Datum eingeben.",
+      "override_date_required": "Unter „Rechnet dein Netzbetreiber anders ab?“ fehlt das Datum für „Jede negative Viertelstunde ab einem Datum“.",
       "date_in_future": "Das Datum darf nicht in der Zukunft liegen."
     },
     "abort": {
@@ -169,6 +210,40 @@
       "options": {
         "future_start": "⚠️ Die Regel greift erst in einem künftigen Jahr. Stimmen Inbetriebnahme und iMSys-Einbaudatum?",
         "direct_marketing": "ℹ️ Über 100 kW gibt es keine feste Einspeisevergütung (§ 21 EEG): Die Anlage vermarktet direkt, und negative Preise kosten die Marktprämie, nicht den hier eingetragenen Satz. Energie und Viertelstunden werden richtig gezählt; Erlös und entgangener Erlös sind nur ein grober Anhaltspunkt."
+      }
+    },
+    "overview": {
+      "options": {
+        "plant": "**Anlage:** {power} kWp, in Betrieb seit {commissioned}",
+        "rate_single": "**Vergütung:** {rate} ct/kWh",
+        "rate_tiered": "**Vergütung:** {rate} ct/kWh – Mischsatz nach Leistung aus {parts}; {feed_in}",
+        "rate_part": "{kw} kW zu {rate} ct",
+        "rate_unknown": "**Vergütung:** unklar – bitte die Sätze prüfen",
+        "rule": "**Regel heute:** {rule}",
+        "rule_start": "ab {date}",
+        "rule_since": "Viertelstunden-Regel (§ 51 EEG) seit {date}",
+        "rule_from": "noch keine – Viertelstunden-Regel ab {date}",
+        "rule_imsys": "(iMSys eingebaut am {date})",
+        "rule_manual": "(von Hand gesetzt)",
+        "rule_waiting": "keine – greift erst ab dem 1. Januar nach dem iMSys-Einbau",
+        "rule_below_2_kw": "keine – Anlagen unter 2 kW sind nicht betroffen",
+        "rule_not_affected": "keine – negative Preise kürzen die Vergütung dieser Anlage nicht",
+        "rule_none": "keine",
+        "rule_unsupported": "nicht berechnet: {rule}",
+        "meter": "**Einspeisezähler:** {meter}",
+        "price": "**Day-Ahead-Preis:** {price}",
+        "smard_on": "**SMARD.de:** an – frühere Viertelstunden nachgezählt, Ersatz für fehlende Preise",
+        "smard_off": "**SMARD.de:** aus",
+        "missing": "**Was fehlt:**",
+        "hint_meter_missing": "Einspeisezähler {meter} nicht gefunden – bis er wieder da ist, wird nichts gebucht.",
+        "hint_meter_unit": "Der Einspeisezähler meldet „{unit}“ – gebucht wird erst, wenn er Wh, kWh oder MWh meldet.",
+        "hint_meter_own": "Der Einspeisezähler ist ein Sensor von Einspeisewacht selbst und wird nicht gelesen – es wird nichts gebucht.",
+        "hint_price": "Der Preissensor liefert gerade keinen Preis – die Einspeisung wartet bis zu 24 Stunden darauf und zählt danach als vergütet. Mit SMARD.de (unter Datenquellen) kämen die Preise nach einer Stunde von dort.",
+        "hint_price_smard": "Der Preissensor liefert gerade keinen Preis – nach einer Stunde springt SMARD.de ein.",
+        "hint_price_own": "Der Preissensor ist ein Sensor von Einspeisewacht selbst und wird nicht gelesen – ohne Preise zählt die Einspeisung nach 24 Stunden als vergütet.",
+        "hint_price_own_smard": "Der Preissensor ist ein Sensor von Einspeisewacht selbst und wird nicht gelesen – die Preise kommen von SMARD.de.",
+        "hint_imsys": "Kein iMSys eingetragen – bis dahin zählt nichts als unvergütet; die Werte „bei greifender Regel“ zeigen, was entgangen wäre. Nach dem Einbau hier das Datum eintragen.",
+        "hint_smard_off": "Ohne SMARD.de zählt die Nachholung (§ 51a EEG) negative Viertelstunden erst ab der Einrichtung, nicht seit der Inbetriebnahme."
       }
     }
   },
@@ -229,6 +304,17 @@
           "not_affected": "Nicht betroffen",
           "manual_from_date": "Manuell: ab einem Datum",
           "manual_never": "Manuell: nicht betroffen"
+        },
+        "state_attributes": {
+          "applies_from": {
+            "name": "Gilt ab"
+          },
+          "applies_today": {
+            "name": "Greift heute"
+          },
+          "rate_ct_per_kwh": {
+            "name": "Vergütungssatz"
+          }
         }
       },
       "catch_up": {
@@ -342,7 +428,7 @@
       "message": "Nichts nachzutragen: Die Statistik reicht bereits bis zu diesem Tag zurück."
     },
     "import_prices_missing": {
-      "message": "Für {count} Viertelstunden dieses Zeitraums sind die Preise unbekannt. Bitte unter „Neu konfigurieren“ „Frühere negative Viertelstunden von SMARD.de nachzählen“ einschalten, den Abruf abwarten und es erneut versuchen."
+      "message": "Für {count} Viertelstunden dieses Zeitraums sind die Preise unbekannt. Bitte unter „Neu konfigurieren“ (Schritt „Datenquellen und Regel“) „SMARD.de nutzen: frühere Viertelstunden nachzählen, fehlende Preise ersetzen“ einschalten, den Abruf abwarten und es erneut versuchen."
     },
     "import_busy": {
       "message": "Die Statistik dieser Anlage wird gerade schon nachgetragen oder neu berechnet. Bitte warten, bis das fertig ist."

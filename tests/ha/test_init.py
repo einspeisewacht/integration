@@ -90,6 +90,9 @@ async def test_booking_and_restart(
     entry = await setup(hass)
     assert entry.state is ConfigEntryState.LOADED
     assert value(hass, entry, "active_rule") == "quarter_hour"
+    rule = hass.states.get(entity_id(hass, entry, "active_rule") or "")
+    assert rule is not None
+    assert rule.attributes["applies_today"] is True
     assert value(hass, entry, "remunerated") == "off"
     # Rule applies already: no shadow sensors.
     assert entity_id(hass, entry, "shadow_energy_unpaid") is None
@@ -158,6 +161,9 @@ async def test_meter_reset_is_not_booked(
 async def test_shadow_sensors_without_smart_meter(hass: HomeAssistant) -> None:
     entry = await setup(hass, **{CONF_SMART_METER: False, CONF_SMART_METER_DATE: None})
     assert value(hass, entry, "active_rule") == "waiting_smart_meter"
+    rule = hass.states.get(entity_id(hass, entry, "active_rule") or "")
+    assert rule is not None
+    assert rule.attributes["applies_today"] is False
     assert value(hass, entry, "remunerated") == "on"
     assert entity_id(hass, entry, "shadow_energy_unpaid") is not None
     assert entity_id(hass, entry, "shadow_negative_quarter_hours") is not None

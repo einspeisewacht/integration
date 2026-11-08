@@ -9,19 +9,24 @@ from unittest.mock import AsyncMock, patch
 import pytest
 from homeassistant.config_entries import SOURCE_USER
 from homeassistant.core import HomeAssistant
-from homeassistant.data_entry_flow import FlowResultType
+from homeassistant.data_entry_flow import FlowResultType, section
 from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.einspeisewacht.const import (
+    CONF_BACKFILL,
+    CONF_FEED_IN_TYPE,
     CONF_METER,
     CONF_METER_PREVIOUS,
     CONF_OVERRIDE,
     CONF_OVERRIDE_DATE,
+    CONF_POWER,
+    CONF_RATE_MODE,
     CONF_RATES,
     DOMAIN,
-    OVERRIDE_AUTO,
+    FEED_IN_FULL,
     OVERRIDE_FROM_DATE,
+    RATE_TIERED,
 )
 from custom_components.einspeisewacht.rename import renamed_data
 
@@ -34,6 +39,7 @@ PLANT = {
     "smart_meter": True,
     "smart_meter_date": "2025-06-15",
 }
+SOURCES = {"meter_entity": METER, "price_entity": PRICE}
 
 
 @pytest.fixture(autouse=True)
@@ -61,24 +67,70 @@ async def configure(hass: HomeAssistant, result: dict, user_input: dict) -> dict
     return await hass.config_entries.flow.async_configure(result["flow_id"], user_input)
 
 
+def fields(result: dict) -> list[str]:
+    """Top-level fields and sections of a form."""
+    return [str(key) for key in result["data_schema"].schema]
+
+
+def section_of(result: dict, name: str) -> section:
+    return next(
+        value for key, value in result["data_schema"].schema.items() if str(key) == name
+    )
+
+
+def unchanged_input(result: dict) -> dict[str, Any]:
+    """What the frontend sends for a form submitted unchanged, without
+    opening a section (computeInitialHaFormData): each field's suggested
+    value, else its default; sections nested, collapsed or not."""
+
+    def values(schema: dict[Any, Any]) -> dict[str, Any]:
+        data: dict[str, Any] = {}
+        for key, value in schema.items():
+            if isinstance(value, section):
+                data[str(key)] = values(value.schema.schema)
+                continue
+            suggested = (key.description or {}).get("suggested_value")
+            if suggested is not None:
+                data[str(key)] = suggested
+            elif key.default is not type(key)("x").default:
+                data[str(key)] = key.default()
+        return data
+
+    return values(result["data_schema"].schema)
+
+
+async def to_sources(hass: HomeAssistant, **plant: Any) -> dict:
+    """Plant and a single rate: on to the last step."""
+    result = await configure(hass, await start(hass), {**PLANT, **plant})
+    return await configure(hass, result, {"rate": 7.94})
+
+
+def add_entry(hass: HomeAssistant, **changes: Any) -> MockConfigEntry:
+    entry = MockConfigEntry(
+        domain=DOMAIN, unique_id=METER, title="Dach", data=entry_data(**changes)
+    )
+    entry.add_to_hass(hass)
+    return entry
+
+
 async def test_full_flow_single_rate(hass: HomeAssistant) -> None:
+    """Three steps; up to 10 kWp the rate step has a single field."""
     result = await start(hass)
     assert result["step_id"] == "user"
     result = await configure(hass, result, PLANT)
     assert result["step_id"] == "rate"
-    result = await configure(
-        hass, result, {"rate_mode": "single", "feed_in_type": "partial", "rate": 7.94}
-    )
+    assert fields(result) == ["rate"]
+    result = await configure(hass, result, {"rate": 7.94})
     # Without Tarifwacht: the tip.
     assert result["step_id"] == "sources_tarifwacht_tip"
-    result = await configure(
-        hass, result, {"meter_entity": METER, "price_entity": PRICE}
-    )
-    assert result["step_id"] == "summary"
-    assert result["description_placeholders"]["applies_from"] == "2026-01-01"
-    assert result["description_placeholders"]["rate"] == "7.94"
-    assert result["description_placeholders"]["note"] == ""
-    result = await configure(hass, result, {CONF_OVERRIDE: OVERRIDE_AUTO})
+    assert fields(result) == ["meter_entity", "price_entity", "backfill_smard", "rule"]
+    assert section_of(result, "rule").options["collapsed"] is True
+    placeholders = result["description_placeholders"]
+    assert placeholders["applies_from"] == "2026-01-01"
+    assert placeholders["rule"].endswith(", from 2026-01-01")
+    assert placeholders["rate"] == "7.94"
+    assert placeholders["note"] == ""
+    result = await configure(hass, result, SOURCES)
     assert result["type"] is FlowResultType.CREATE_ENTRY
     assert result["title"] == "Dach"
     assert result["data"] == entry_data()
@@ -87,21 +139,30 @@ async def test_full_flow_single_rate(hass: HomeAssistant) -> None:
 
 async def test_tiered_rates(hass: HomeAssistant) -> None:
     result = await configure(hass, await start(hass), {**PLANT, "power_kw": 25})
+    # Above 10 kWp: the bands in a collapsed section.
+    assert fields(result) == ["rate", "tiers"]
+    assert section_of(result, "tiers").options["collapsed"] is True
     result = await configure(
-        hass, result, {"rate_mode": "tiered", "feed_in_type": "partial"}
+        hass, result, {"tiers": {"rate_mode": "tiered", "feed_in_type": "partial"}}
     )
     assert result["step_id"] == "tier_rates"
-    assert [str(k) for k in result["data_schema"].schema] == ["band_0_10", "band_10_40"]
+    assert fields(result) == ["band_0_10", "band_10_40"]
     result = await configure(hass, result, {"band_0_10": 8.51, "band_10_40": 7.43})
     # Without Tarifwacht: the tip.
     assert result["step_id"] == "sources_tarifwacht_tip"
-    result = await configure(
-        hass, result, {"meter_entity": METER, "price_entity": PRICE}
-    )
     # (10 * 8.51 + 15 * 7.43) / 25 = 7.862
     assert result["description_placeholders"]["rate"] == "7.862"
-    result = await configure(hass, result, {CONF_OVERRIDE: OVERRIDE_AUTO})
+    result = await configure(hass, result, SOURCES)
     assert result["data"][CONF_RATES] == [8.51, 7.43]
+    assert result["data"][CONF_RATE_MODE] == RATE_TIERED
+
+
+async def test_single_rate_above_10_kwp(hass: HomeAssistant) -> None:
+    """The section left closed: one rate."""
+    result = await configure(hass, await start(hass), {**PLANT, "power_kw": 25})
+    result = await configure(hass, result, {"rate": 7.5})
+    result = await configure(hass, result, SOURCES)
+    assert result["data"] == entry_data(**{CONF_POWER: 25.0, CONF_RATES: [7.5]})
 
 
 async def test_plant_errors(hass: HomeAssistant) -> None:
@@ -128,13 +189,8 @@ async def test_dates_in_future(hass: HomeAssistant) -> None:
 @pytest.mark.freeze_time("2026-10-26 12:00:00+00:00")
 async def test_note_when_rule_starts_in_future_year(hass: HomeAssistant) -> None:
     """iMSys this year: the rule starts next year, which is worth a second look."""
-    plant = {**PLANT, "commissioned": "2026-03-01", "smart_meter_date": "2026-03-10"}
-    result = await configure(hass, await start(hass), plant)
-    result = await configure(
-        hass, result, {"rate_mode": "single", "feed_in_type": "partial", "rate": 7.94}
-    )
-    result = await configure(
-        hass, result, {"meter_entity": METER, "price_entity": PRICE}
+    result = await to_sources(
+        hass, commissioned="2026-03-01", smart_meter_date="2026-03-10"
     )
     assert result["description_placeholders"]["applies_from"] == "2027-01-01"
     assert result["description_placeholders"]["note"].startswith("⚠️")
@@ -142,19 +198,14 @@ async def test_note_when_rule_starts_in_future_year(hass: HomeAssistant) -> None
 
 async def test_rate_required(hass: HomeAssistant) -> None:
     result = await configure(hass, await start(hass), PLANT)
-    result = await configure(
-        hass, result, {"rate_mode": "single", "feed_in_type": "partial"}
-    )
+    result = await configure(hass, result, {})
     assert result["errors"] == {"rate": "rate_required"}
 
 
 async def test_source_errors(hass: HomeAssistant) -> None:
     hass.states.async_set("sensor.power", "500", {"unit_of_measurement": "W"})
     hass.states.async_set("sensor.no_price", "unknown", {})
-    result = await configure(hass, await start(hass), PLANT)
-    result = await configure(
-        hass, result, {"rate_mode": "single", "feed_in_type": "partial", "rate": 7.94}
-    )
+    result = await to_sources(hass)
     result = await configure(
         hass,
         result,
@@ -167,32 +218,37 @@ async def test_source_errors(hass: HomeAssistant) -> None:
 
 
 async def test_override_needs_date(hass: HomeAssistant) -> None:
-    result = await configure(hass, await start(hass), PLANT)
+    result = await to_sources(hass)
     result = await configure(
-        hass, result, {"rate_mode": "single", "feed_in_type": "partial", "rate": 7.94}
+        hass, result, {**SOURCES, "rule": {CONF_OVERRIDE: OVERRIDE_FROM_DATE}}
     )
-    result = await configure(
-        hass, result, {"meter_entity": METER, "price_entity": PRICE}
-    )
-    result = await configure(hass, result, {CONF_OVERRIDE: OVERRIDE_FROM_DATE})
-    assert result["errors"] == {CONF_OVERRIDE_DATE: "override_date_required"}
+    assert result["errors"] == {"base": "override_date_required"}
+    # The section the error is about is open.
+    assert section_of(result, "rule").options["collapsed"] is False
     result = await configure(
         hass,
         result,
-        {CONF_OVERRIDE: OVERRIDE_FROM_DATE, CONF_OVERRIDE_DATE: "2026-05-01"},
+        {
+            **SOURCES,
+            "rule": {
+                CONF_OVERRIDE: OVERRIDE_FROM_DATE,
+                CONF_OVERRIDE_DATE: "2026-05-01",
+            },
+        },
     )
+    assert result["data"][CONF_OVERRIDE] == OVERRIDE_FROM_DATE
     assert result["data"][CONF_OVERRIDE_DATE] == "2026-05-01"
+
+
+async def test_backfill_opt_in(hass: HomeAssistant) -> None:
+    result = await to_sources(hass)
+    result = await configure(hass, result, {**SOURCES, CONF_BACKFILL: True})
+    assert result["data"][CONF_BACKFILL] is True
 
 
 async def test_meter_already_in_use(hass: HomeAssistant) -> None:
     MockConfigEntry(domain=DOMAIN, unique_id=METER, data=entry_data()).add_to_hass(hass)
-    result = await configure(hass, await start(hass), PLANT)
-    result = await configure(
-        hass, result, {"rate_mode": "single", "feed_in_type": "partial", "rate": 7.94}
-    )
-    result = await configure(
-        hass, result, {"meter_entity": METER, "price_entity": PRICE}
-    )
+    result = await configure(hass, await to_sources(hass), SOURCES)
     assert result["errors"] == {"meter_entity": "meter_in_use"}
 
 
@@ -208,10 +264,7 @@ async def test_own_sensors_as_sources_are_refused(hass: HomeAssistant) -> None:
         "sensor", DOMAIN, "01JZ_revenue", suggested_object_id="dach_revenue"
     )
     hass.states.async_set(money.entity_id, "3.21", {"unit_of_measurement": "EUR"})
-    result = await configure(hass, await start(hass), PLANT)
-    result = await configure(
-        hass, result, {"rate_mode": "single", "feed_in_type": "partial", "rate": 7.94}
-    )
+    result = await to_sources(hass)
     result = await configure(
         hass,
         result,
@@ -221,17 +274,12 @@ async def test_own_sensors_as_sources_are_refused(hass: HomeAssistant) -> None:
         "meter_entity": "own_entity",
         "price_entity": "own_entity",
     }
-    result = await configure(
-        hass, result, {"meter_entity": METER, "price_entity": PRICE}
-    )
-    assert result["step_id"] == "summary"
+    result = await configure(hass, result, SOURCES)
+    assert result["type"] is FlowResultType.CREATE_ENTRY
 
 
 async def test_reconfigure_refuses_the_entrys_own_sensor(hass: HomeAssistant) -> None:
-    entry = MockConfigEntry(
-        domain=DOMAIN, unique_id=METER, title="Dach", data=entry_data()
-    )
-    entry.add_to_hass(hass)
+    entry = add_entry(hass)
     own = er.async_get(hass).async_get_or_create(
         "sensor",
         DOMAIN,
@@ -242,9 +290,7 @@ async def test_reconfigure_refuses_the_entrys_own_sensor(hass: HomeAssistant) ->
     hass.states.async_set(own.entity_id, "12.5", METER_ATTRIBUTES)
     result = await entry.start_reconfigure_flow(hass)
     result = await configure(hass, result, PLANT)
-    result = await configure(
-        hass, result, {"rate_mode": "single", "feed_in_type": "partial", "rate": 7.94}
-    )
+    result = await configure(hass, result, {"rate": 7.94})
     result = await configure(
         hass, result, {"meter_entity": own.entity_id, "price_entity": PRICE}
     )
@@ -252,24 +298,107 @@ async def test_reconfigure_refuses_the_entrys_own_sensor(hass: HomeAssistant) ->
 
 
 async def test_reconfigure(hass: HomeAssistant) -> None:
-    entry = MockConfigEntry(
-        domain=DOMAIN, unique_id=METER, title="Dach", data=entry_data()
-    )
-    entry.add_to_hass(hass)
+    entry = add_entry(hass)
     result = await entry.start_reconfigure_flow(hass)
     assert result["step_id"] == "reconfigure"
     result = await configure(hass, result, {**PLANT, "name": "Dach Süd"})
-    result = await configure(
-        hass, result, {"rate_mode": "single", "feed_in_type": "partial", "rate": 8.0}
-    )
-    result = await configure(
-        hass, result, {"meter_entity": METER, "price_entity": PRICE}
-    )
-    result = await configure(hass, result, {CONF_OVERRIDE: OVERRIDE_AUTO})
+    result = await configure(hass, result, {"rate": 8.0})
+    assert result["step_id"] == "sources"
+    result = await configure(hass, result, SOURCES)
     assert result["type"] is FlowResultType.ABORT
     assert result["reason"] == "reconfigure_successful"
     assert entry.title == "Dach Süd"
     assert entry.data[CONF_RATES] == [8.0]
+
+
+@pytest.mark.freeze_time("2026-11-08 12:00:00+00:00")
+async def test_reconfigure_starts_with_an_overview(hass: HomeAssistant) -> None:
+    hass.states.async_set(
+        METER, "1234567.0", {**METER_ATTRIBUTES, "friendly_name": "Smart Meter"}
+    )
+    entry = add_entry(hass)
+    result = await entry.start_reconfigure_flow(hass)
+    text = result["description_placeholders"]["overview"]
+    assert text.splitlines() == [
+        "- **Plant:** 8.5 kWp, commissioned on 2025-06-15",
+        "- **Remuneration:** 7.94 ct/kWh",
+        "- **Rule today:** quarter-hour rule (§ 51 EEG) since 2026-01-01"
+        " (iMSys installed on 2025-06-15)",
+        "- **Feed-in meter:** Smart Meter",
+        "- **Day-ahead price:** EPEX Spot Data Market Price",
+        "- **SMARD.de:** off",
+        "",
+        "**What is missing:**",
+        # Set up today, commissioned in 2025.
+        "- Without SMARD.de the extension (§ 51a EEG) counts negative quarter"
+        " hours only from setup, not since commissioning.",
+    ]
+
+
+@pytest.mark.freeze_time("2026-11-08 12:00:00+00:00")
+async def test_overview_says_what_is_missing(hass: HomeAssistant) -> None:
+    hass.states.async_remove(METER)
+    hass.states.async_set(PRICE, "unavailable", {})
+    entry = add_entry(hass, **{CONF_BACKFILL: True})
+    result = await entry.start_reconfigure_flow(hass)
+    text = result["description_placeholders"]["overview"]
+    assert "**What is missing:**" in text
+    assert f"Feed-in meter {METER} not found – nothing is booked" in text
+    assert "after an hour SMARD.de stands in" in text
+
+
+async def test_reconfigure_unchanged_keeps_values_in_sections(
+    hass: HomeAssistant,
+) -> None:
+    """Stored values show inside the sections, which open when in use; the
+    forms submitted as they are (sections not opened) keep everything."""
+    entry = add_entry(
+        hass,
+        **{
+            CONF_POWER: 25.0,
+            CONF_RATE_MODE: RATE_TIERED,
+            CONF_FEED_IN_TYPE: FEED_IN_FULL,
+            CONF_RATES: [12.6, 10.56],
+            CONF_OVERRIDE: OVERRIDE_FROM_DATE,
+            CONF_OVERRIDE_DATE: "2026-05-01",
+            CONF_BACKFILL: True,
+        },
+    )
+    before = dict(entry.data)
+    result = await entry.start_reconfigure_flow(hass)
+    result = await configure(hass, result, unchanged_input(result))
+    assert result["step_id"] == "rate"
+    assert section_of(result, "tiers").options["collapsed"] is False
+    assert unchanged_input(result)["tiers"] == {
+        "rate_mode": "tiered",
+        "feed_in_type": "full",
+    }
+    result = await configure(hass, result, unchanged_input(result))
+    assert result["step_id"] == "tier_rates"
+    result = await configure(hass, result, unchanged_input(result))
+    assert result["step_id"] == "sources"
+    assert section_of(result, "rule").options["collapsed"] is False
+    assert unchanged_input(result)["rule"] == {
+        "override": "from_date",
+        "override_date": "2026-05-01",
+    }
+    result = await configure(hass, result, unchanged_input(result))
+    assert result["reason"] == "reconfigure_successful"
+    assert dict(entry.data) == before
+
+
+async def test_reconfigure_without_sections_keeps_them(hass: HomeAssistant) -> None:
+    """A section left out of the input keeps what is stored."""
+    entry = add_entry(
+        hass, **{CONF_OVERRIDE: OVERRIDE_FROM_DATE, CONF_OVERRIDE_DATE: "2026-05-01"}
+    )
+    result = await entry.start_reconfigure_flow(hass)
+    result = await configure(hass, result, PLANT)
+    result = await configure(hass, result, {"rate": 7.94})
+    result = await configure(hass, result, SOURCES)
+    assert result["reason"] == "reconfigure_successful"
+    assert entry.data[CONF_OVERRIDE] == OVERRIDE_FROM_DATE
+    assert entry.data[CONF_OVERRIDE_DATE] == "2026-05-01"
 
 
 def suggested(result: dict) -> dict[str, Any]:
@@ -318,21 +447,14 @@ SOLAR = {
 }
 
 
-async def to_sources(hass: HomeAssistant) -> dict:
-    result = await configure(hass, await start(hass), PLANT)
-    return await configure(
-        hass, result, {"rate_mode": "single", "feed_in_type": "partial", "rate": 7.94}
-    )
-
-
 async def test_tarifwacht_without_pv_subentry(hass: HomeAssistant) -> None:
     """Only a fixed price: nothing to suggest, the tip stays."""
     add_tarifwacht(hass, FIXED_TARIFF)
     result = await to_sources(hass)
     assert result["step_id"] == "sources_tarifwacht_tip"
-    assert result["description_placeholders"] == {
-        "tarifwacht_url": "https://github.com/tarifwacht/integration"
-    }
+    placeholders = result["description_placeholders"]
+    assert placeholders["tarifwacht_url"] == "https://github.com/tarifwacht/integration"
+    assert "tarifwacht" not in placeholders
     assert not any(suggested(result).values())
 
 
@@ -340,13 +462,9 @@ async def test_sources_suggested_from_tarifwacht(hass: HomeAssistant) -> None:
     add_tarifwacht(hass, FIXED_TARIFF, MARKET_TARIFF, SOLAR)
     result = await to_sources(hass)
     assert result["step_id"] == "sources_tarifwacht"
-    assert result["description_placeholders"] == {"tarifwacht": "Haus"}
+    assert result["description_placeholders"]["tarifwacht"] == "Haus"
     assert suggested(result) == {"meter_entity": METER, "price_entity": PRICE}
-    result = await configure(
-        hass, result, {"meter_entity": METER, "price_entity": PRICE}
-    )
-    assert result["step_id"] == "summary"
-    result = await configure(hass, result, {CONF_OVERRIDE: OVERRIDE_AUTO})
+    result = await configure(hass, result, SOURCES)
     assert result["type"] is FlowResultType.CREATE_ENTRY
 
     # A second entry: the meter belongs to the first one, the price is kept.
@@ -359,37 +477,20 @@ async def test_reconfigure_suggests_nothing_from_tarifwacht(
     hass: HomeAssistant,
 ) -> None:
     add_tarifwacht(hass, MARKET_TARIFF, {**SOLAR, "feed_in_entity": "sensor.other"})
-    entry = MockConfigEntry(
-        domain=DOMAIN, unique_id=METER, title="Dach", data=entry_data()
-    )
-    entry.add_to_hass(hass)
+    entry = add_entry(hass)
     result = await entry.start_reconfigure_flow(hass)
     result = await configure(hass, result, PLANT)
-    result = await configure(
-        hass, result, {"rate_mode": "single", "feed_in_type": "partial", "rate": 8.0}
-    )
+    result = await configure(hass, result, {"rate": 8.0})
     assert result["step_id"] == "sources"
     assert suggested(result)["meter_entity"] == METER
 
 
 async def test_note_above_100_kw(hass: HomeAssistant) -> None:
     """No fixed feed-in tariff above 100 kW (§ 21 EEG): say so."""
-    result = await configure(hass, await start(hass), {**PLANT, "power_kw": 150})
-    result = await configure(
-        hass, result, {"rate_mode": "single", "feed_in_type": "partial", "rate": 7.94}
-    )
-    result = await configure(
-        hass, result, {"meter_entity": METER, "price_entity": PRICE}
-    )
+    result = await to_sources(hass, power_kw=150)
     assert result["description_placeholders"]["note"].startswith("ℹ️")
     # Exactly 100 kW still has the fixed tariff.
-    result = await configure(hass, await start(hass), {**PLANT, "power_kw": 100})
-    result = await configure(
-        hass, result, {"rate_mode": "single", "feed_in_type": "partial", "rate": 7.94}
-    )
-    result = await configure(
-        hass, result, {"meter_entity": METER, "price_entity": PRICE}
-    )
+    result = await to_sources(hass, power_kw=100)
     assert result["description_placeholders"]["note"] == ""
 
 
@@ -402,22 +503,13 @@ async def test_reconfigure_keeps_earlier_meter_ids_only_for_the_same_meter(
 ) -> None:
     """Earlier ids of a renamed meter mean nothing for another meter."""
     hass.states.async_set("sensor.other_export", "5.0", METER_ATTRIBUTES)
-    entry = MockConfigEntry(
-        domain=DOMAIN,
-        unique_id=METER,
-        title="Dach",
-        data=entry_data(**{CONF_METER_PREVIOUS: ["sensor.old_export"]}),
-    )
-    entry.add_to_hass(hass)
+    entry = add_entry(hass, **{CONF_METER_PREVIOUS: ["sensor.old_export"]})
     result = await entry.start_reconfigure_flow(hass)
     result = await configure(hass, result, PLANT)
-    result = await configure(
-        hass, result, {"rate_mode": "single", "feed_in_type": "partial", "rate": 7.94}
-    )
+    result = await configure(hass, result, {"rate": 7.94})
     result = await configure(
         hass, result, {"meter_entity": meter, "price_entity": PRICE}
     )
-    result = await configure(hass, result, {CONF_OVERRIDE: OVERRIDE_AUTO})
     assert result["reason"] == "reconfigure_successful"
     assert entry.unique_id == meter
     assert entry.data.get(CONF_METER_PREVIOUS) == previous
@@ -427,25 +519,20 @@ async def test_reconfigure_keeps_a_rename_made_while_the_flow_was_open(
     hass: HomeAssistant,
 ) -> None:
     """The form still holds the old meter id; the rename is not undone."""
-    entry = MockConfigEntry(
-        domain=DOMAIN, unique_id=METER, title="Dach", data=entry_data()
-    )
-    entry.add_to_hass(hass)
+    entry = add_entry(hass)
     result = await entry.start_reconfigure_flow(hass)
     result = await configure(hass, result, PLANT)
-    result = await configure(
-        hass, result, {"rate_mode": "single", "feed_in_type": "partial", "rate": 7.94}
-    )
-    result = await configure(
-        hass, result, {"meter_entity": METER, "price_entity": PRICE}
-    )
-    # Renamed now (as __init__.py follows it), before the last step.
+    result = await configure(hass, result, {"rate": 7.94})
+    assert result["step_id"] == "sources"
+    # Renamed now (as __init__.py follows it), while the last form is open.
+    hass.states.async_remove(METER)
+    hass.states.async_set("sensor.meter_export", "1234567.0", METER_ATTRIBUTES)
     hass.config_entries.async_update_entry(
         entry,
         unique_id="sensor.meter_export",
         data=renamed_data(entry.data, METER, "sensor.meter_export"),
     )
-    result = await configure(hass, result, {CONF_OVERRIDE: OVERRIDE_AUTO})
+    result = await configure(hass, result, SOURCES)
     assert result["reason"] == "reconfigure_successful"
     assert entry.data[CONF_METER] == "sensor.meter_export"
     assert entry.data[CONF_METER_PREVIOUS] == [METER]

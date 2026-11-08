@@ -71,8 +71,23 @@ def test_every_regime_translated() -> None:
 
 
 def test_reconfigure_step_matches_user_step() -> None:
-    steps = load(INTEGRATION / "strings.json")["config"]["step"]
-    assert steps["reconfigure"] == steps["user"]
+    """Same fields; reconfigure describes the overview instead of the intro."""
+    for name in ("strings.json", "translations/de.json"):
+        steps = load(INTEGRATION / name)["config"]["step"]
+        user, reconfigure = dict(steps["user"]), dict(steps["reconfigure"])
+        assert reconfigure.pop("description").startswith("{overview}")
+        user.pop("description")
+        assert reconfigure == user
+
+
+def test_sources_steps_differ_only_in_the_tarifwacht_hint() -> None:
+    for name in ("strings.json", "translations/de.json"):
+        steps = load(INTEGRATION / name)["config"]["step"]
+        plain = dict(steps["sources"])
+        for variant in ("sources_tarifwacht", "sources_tarifwacht_tip"):
+            other = dict(steps[variant])
+            assert other.pop("description").startswith(plain["description"])
+            assert other == {k: v for k, v in plain.items() if k != "description"}
 
 
 def test_every_entity_has_an_icon() -> None:

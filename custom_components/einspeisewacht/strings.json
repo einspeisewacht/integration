@@ -21,7 +21,7 @@
       },
       "reconfigure": {
         "title": "PV plant",
-        "description": "Einspeisewacht tracks feed-in that is not remunerated because of negative day-ahead prices (§ 51 EEG). The values are a guide only – your grid operator's statement is what counts.",
+        "description": "{overview}\n\nChange the plant below; remuneration, data sources and rule follow.",
         "data": {
           "name": "Name",
           "commissioned": "Commissioning date",
@@ -39,16 +39,25 @@
       },
       "rate": {
         "title": "Remuneration",
-        "description": "Take the rate from your grid operator's statement (after the deduction of 0.4 ct/kWh).",
+        "description": "The rate from your grid operator's statement, after the deduction of 0.4 ct/kWh.",
         "data": {
-          "rate_mode": "Rate",
-          "feed_in_type": "Feed-in type",
           "rate": "Remuneration rate"
         },
         "data_description": {
-          "rate_mode": "Plants above 10 kWp are paid a capacity-weighted mix of several rates (§ 23c EEG).",
-          "feed_in_type": "Only relevant for tiered rates: the capacity bands differ for full feed-in.",
-          "rate": "Only for a single rate."
+          "rate": "Plants above 10 kWp with several rates: leave empty and choose “Tiered by capacity band” below."
+        },
+        "sections": {
+          "tiers": {
+            "name": "Several rates by capacity band (above 10 kWp)",
+            "description": "Plants above 10 kWp are paid a capacity-weighted mix of the rates of each band (§ 23c EEG). If your statement shows a single rate, enter it above.",
+            "data": {
+              "rate_mode": "Rate",
+              "feed_in_type": "Feed-in type"
+            },
+            "data_description": {
+              "feed_in_type": "The capacity bands differ for full feed-in."
+            }
+          }
         }
       },
       "tier_rates": {
@@ -64,52 +73,84 @@
         }
       },
       "sources": {
-        "title": "Data sources",
-        "description": "Einspeisewacht only reads these entities.",
+        "title": "Data sources and rule",
+        "description": "**Rule from your details:** {rule}\n**Remuneration:** {rate} ct/kWh\n\n{note}\n\nEinspeisewacht only reads the entities below.",
         "data": {
           "meter_entity": "Grid feed-in meter",
-          "price_entity": "Day-ahead price"
+          "price_entity": "Day-ahead price",
+          "backfill_smard": "Use SMARD.de: count earlier quarter hours, fill in missing prices"
         },
         "data_description": {
           "meter_entity": "Energy exported to the grid (Wh, kWh or MWh, cumulative). Best: the meter at the grid connection point.",
-          "price_entity": "A sensor with the day-ahead price forecast per quarter hour, e.g. from the EPEX Spot integration."
+          "price_entity": "A sensor with the day-ahead price forecast per quarter hour, e.g. from the EPEX Spot integration.",
+          "backfill_smard": "Over the internet, public day-ahead prices of the Bundesnetzagentur (SMARD.de, CC BY 4.0): once since commissioning, so that the extension (§ 51a EEG) also covers the time before setup – and for quarter hours the price sensor leaves open for more than an hour. Without it, counting starts now."
+        },
+        "sections": {
+          "rule": {
+            "name": "Does your grid operator settle differently?",
+            "description": "Only needed if the statement does not follow the rule above.",
+            "data": {
+              "override": "Rule",
+              "override_date": "Every negative quarter hour from"
+            },
+            "data_description": {
+              "override_date": "Only for “Every negative quarter hour from a date”."
+            }
+          }
         }
       },
       "sources_tarifwacht": {
-        "title": "Data sources",
-        "description": "Einspeisewacht only reads these entities.\n\nPrefilled from Tarifwacht \"{tarifwacht}\" – please check.",
+        "title": "Data sources and rule",
+        "description": "**Rule from your details:** {rule}\n**Remuneration:** {rate} ct/kWh\n\n{note}\n\nEinspeisewacht only reads the entities below.\n\nPrefilled from Tarifwacht \"{tarifwacht}\" – please check.",
         "data": {
           "meter_entity": "Grid feed-in meter",
-          "price_entity": "Day-ahead price"
+          "price_entity": "Day-ahead price",
+          "backfill_smard": "Use SMARD.de: count earlier quarter hours, fill in missing prices"
         },
         "data_description": {
           "meter_entity": "Energy exported to the grid (Wh, kWh or MWh, cumulative). Best: the meter at the grid connection point.",
-          "price_entity": "A sensor with the day-ahead price forecast per quarter hour, e.g. from the EPEX Spot integration."
+          "price_entity": "A sensor with the day-ahead price forecast per quarter hour, e.g. from the EPEX Spot integration.",
+          "backfill_smard": "Over the internet, public day-ahead prices of the Bundesnetzagentur (SMARD.de, CC BY 4.0): once since commissioning, so that the extension (§ 51a EEG) also covers the time before setup – and for quarter hours the price sensor leaves open for more than an hour. Without it, counting starts now."
+        },
+        "sections": {
+          "rule": {
+            "name": "Does your grid operator settle differently?",
+            "description": "Only needed if the statement does not follow the rule above.",
+            "data": {
+              "override": "Rule",
+              "override_date": "Every negative quarter hour from"
+            },
+            "data_description": {
+              "override_date": "Only for “Every negative quarter hour from a date”."
+            }
+          }
         }
       },
       "sources_tarifwacht_tip": {
-        "title": "Data sources",
-        "description": "Einspeisewacht only reads these entities.\n\nTip: [Tarifwacht]({tarifwacht_url}) compares your electricity tariffs using the same meters. Once it is set up, Einspeisewacht takes these fields from there.",
+        "title": "Data sources and rule",
+        "description": "**Rule from your details:** {rule}\n**Remuneration:** {rate} ct/kWh\n\n{note}\n\nEinspeisewacht only reads the entities below.\n\nTip: [Tarifwacht]({tarifwacht_url}) compares your electricity tariffs using the same meters. Once it is set up, Einspeisewacht takes these fields from there.",
         "data": {
           "meter_entity": "Grid feed-in meter",
-          "price_entity": "Day-ahead price"
+          "price_entity": "Day-ahead price",
+          "backfill_smard": "Use SMARD.de: count earlier quarter hours, fill in missing prices"
         },
         "data_description": {
           "meter_entity": "Energy exported to the grid (Wh, kWh or MWh, cumulative). Best: the meter at the grid connection point.",
-          "price_entity": "A sensor with the day-ahead price forecast per quarter hour, e.g. from the EPEX Spot integration."
-        }
-      },
-      "summary": {
-        "title": "Rule",
-        "description": "Derived rule: **{rule}**\nApplies from: {applies_from}\nRemuneration: {rate} ct/kWh\n\n{note}\n\nIf your grid operator settles differently, override the rule here.",
-        "data": {
-          "override": "Rule",
-          "override_date": "Every negative quarter hour from",
-          "backfill_smard": "Count earlier negative quarter hours from SMARD.de"
+          "price_entity": "A sensor with the day-ahead price forecast per quarter hour, e.g. from the EPEX Spot integration.",
+          "backfill_smard": "Over the internet, public day-ahead prices of the Bundesnetzagentur (SMARD.de, CC BY 4.0): once since commissioning, so that the extension (§ 51a EEG) also covers the time before setup – and for quarter hours the price sensor leaves open for more than an hour. Without it, counting starts now."
         },
-        "data_description": {
-          "override_date": "Only for “From a date”.",
-          "backfill_smard": "Over the internet, from SMARD.de (Bundesnetzagentur, CC BY 4.0): once the day-ahead prices since commissioning, so that the extension (§ 51a EEG) also covers the time before setup – and prices that the price sensor leaves open for more than an hour. Without it, counting starts now."
+        "sections": {
+          "rule": {
+            "name": "Does your grid operator settle differently?",
+            "description": "Only needed if the statement does not follow the rule above.",
+            "data": {
+              "override": "Rule",
+              "override_date": "Every negative quarter hour from"
+            },
+            "data_description": {
+              "override_date": "Only for “Every negative quarter hour from a date”."
+            }
+          }
         }
       }
     },
@@ -124,7 +165,7 @@
       "meter_unit": "The meter must report Wh, kWh or MWh.",
       "meter_state_class": "The meter must be cumulative (state class total or total_increasing).",
       "price_invalid": "No price found: the sensor has neither a forecast attribute `data` nor a numeric state.",
-      "override_date_required": "Please enter a date.",
+      "override_date_required": "Under “Does your grid operator settle differently?”, the date for “Every negative quarter hour from a date” is missing.",
       "date_in_future": "The date must not be in the future."
     },
     "abort": {
@@ -169,6 +210,40 @@
       "options": {
         "future_start": "⚠️ The rule starts in a future year. Are the commissioning date and the iMSys installation date correct?",
         "direct_marketing": "ℹ️ Above 100 kW there is no fixed feed-in tariff (§ 21 EEG): the plant sells directly, and negative prices cost it the market premium, not the rate entered here. Energy and quarter hours are counted correctly; revenue and lost revenue are only a rough guide."
+      }
+    },
+    "overview": {
+      "options": {
+        "plant": "**Plant:** {power} kWp, commissioned on {commissioned}",
+        "rate_single": "**Remuneration:** {rate} ct/kWh",
+        "rate_tiered": "**Remuneration:** {rate} ct/kWh – blended by capacity from {parts}; {feed_in}",
+        "rate_part": "{kw} kW at {rate} ct",
+        "rate_unknown": "**Remuneration:** unclear – please check the rates",
+        "rule": "**Rule today:** {rule}",
+        "rule_start": "from {date}",
+        "rule_since": "quarter-hour rule (§ 51 EEG) since {date}",
+        "rule_from": "none yet – quarter-hour rule from {date}",
+        "rule_imsys": "(iMSys installed on {date})",
+        "rule_manual": "(set manually)",
+        "rule_waiting": "none – starts only on 1 January after the iMSys installation",
+        "rule_below_2_kw": "none – plants below 2 kW are not affected",
+        "rule_not_affected": "none – negative prices do not reduce this plant's remuneration",
+        "rule_none": "none",
+        "rule_unsupported": "not calculated: {rule}",
+        "meter": "**Feed-in meter:** {meter}",
+        "price": "**Day-ahead price:** {price}",
+        "smard_on": "**SMARD.de:** on – earlier quarter hours counted, stands in for missing prices",
+        "smard_off": "**SMARD.de:** off",
+        "missing": "**What is missing:**",
+        "hint_meter_missing": "Feed-in meter {meter} not found – nothing is booked until it is back.",
+        "hint_meter_unit": "The feed-in meter reports “{unit}” – nothing is booked until it reports Wh, kWh or MWh.",
+        "hint_meter_own": "The feed-in meter is a sensor of Einspeisewacht itself and is not read – nothing is booked.",
+        "hint_price": "The price sensor delivers no price right now – feed-in waits up to 24 hours for it and then counts as remunerated. With SMARD.de (under data sources) the prices would come from there after an hour.",
+        "hint_price_smard": "The price sensor delivers no price right now – after an hour SMARD.de stands in.",
+        "hint_price_own": "The price sensor is a sensor of Einspeisewacht itself and is not read – without prices, feed-in counts as remunerated after 24 hours.",
+        "hint_price_own_smard": "The price sensor is a sensor of Einspeisewacht itself and is not read – the prices come from SMARD.de.",
+        "hint_imsys": "No iMSys entered – until then nothing counts as not remunerated; the values “if the rule applied” show what would be lost. Enter the date here once it is installed.",
+        "hint_smard_off": "Without SMARD.de the extension (§ 51a EEG) counts negative quarter hours only from setup, not since commissioning."
       }
     }
   },
@@ -229,6 +304,17 @@
           "not_affected": "Not affected",
           "manual_from_date": "Manual: from a date",
           "manual_never": "Manual: not affected"
+        },
+        "state_attributes": {
+          "applies_from": {
+            "name": "Applies from"
+          },
+          "applies_today": {
+            "name": "Applies today"
+          },
+          "rate_ct_per_kwh": {
+            "name": "Remuneration rate"
+          }
         }
       },
       "catch_up": {
@@ -342,7 +428,7 @@
       "message": "Nothing to fill in: the statistics already reach back to this day."
     },
     "import_prices_missing": {
-      "message": "Prices are unknown for {count} quarter hours of this period. Turn on “Count earlier negative quarter hours from SMARD.de” under Reconfigure, wait for it to finish and try again."
+      "message": "Prices are unknown for {count} quarter hours of this period. Turn on “Use SMARD.de: count earlier quarter hours, fill in missing prices” under Reconfigure (step “Data sources and rule”), wait for it to finish and try again."
     },
     "import_busy": {
       "message": "Statistics of this plant are being imported or recalculated already. Please wait until that is done."

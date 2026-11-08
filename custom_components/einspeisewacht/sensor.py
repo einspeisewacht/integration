@@ -23,7 +23,7 @@ from . import EinspeisewachtConfigEntry
 from .catchup import Extension, extension
 from .const import BERLIN
 from .entity import PlantEntity
-from .regime import Regime, shadow_needed
+from .regime import Regime, applies_on, shadow_needed
 from .runtime import PlantRuntime
 
 
@@ -162,9 +162,13 @@ class ActiveRuleSensor(PlantEntity, SensorEntity):
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
-        applies_from = self.runtime.derived.applies_from
+        derived = self.runtime.derived
+        applies_from = derived.applies_from
         return {
             "applies_from": applies_from.isoformat() if applies_from else None,
+            # The rule in force today: false before its start (iMSys this
+            # year: from 1 January) and for "not affected".
+            "applies_today": applies_on(derived, dt_util.now(BERLIN).date()),
             "rate_ct_per_kwh": round(self.runtime.rate_ct, 4),
         }
 
