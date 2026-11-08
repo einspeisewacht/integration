@@ -77,7 +77,7 @@
       },
       "sources_tarifwacht": {
         "title": "Data sources",
-        "description": "Einspeisewacht only reads these entities.\n\nPrefilled from Tarifwacht '{tarifwacht}' – please check.",
+        "description": "Einspeisewacht only reads these entities.\n\nPrefilled from Tarifwacht \"{tarifwacht}\" – please check.",
         "data": {
           "meter_entity": "Grid feed-in meter",
           "price_entity": "Day-ahead price"
