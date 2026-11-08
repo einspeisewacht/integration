@@ -1,4 +1,7 @@
-"""Day-ahead prices per quarter hour, parsed from price sensor forecasts."""
+"""Day-ahead prices per quarter hour, parsed from price sensor forecasts.
+
+Copies: tarifwacht/custom_components/tarifwacht/prices.py (derived).
+"""
 
 from __future__ import annotations
 

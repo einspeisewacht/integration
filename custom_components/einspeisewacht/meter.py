@@ -1,4 +1,7 @@
-"""Turn readings of a cumulative energy meter into energy per quarter hour."""
+"""Turn readings of a cumulative energy meter into energy per quarter hour.
+
+Copies: tarifwacht/custom_components/tarifwacht/meter.py (derived).
+"""
 
 from __future__ import annotations
 

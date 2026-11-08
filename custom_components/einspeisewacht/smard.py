@@ -9,6 +9,8 @@ files that start on Monday 00:00 local time. Before 1 October 2025 the
 quarter-hour series repeats each hourly price four times.
 
 Data: Bundesnetzagentur | SMARD.de, CC BY 4.0.
+
+Copies: tarifwacht/custom_components/tarifwacht/smard.py (derived).
 """
 
 from __future__ import annotations

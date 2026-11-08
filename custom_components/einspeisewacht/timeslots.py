@@ -2,6 +2,8 @@
 
 All German offsets are whole hours, so flooring in UTC gives the same slot
 boundaries as local time, also on DST changeover days (92 or 100 slots).
+
+Copies: tarifwacht/custom_components/tarifwacht/timeslots.py (derived).
 """
 
 from __future__ import annotations
