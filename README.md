@@ -25,7 +25,7 @@ Die Oberfläche gibt es auf Deutsch und Englisch; sie folgt der Sprache deines H
 
 - [Was Einspeisewacht kann](#was-einspeisewacht-kann) · [Welche Regel gilt](#welche-regel-gilt--51-eeg) · [Was Einspeisewacht nicht kann](#was-einspeisewacht-nicht-kann)
 - **Loslegen:** [Voraussetzungen](#voraussetzungen) · [Installation](#installation) · [Einrichtung](#einrichtung)
-- **Nutzen:** [Entitäten](#entitäten) · [Bericht für einen Zeitraum](#bericht-für-einen-zeitraum) · [Statistik nachtragen](#statistik-nachtragen)
+- **Nutzen:** [Entitäten](#entitäten) · [Bericht für einen Zeitraum](#bericht-für-einen-zeitraum) · [Statistik nachtragen](#statistik-nachtragen) · [Statistik neu berechnen](#statistik-neu-berechnen)
 - **[Was du damit bauen kannst](#was-du-damit-bauen-kannst):** [Dashboard-Karte](#dashboard-karte-mit-tages--und-jahreswerten) · [Blueprint](#fertiger-blueprint) · [Speicher laden](#speicher-laden-solange-es-keine-vergütung-gibt-als-eigene-automation) · [Hinweis am Vortag](#hinweis-am-vortag)
 - **Mehr:** [Datenschutz](#datenschutz) · [Fehlerbehebung](#fehlerbehebung) · [Entfernen](#entfernen) · [Fehler melden](#fehler-melden) · [Weitere Wachten](#weitere-wachten) · [Lizenz und Quellen](#lizenz-und-quellen)
 
@@ -90,7 +90,7 @@ Mehrere Anlagen oder Zähler: je einen Eintrag anlegen. Ändern: *Einspeisewacht
 
 Was eine Änderung für die Zeit davor bedeutet:
 
-- **Vergütungssatz:** gilt rückwirkend ab der Einrichtung – Erlös und entgangener Erlös werden aus den gebuchten kWh neu berechnet. In der Langzeitstatistik erscheint die Korrektur in der Stunde der Änderung; schon [nachgetragene Statistik](#statistik-nachtragen) bleibt beim alten Satz.
+- **Vergütungssatz** (auch Staffelung, Leistung, Voll-/Teileinspeisung): gilt rückwirkend ab der Einrichtung – Erlös und entgangener Erlös werden aus den gebuchten kWh neu berechnet. Die Langzeitstatistik vergangener Stunden (Statistik-Diagramme, Werte je Tag und Monat), auch [nachgetragene](#statistik-nachtragen), behält aber den alten Satz; Home Assistant bucht den ganzen Unterschied in die Stunde der Änderung. Unter *Reparaturen* erscheint deshalb der Hinweis „Statistik mit altem Satz“ – [Statistik neu berechnen](#statistik-neu-berechnen) bringt sie auf den neuen Satz.
 - **Regel** (Inbetriebnahme, Leistung, Smart-Meter-Datum, Übersteuerung): Viertelstunden ohne Vergütung, Nachholung, „Vergütung bis“ und der [Bericht](#bericht-für-einen-zeitraum) folgen sofort der neuen Regel, auch rückwirkend. Die Summen „Einspeisung vergütet/unvergütet“, „Erlös“ und „Entgangener Erlös“ behalten für die Zeit vor der Änderung aber ihre Aufteilung: Eine sinkende kWh-Summe hielte Home Assistant für einen Zählerwechsel und verfälschte die Statistik. Die Werte nach neuer Regel liefert der Bericht. Betrifft die Änderung schon gebuchte negative Viertelstunden, erscheint unter *Einstellungen → Reparaturen* der Hinweis „Summen teils nach alter Regel“ mit dem Datum der Änderung und der Zahl der betroffenen Viertelstunden. Er verschwindet, wenn die Regel zurückgeändert wird, und lässt sich sonst ignorieren.
 - **Einspeisezähler:** Der neue Zähler beginnt mit eigenem Ausgangswert; die Einspeisung zwischen dem letzten Wert des alten und dem ersten Wert des neuen Zählers wird nicht gebucht.
 
@@ -110,6 +110,7 @@ Benennst du Einspeisezähler oder Preissensor in Home Assistant um (neue Entity-
 | Vergütung aktiv | vergütet/unvergütet | ob die laufende Viertelstunde vergütet wird; unbekannt ohne Preis |
 | Negative Preise | Kalender | Zeitfenster mit negativem Preis |
 | Regel | Diagnose | die angewandte Regel, Attribute `applies_from` und `rate_ct_per_kwh` |
+| Statistik neu berechnen | Schaltfläche (Konfiguration) | rechnet die Statistik von Erlös und entgangenem Erlös mit dem aktuellen Satz neu, siehe [Statistik neu berechnen](#statistik-neu-berechnen) |
 | Bericht für Fehlermeldung | Schaltfläche (Diagnose) | zeigt einen kurzen Bericht zum Kopieren in ein Issue, siehe [Fehler melden](#fehler-melden) |
 
 Solange die Regel noch nicht greift (z. B. ohne iMSys), kommen „Unvergütet bei greifender Regel“, „Entgangener Erlös bei greifender Regel“ und „Viertelstunden ohne Vergütung bei greifender Regel“ dazu; Nachholung und „Vergütung bis“ entfallen dann.
@@ -150,6 +151,8 @@ gaps:
 
 Die Antwort enthält kWh vergütet und unvergütet, Erlös, entgangenen Erlös und die negativen Viertelstunden – gesamt und je Monat. Grundlage ist die Langzeitstatistik deines Einspeisezählers (Stundenwerte, gleichmäßig auf die vier Viertelstunden verteilt – exakt, wenn alle vier gleich ausgehen, sonst eine gute Näherung). Viertelstunden ohne bekannten Preis zählen als vergütet und stehen unter `gaps` – auch die Zeit, in der Home Assistant länger als 14 Tage aus war; mit der SMARD-Option reichen die Preise bis zur Inbetriebnahme zurück.
 
+**Unplausible Stunden** in der Statistik des Zählers bleiben außen vor und stehen unter `gaps.hours_implausible` (Anzahl und die ersten fünf Stunden): eine Stunde mit mehr Einspeisung als Anlagenleistung × 1,5 – dieselbe Grenze wie für jede Ablesung im laufenden Betrieb, bei 9 kWp also 13,5 kWh; nach einer Pause von Home Assistant entsprechend mehr –, eine negative Stunde (Zähler getauscht, Statistik korrigiert) und die Stunde danach, in der der Zählerstand nach so einem Sprung wieder fällt. Typischer Fall: Ein Zähler meldet kurz Wh als kWh (107 → 109.851 → 110 kWh); ohne die Prüfung käme so ein Tag auf über 100.000 kWh. Diese Stunden zählen auch unter `hours_without_energy`.
+
 ## Statistik nachtragen
 
 Die Summen-Sensoren beginnen mit der Einrichtung. Damit Statistik-Karten und Verlauf auch die Zeit davor zeigen, gibt es die Aktion **Einspeisewacht: Statistik nachtragen** (*Entwicklerwerkzeuge → Aktionen*), z. B. ab dem 1. Januar oder ab der Inbetriebnahme:
@@ -161,7 +164,19 @@ data:
   start: "2026-01-01"
 ```
 
-Sie rechnet wie der Bericht (Stundenwerte des Zählers gegen die negativen Viertelstunden) und schreibt die Stunden **vor** dem ersten vorhandenen Statistikwert in die Langzeitstatistik von „Einspeisung vergütet/unvergütet“, „Erlös“ und „Entgangener Erlös“; die späteren Summen werden passend verschoben. Voraussetzungen: die SMARD-Option ist an und ihr Abruf fertig (sonst fehlen Preise), und die Sensoren haben schon mindestens eine Stunde Statistik. **Das greift in die Statistik-Datenbank ein – vorher ein Backup anlegen.** Ein zweiter Aufruf findet nichts mehr nachzutragen.
+Sie rechnet wie der Bericht (Stundenwerte des Zählers gegen die negativen Viertelstunden) und schreibt die Stunden **vor** dem ersten vorhandenen Statistikwert in die Langzeitstatistik von „Einspeisung vergütet/unvergütet“, „Erlös“ und „Entgangener Erlös“; die späteren Summen werden passend verschoben. Voraussetzungen: die SMARD-Option ist an und ihr Abruf fertig (sonst fehlen Preise), und die Sensoren haben schon mindestens eine Stunde Statistik. [Unplausible Stunden](#bericht-für-einen-zeitraum) des Zählers werden nicht nachgetragen und stehen in der Antwort unter `hours_implausible`. **Das greift in die Statistik-Datenbank ein – vorher ein Backup anlegen.** Ein zweiter Aufruf findet nichts mehr nachzutragen.
+
+## Statistik neu berechnen
+
+Korrigierst du den Vergütungssatz (unter *Neu konfigurieren*; auch Staffelung, Leistung oder Voll-/Teileinspeisung, wenn sie den Satz ändern), zeigen Erlös und entgangener Erlös sofort die neuen Summen. Die Langzeitstatistik vergangener Stunden, aus der Statistik-Diagramme, Werte je Tag und Monat und die [Dashboard-Karte](#dashboard-karte-mit-tages--und-jahreswerten) kommen, behält dagegen den alten Satz, auch nachgetragene; den ganzen Unterschied bucht Home Assistant in die Stunde der Änderung. Unter *Reparaturen* erinnert der Hinweis „Statistik mit altem Satz“ daran. Dafür gibt es am Gerät der Anlage die Schaltfläche **Statistik neu berechnen** (unter *Konfiguration*):
+
+- Sie berechnet die Statistik von Erlös, entgangenem Erlös und – solange die Regel noch nicht greift – „Entgangener Erlös bei greifender Regel“ von deren erstem Wert bis zum letzten mit dem aktuellen Satz neu: aus der Statistik der Energie-Sensoren, also exakt aus dem, was je Stunde gebucht ist. Die Statistik danach schließt ohne Sprung an.
+- Das Ergebnis erscheint als Benachrichtigung: Zeitraum, Satz und um wie viel sich die Summe jedes Sensors geändert hat. Der Reparaturhinweis verschwindet danach (oder wenn du den Satz zurückänderst).
+- Zweimal drücken ergibt dasselbe. Sensoren ohne Statistik bleiben, wie sie sind.
+- Auch die Fünf-Minuten-Statistik der letzten 10 Tage wird neu berechnet; ältere (bei längerem `purge_keep_days`) bleibt, die zeigen nur Fünf-Minuten-Diagramme.
+- Ab einem bestimmten Tag: die Aktion **Statistik nachtragen** mit **Vorhandene Statistik ersetzen** (`replace: true`). Davor bleibt die Statistik unverändert; liegt der Tag vor der Einrichtung, wird die Zeit davor zuerst nachgetragen.
+- Nicht neu berechnet wird die Aufteilung vergütet/unvergütet nach einer Regeländerung (siehe [Einrichtung](#einrichtung)): Die Summen-Sensoren behalten sie bewusst, die Statistik folgt ihnen.
+- **Auch das greift in die Statistik-Datenbank ein – vorher ein Backup anlegen.**
 
 ## Was du damit bauen kannst
 

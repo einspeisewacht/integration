@@ -25,7 +25,7 @@ The integration's UI is available in German and English and follows your Home As
 
 - [What Einspeisewacht does](#what-einspeisewacht-does) · [Which rule applies](#which-rule-applies--51-eeg) · [What Einspeisewacht does not do](#what-einspeisewacht-does-not-do)
 - **Getting started:** [Requirements](#requirements) · [Installation](#installation) · [Setup](#setup)
-- **Using it:** [Entities](#entities) · [Report for a period](#report-for-a-period) · [Import statistics](#import-statistics)
+- **Using it:** [Entities](#entities) · [Report for a period](#report-for-a-period) · [Import statistics](#import-statistics) · [Recalculate statistics](#recalculate-statistics)
 - **[Examples](#examples):** [Dashboard card](#dashboard-card-with-daily-and-yearly-values)
 - **More:** [Privacy](#privacy) · [Troubleshooting](#troubleshooting) · [Removal](#removal) · [Reporting issues](#reporting-issues) · [Sister integrations](#sister-integrations) · [License and sources](#license-and-sources)
 
@@ -88,7 +88,7 @@ Several plants or meters: one entry each. To change: *Einspeisewacht → entry �
 
 What a change means for the time before it:
 
-- **Rate:** applies retroactively from setup – revenue and lost revenue are recalculated from the booked kWh. In the long-term statistics the correction shows up in the hour of the change; statistics already added with [Import statistics](#import-statistics) keep the old rate.
+- **Rate** (also tiers, capacity, full/partial feed-in): applies retroactively from setup – revenue and lost revenue are recalculated from the booked kWh. The long-term statistics of past hours (statistics graphs, values per day and month), [imported](#import-statistics) ones included, keep the old rate, though; Home Assistant books the whole difference into the hour of the change. *Repairs* therefore shows "Statistics with the old rate" – [Recalculate statistics](#recalculate-statistics) brings them to the new rate.
 - **Rule** (commissioning, capacity, smart meter date, override): quarter hours without remuneration, extension, "Remunerated until" and the [report](#report-for-a-period) follow the new rule at once, retroactively too. The totals "Feed-in remunerated/not remunerated", "Revenue" and "Lost revenue" keep their split for the time before the change, though: Home Assistant would take a falling kWh total for a meter replacement and distort the statistics. The report gives the values under the new rule. If the change affects negative quarter hours already booked, *Settings → Repairs* shows "Totals partly follow the previous rule" with the date of the change and the number of quarter hours affected. It disappears if the rule is changed back; otherwise you can ignore it.
 - **Feed-in meter:** the new meter starts from its own baseline; feed-in between the old meter's last reading and the new one's first is not booked.
 
@@ -108,6 +108,7 @@ If you rename the feed-in meter or the price sensor in Home Assistant (new entit
 | Remunerated | paid/unpaid | whether the running quarter hour is remunerated; unknown without a price |
 | Negative prices | calendar | windows with a negative price |
 | Rule | diagnostic | the rule applied, attributes `applies_from` and `rate_ct_per_kwh` |
+| Recalculate statistics | button (configuration) | recalculates the statistics of revenue and lost revenue with the current rate, see [Recalculate statistics](#recalculate-statistics) |
 | Report for a bug report | button (diagnostic) | shows a short report to copy into an issue, see [Reporting issues](#reporting-issues) |
 
 While the rule does not apply yet (e.g. no iMSys), "… if the rule applied" sensors are added and the extension sensors are left out.
@@ -126,6 +127,8 @@ data:
 
 The response holds kWh remunerated and not, revenue, lost revenue and the negative quarter hours – in total and by month. It is based on your feed-in meter's long-term statistics (hourly values spread evenly over the four quarter hours – exact when all four end the same way, a close estimate otherwise). Quarter hours without a known price count as remunerated and are listed under `gaps` – including time Home Assistant was off for more than 14 days; with the SMARD option, prices reach back to commissioning.
 
+**Implausible hours** in the meter's statistics are left out and listed under `gaps.hours_implausible` (count and the first five hours): an hour with more feed-in than the plant's capacity × 1.5 – the same bound as for every reading in live operation, 13.5 kWh for 9 kWp; more after Home Assistant was off –, a negative hour (meter replaced, statistics adjusted) and the hour after, in which the reading falls back after such a jump. Typical case: a meter briefly reports Wh as kWh (107 → 109,851 → 110 kWh); without the check such a day would come to more than 100,000 kWh. These hours also count under `hours_without_energy`.
+
 ## Import statistics
 
 The total sensors start at setup. To make statistics cards and history cover the time before, use the action **Einspeisewacht: Import statistics** (*Developer tools → Actions*), e.g. from 1 January or from commissioning:
@@ -137,7 +140,19 @@ data:
   start: "2026-01-01"
 ```
 
-It computes like the report and writes the hours **before** the first existing statistic into the long-term statistics of the four total sensors; later sums are shifted to match. Requires the SMARD option (its download finished) and at least one hour of statistics for the sensors. **This changes the statistics database – make a backup first.** A second call finds nothing left to import.
+It computes like the report and writes the hours **before** the first existing statistic into the long-term statistics of the four total sensors; later sums are shifted to match. Requires the SMARD option (its download finished) and at least one hour of statistics for the sensors. [Implausible hours](#report-for-a-period) of the meter are not imported and are listed in the response under `hours_implausible`. **This changes the statistics database – make a backup first.** A second call finds nothing left to import.
+
+## Recalculate statistics
+
+If you correct the rate (under *Reconfigure*; also tiers, capacity or full/partial feed-in when they change the rate), revenue and lost revenue show the new totals at once. The long-term statistics of past hours – statistics graphs, values per day and month, the [dashboard card](#dashboard-card-with-daily-and-yearly-values) – keep the old rate, imported ones too; Home Assistant books the whole difference into the hour of the change. *Repairs* reminds you with "Statistics with the old rate". The plant's device has the button **Recalculate statistics** for this (under *Configuration*):
+
+- It recalculates the statistics of revenue, lost revenue and – while the rule does not apply yet – "Lost revenue if the rule applied" from their first value to the latest with the current rate: from the energy sensors' statistics, so exactly from what is booked per hour. The statistics after it continue without a jump.
+- The result shows up as a notification: period, rate and how much each sensor's total changed. The repair issue goes away afterwards (or when you change the rate back).
+- Pressing twice gives the same result. Sensors without statistics stay as they are.
+- The 5-minute statistics of the last 10 days are recalculated too; older ones (with a longer `purge_keep_days`) stay, only 5-minute graphs show them.
+- From a given day on: the action **Import statistics** with **Replace existing statistics** (`replace: true`). Before that day the statistics stay unchanged; if the day is before the setup, the time before is imported first.
+- Not recalculated: the split remunerated/not remunerated after a rule change (see [Setup](#setup)). The total sensors keep it on purpose, the statistics follow them.
+- **This changes the statistics database too – make a backup first.**
 
 ## Examples
 
