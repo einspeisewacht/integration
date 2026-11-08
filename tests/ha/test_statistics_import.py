@@ -267,11 +267,11 @@ async def test_import_recalculate_import_earlier_without_jump(
     )
     assert paid[0][0] == local_midnight(earlier)
     totals = [p + u for (_, p), (_, u) in zip(paid, unpaid, strict=True)]
-    # 1 kWh in every imported hour, 0.5 in the compiled one: no jump anywhere,
-    # also not at the start of the first import (24.10. 00:00).
+    # 1 kWh in every imported hour, 0.5 + 0.5 in the compiled one: no jump
+    # anywhere, also not at the start of the first import (24.10. 00:00).
     steps = [b - a for a, b in zip([0.0, *totals], totals, strict=False)]
-    assert steps[:-1] == pytest.approx([1.0] * (len(steps) - 1))
-    assert steps[-1] == pytest.approx(0.5)
+    assert len(steps) == 3 * 24 + 6
+    assert steps == pytest.approx([1.0] * len(steps))
     for money, energy in (("revenue", paid), ("revenue_lost", unpaid)):
         money_sums = await sums(hass, ids[money])
         assert [s for _, s in money_sums] == pytest.approx(
