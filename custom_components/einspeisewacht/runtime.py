@@ -64,7 +64,7 @@ from .ledger import FeedInValuation
 from .meter import MeterTracker, to_kwh
 from .prices import ParsedPrices, parse_interval_prices
 from .regime import Derived, Plant, derive, local_midnight, manual, rule_for
-from .report import build_report
+from .report import build_report, implausible_summary, plausible_hours
 from .rules import NegativeQuarterHour
 from .smard import INDEX_URL, parse_index, parse_week, week_url, weeks_covering
 from .solar import daylight_weight
@@ -95,6 +95,12 @@ SMARD_FILL_INTERVAL = timedelta(hours=1)
 # Price sensors without a forecast attribute: the state is the current price.
 # Only its sign matters for the rule, so the unit is not converted.
 FORECAST_ATTRIBUTE = "data"
+
+# The meter's hourly statistics are read from this long before a period, so
+# the plausibility check knows the row before its first hour.
+METER_CONTEXT = timedelta(days=1)
+# Rates differing by less than this are the same (float noise, ct/kWh).
+RATE_EPSILON = 1e-9
 
 # SMARD.de: one request per week of history; be gentle with the website.
 SMARD_PAUSE = 0.5
@@ -181,6 +187,10 @@ class PlantRuntime:
             since=local_midnight(self.commissioned),
             weight=daylight_weight(hass.config.latitude, hass.config.longitude),
         )
+        # The rate (ct/kWh) the money sensors' long-term statistics were
+        # recorded with; a corrected rate leaves them behind until they are
+        # recalculated (repair issue "statistics_outdated").
+        self.statistics_rate = self.rate_ct
         self.unknown_unit: str | None = None
         self.backfill_error: str | None = None
         self.backfill_missing: int | None = None
@@ -211,6 +221,8 @@ class PlantRuntime:
         """Restore the stored state, read current values, start listening."""
         if live := await self._store.async_load():
             self.engine.restore(live, await self._history.async_load())
+            # Missing in stores before 0.1.9: taken as the current rate.
+            self.statistics_rate = live.get("statistics_rate", self.rate_ct)
             change = self.engine.rule_change
             if change is not None and change != live.get("rule_change"):
                 _LOGGER.warning(
@@ -224,6 +236,7 @@ class PlantRuntime:
                 ir.async_delete_issue(self.hass, DOMAIN, self._issue("rule_changed"))
         self._update_rule_issue()
         self._update_own_issue()
+        self._update_statistics_issue()
         now = dt_util.utcnow()
         if not self.price_own and (state := self.hass.states.get(self.price_entity)):
             self._handle_price(state, now)
@@ -277,7 +290,7 @@ class PlantRuntime:
                 task.cancel()
             await asyncio.wait(tasks)
         self._fill_task = None
-        await self._store.async_save(self.engine.as_live_dict())
+        await self._store.async_save(self._live_dict())
         await self._history.async_save(self.engine.as_history_dict())
 
     async def async_remove(self) -> None:
@@ -290,6 +303,7 @@ class PlantRuntime:
             self._issue("meter_missing"),
             self._issue("rule_changed"),
             self._issue("own_entity"),
+            self._issue("statistics_outdated"),
         ):
             ir.async_delete_issue(self.hass, DOMAIN, issue)
 
@@ -362,11 +376,59 @@ class PlantRuntime:
             },
         )
 
+    def _live_dict(self) -> dict[str, Any]:
+        return {**self.engine.as_live_dict(), "statistics_rate": self.statistics_rate}
+
+    @property
+    def statistics_outdated(self) -> bool:
+        """Whether the money statistics were recorded with another rate."""
+        return abs(self.statistics_rate - self.rate_ct) > RATE_EPSILON
+
+    def _update_statistics_issue(self) -> None:
+        """Say while the money statistics of past hours keep an earlier rate.
+
+        Revenue and lost revenue are energy times the current rate: a
+        corrected rate gives the sensors new totals at once, but the
+        long-term statistics only see the change in the hour of the
+        correction. Gone after "Recalculate statistics" or when the rate is
+        changed back.
+        """
+        issue_id = self._issue("statistics_outdated")
+        if not self.statistics_outdated:
+            ir.async_delete_issue(self.hass, DOMAIN, issue_id)
+            return
+        german = self.hass.config.language.startswith("de")
+
+        def rate(value: float) -> str:
+            text = f"{value:.4g}"
+            return text.replace(".", ",") if german else text
+
+        ir.async_create_issue(
+            self.hass,
+            DOMAIN,
+            issue_id,
+            is_fixable=False,
+            severity=ir.IssueSeverity.WARNING,
+            translation_key="statistics_outdated",
+            translation_placeholders={
+                "name": self.name,
+                "old": rate(self.statistics_rate),
+                "new": rate(self.rate_ct),
+            },
+        )
+
+    @callback
+    def statistics_recalculated(self) -> None:
+        """The money statistics follow the current rate again."""
+        self.statistics_rate = self.rate_ct
+        self._update_statistics_issue()
+        self._changed()
+
     async def _async_save(self, now: datetime | None = None) -> None:
         """Write what changed: the live state, and the history if it changed."""
         if self._live_dirty:
             self._live_dirty = False
-            await self._store.async_save(self.engine.as_live_dict())
+            await self._store.async_save(self._live_dict())
         if self.engine.history_version != self._saved_history:
             self._saved_history = self.engine.history_version
             await self._history.async_save(self.engine.as_history_dict())
@@ -492,7 +554,7 @@ class PlantRuntime:
         end = min(local_midnight(last_day + timedelta(days=1)), now)
         if end <= start:
             raise ValueError("empty period")
-        hourly = await self.async_hourly_energy(start, end)
+        hourly, implausible = await self.async_hourly_energy(start, end)
         result = build_report(
             hourly,
             start,
@@ -502,6 +564,8 @@ class PlantRuntime:
             self.rate_ct / 100,
             BERLIN,
         )
+        if summary := implausible_summary(implausible, BERLIN):
+            result["gaps"]["hours_implausible"] = summary
         return {
             "plant": self.name,
             "start": start.astimezone(BERLIN).isoformat(),
@@ -513,8 +577,21 @@ class PlantRuntime:
 
     async def async_hourly_energy(
         self, start: datetime, end: datetime
-    ) -> list[tuple[datetime, float]]:
-        """Energy per hour (kWh) of the meter from Home Assistant's long-term statistics."""
+    ) -> tuple[list[tuple[datetime, float]], list[datetime]]:
+        """Energy per hour (kWh) of the meter in [start, end) from Home
+        Assistant's long-term statistics, and the hours left out as
+        implausible (report.plausible_hours)."""
+        rows = await self.async_meter_rows(start - METER_CONTEXT, end)
+        kept, left_out = plausible_hours(rows, self.engine.meter.max_power_kw)
+        return (
+            [(hour, kwh) for hour, kwh in kept if start <= hour < end],
+            [hour for hour in left_out if start <= hour < end],
+        )
+
+    async def async_meter_rows(
+        self, start: datetime, end: datetime
+    ) -> list[tuple[datetime, float, float | None]]:
+        """The meter's hourly statistics: (start, change, state), in kWh."""
         rows = await get_instance(self.hass).async_add_executor_job(
             statistics_during_period,
             self.hass,
@@ -523,10 +600,10 @@ class PlantRuntime:
             {self.meter_entity},
             "hour",
             {"energy": UnitOfEnergy.KILO_WATT_HOUR},
-            {"change"},
+            {"change", "state"},
         )
         return [
-            (dt_util.utc_from_timestamp(row["start"]), row["change"])
+            (dt_util.utc_from_timestamp(row["start"]), row["change"], row.get("state"))
             for row in rows.get(self.meter_entity, [])
             if row.get("change") is not None
         ]

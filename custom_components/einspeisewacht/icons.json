@@ -9,6 +9,9 @@
       }
     },
     "button": {
+      "recalculate_statistics": {
+        "default": "mdi:database-refresh-outline"
+      },
       "issue_report": {
         "default": "mdi:clipboard-text-outline"
       }

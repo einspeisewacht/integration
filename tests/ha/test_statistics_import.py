@@ -99,7 +99,9 @@ async def test_import_statistics(recorder_mock: Recorder, hass: HomeAssistant) -
 
     start = local_midnight(IMPORT_FROM)  # 23.10. 22:00 UTC
     with patch.object(
-        PlantRuntime, "async_hourly_energy", return_value=hourly(start, LIVE_START)
+        PlantRuntime,
+        "async_hourly_energy",
+        return_value=(hourly(start, LIVE_START), []),
     ):
         # Without prices for the period: refused.
         with pytest.raises(ServiceValidationError) as err:
@@ -168,7 +170,7 @@ async def test_import_statistics_adds_the_setup_hour_before_the_setup(
     with patch.object(
         PlantRuntime,
         "async_hourly_energy",
-        return_value=hourly(start, LIVE_START + timedelta(hours=1)),
+        return_value=(hourly(start, LIVE_START + timedelta(hours=1)), []),
     ):
         await import_statistics(hass, entry.entry_id)
         await async_wait_recording_done(hass)

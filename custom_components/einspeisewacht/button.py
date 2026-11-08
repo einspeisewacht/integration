@@ -1,4 +1,11 @@
-"""Button: show a short report for a bug report (issue_report.py)."""
+"""Buttons of the plant device.
+
+"Recalculate statistics": the money sensors' long-term statistics with the
+current rate (statistics_import.async_recalculate); the result as a
+notification.
+
+"Report for a bug report": a short report as a notification (issue_report.py).
+"""
 
 from __future__ import annotations
 
@@ -6,10 +13,12 @@ from collections.abc import Mapping
 from datetime import datetime
 from typing import Any
 
+from homeassistant.components import persistent_notification
 from homeassistant.components.button import ButtonEntity
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
+from homeassistant.helpers.translation import async_get_translations
 
 from . import EinspeisewachtConfigEntry
 from .const import (
@@ -31,6 +40,7 @@ from .issue_report import Lines, build, show, utc
 from .issue_report import settings as format_settings
 from .prices import ParsedPrices
 from .runtime import PlantRuntime
+from .statistics_import import StatisticsImportError, async_recalculate
 
 NAME = "Einspeisewacht"
 
@@ -57,7 +67,105 @@ async def async_setup_entry(
     entry: EinspeisewachtConfigEntry,
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
-    async_add_entities([IssueReport(entry)])
+    async_add_entities([RecalculateStatistics(entry), IssueReport(entry)])
+
+
+class RecalculateStatistics(PlantEntity, ButtonEntity):
+    """Recalculate the money sensors' long-term statistics with the current
+    rate, e.g. after the rate was corrected; the result as a notification."""
+
+    _attr_entity_category = EntityCategory.CONFIG
+
+    def __init__(self, entry: EinspeisewachtConfigEntry) -> None:
+        super().__init__(entry, "recalculate_statistics")
+        self._entry = entry
+
+    async def async_press(self) -> None:
+        hass, entry = self.hass, self._entry
+        texts = await notification_texts(hass)
+        german = (hass.config.language or "").startswith("de")
+        name = entry.runtime_data.name
+        try:
+            result = await async_recalculate(hass, entry)
+        except StatisticsImportError as err:
+            title = _fill(texts["recalculate_failed_title"], name=name)
+            message = _fill(texts[f"import_{err.key}"], **err.placeholders)
+        else:
+            title = _fill(texts["recalculated_title"], name=name)
+            message = recalculated_message(hass, result, texts, german)
+        persistent_notification.async_create(
+            hass,
+            message,
+            title=title,
+            notification_id=f"{DOMAIN}_recalculate_{entry.entry_id}",
+        )
+
+
+async def notification_texts(hass: HomeAssistant) -> dict[str, str]:
+    """The notification's texts in the user's language: kept with the
+    action's error messages (category "exceptions" of the translations)."""
+    prefix = f"component.{DOMAIN}.exceptions."
+    raw = await async_get_translations(
+        hass, hass.config.language, "exceptions", {DOMAIN}
+    )
+    return {
+        key.removeprefix(prefix).removesuffix(".message"): text
+        for key, text in raw.items()
+        if key.startswith(prefix)
+    }
+
+
+def _fill(text: str, **values: str) -> str:
+    for key, value in values.items():
+        text = text.replace(f"{{{key}}}", value)
+    return text
+
+
+def _moment(value: str, german: bool) -> str:
+    moment = datetime.fromisoformat(value)
+    return f"{moment:%d.%m.%Y %H:%M}" if german else f"{moment:%Y-%m-%d %H:%M}"
+
+
+def _number(value: float, digits: int, german: bool) -> str:
+    text = f"{value:+.{digits}f}"
+    return text.replace(".", ",") if german else text
+
+
+def recalculated_message(
+    hass: HomeAssistant,
+    result: Mapping[str, Any],
+    texts: Mapping[str, str],
+    german: bool,
+) -> str:
+    """What was recalculated: the period, the rate, each sensor's change of
+    its sum, sensors left out."""
+    sensors: Mapping[str, Mapping[str, Any]] = result["sensors"]
+    rate = f"{result['rate_ct_per_kwh']:.4g}"
+    parts = [
+        _fill(
+            texts["recalculated"],
+            count=str(len(sensors)),
+            start=_moment(result["start"], german),
+            end=_moment(result["end"], german) if result["end"] else "-",
+            rate=rate.replace(".", ",") if german else rate,
+        )
+    ]
+    lines = []
+    for entity_id, info in sensors.items():
+        if info.get("change") is None:
+            continue
+        state = hass.states.get(entity_id)
+        label = state.name if state is not None else entity_id
+        lines.append(f"- {label}: {_number(info['change'], 2, german)} €")
+    if lines:
+        parts.append(texts["recalculated_changes"] + "\n" + "\n".join(lines))
+    if result.get("skipped"):
+        labels = []
+        for entity_id in result["skipped"]:
+            state = hass.states.get(entity_id)
+            labels.append(state.name if state is not None else entity_id)
+        parts.append(_fill(texts["recalculated_skipped"], sensors=", ".join(labels)))
+    return "\n\n".join(parts)
 
 
 class IssueReport(PlantEntity, ButtonEntity):

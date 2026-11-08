@@ -185,6 +185,9 @@
     "button": {
       "issue_report": {
         "name": "Report for a bug report"
+      },
+      "recalculate_statistics": {
+        "name": "Recalculate statistics"
       }
     },
     "sensor": {
@@ -266,6 +269,10 @@
     "rule_changed": {
       "title": "Totals partly follow the previous rule ({name})",
       "description": "The rule was changed. Up to the change on {date}, the totals “Feed-in remunerated/not remunerated”, “Revenue” and “Lost revenue” follow the previous rule: the new one judges {count} negative quarter hours already booked differently. Einspeisewacht does not rebook them, because Home Assistant would take a falling total for a meter replacement. The Report action gives the correct values for the time before. This message disappears if the rule is changed back; otherwise you can ignore it."
+    },
+    "statistics_outdated": {
+      "title": "Statistics with the old rate ({name})",
+      "description": "The remuneration rate changed from {old} to {new} ct/kWh. Revenue and lost revenue show the new totals at once, but the long-term statistics of past hours (statistics graphs, values per day and month) still hold the old rate; Home Assistant books the difference in the hour of the change. Press “Recalculate statistics” on the plant's device (under Configuration) to recalculate them with the current rate. This message disappears afterwards, or when the rate is changed back."
     }
   },
   "services": {
@@ -289,7 +296,7 @@
     },
     "import_statistics": {
       "name": "Import statistics",
-      "description": "Fills the long-term statistics of the four total sensors (feed-in remunerated/not remunerated, revenue, lost revenue) for the time before setup, from the given day on – computed like the report from the meter's hourly statistics. Later sums are shifted so the series stays continuous. Changes the statistics database: make a backup first. Only hours before each sensor's first statistic are written; a second call finds nothing left.",
+      "description": "Fills the long-term statistics of the four total sensors (feed-in remunerated/not remunerated, revenue, lost revenue) for the time before setup, from the given day on – computed like the report from the meter's hourly statistics; implausible hours of the meter are left out. Later sums are shifted so the series stays continuous. Changes the statistics database: make a backup first. Only hours before each sensor's first statistic are written; a second call finds nothing left.",
       "fields": {
         "config_entry_id": {
           "name": "Plant",
@@ -298,6 +305,10 @@
         "start": {
           "name": "From",
           "description": "First day to fill in, e.g. 1 January or the commissioning date."
+        },
+        "replace": {
+          "name": "Replace existing statistics",
+          "description": "Also recalculates the existing statistics of revenue and lost revenue from this day on with the current rate, like the button “Recalculate statistics”. Before this day the statistics stay as they are."
         }
       }
     }
@@ -332,6 +343,30 @@
     },
     "import_prices_missing": {
       "message": "Prices are unknown for {count} quarter hours of this period. Turn on “Count earlier negative quarter hours from SMARD.de” under Reconfigure, wait for it to finish and try again."
+    },
+    "import_busy": {
+      "message": "Statistics of this plant are being imported or recalculated already. Please wait until that is done."
+    },
+    "import_nothing_to_recalculate": {
+      "message": "Nothing to recalculate: there are no statistics from this day on."
+    },
+    "import_energy_statistics_missing": {
+      "message": "The statistics of the energy sensors are missing for hours in which revenue or lost revenue have statistics (deleted?). Without them the money values cannot be recalculated."
+    },
+    "recalculated_title": {
+      "message": "Einspeisewacht: statistics recalculated ({name})"
+    },
+    "recalculated": {
+      "message": "The statistics of {count} sensors were recalculated from {start} to {end} with the current rate of {rate} ct/kWh. The next values continue from them."
+    },
+    "recalculated_changes": {
+      "message": "Change of the total:"
+    },
+    "recalculated_skipped": {
+      "message": "Left alone (energy statistics missing): {sensors}"
+    },
+    "recalculate_failed_title": {
+      "message": "Einspeisewacht: statistics not recalculated ({name})"
     }
   }
 }

@@ -185,6 +185,9 @@
     "button": {
       "issue_report": {
         "name": "Bericht für Fehlermeldung"
+      },
+      "recalculate_statistics": {
+        "name": "Statistik neu berechnen"
       }
     },
     "sensor": {
@@ -266,6 +269,10 @@
     "rule_changed": {
       "title": "Summen teils nach alter Regel ({name})",
       "description": "Die Regel wurde geändert. Die Summen „Einspeisung vergütet/unvergütet“, „Erlös“ und „Entgangener Erlös“ folgen bis zur Änderung am {date} der alten Regel: {count} schon gebuchte negative Viertelstunden beurteilt die neue Regel anders. Einspeisewacht bucht sie nicht um, weil Home Assistant eine sinkende Summe für einen Zählerwechsel hielte. Die richtigen Werte für die Zeit davor liefert die Aktion „Bericht“. Die Meldung verschwindet, wenn die Regel zurückgeändert wird; sonst kannst du sie ignorieren."
+    },
+    "statistics_outdated": {
+      "title": "Statistik mit altem Satz ({name})",
+      "description": "Der Vergütungssatz wurde von {old} auf {new} ct/kWh geändert. Erlös und entgangener Erlös zeigen sofort die neuen Summen, die Langzeitstatistik vergangener Stunden (Statistik-Diagramme, Werte je Tag und Monat) enthält aber noch den alten Satz; Home Assistant bucht den Unterschied in die Stunde der Änderung. Drücke am Gerät der Anlage (unter Konfiguration) „Statistik neu berechnen“, um sie mit dem aktuellen Satz neu zu berechnen. Die Meldung verschwindet danach oder wenn der Satz zurückgeändert wird."
     }
   },
   "services": {
@@ -289,7 +296,7 @@
     },
     "import_statistics": {
       "name": "Statistik nachtragen",
-      "description": "Füllt die Langzeitstatistik der vier Summen-Sensoren (Einspeisung vergütet/unvergütet, Erlös, entgangener Erlös) für die Zeit vor der Einrichtung, ab dem angegebenen Tag – berechnet wie der Bericht aus den Stundenwerten des Zählers. Spätere Summen werden verschoben, damit die Reihe durchgehend bleibt. Greift in die Statistik-Datenbank ein: vorher ein Backup anlegen. Es werden nur Stunden vor dem ersten vorhandenen Wert geschrieben; ein zweiter Aufruf findet nichts mehr.",
+      "description": "Füllt die Langzeitstatistik der vier Summen-Sensoren (Einspeisung vergütet/unvergütet, Erlös, entgangener Erlös) für die Zeit vor der Einrichtung, ab dem angegebenen Tag – berechnet wie der Bericht aus den Stundenwerten des Zählers; unplausible Stunden des Zählers bleiben außen vor. Spätere Summen werden verschoben, damit die Reihe durchgehend bleibt. Greift in die Statistik-Datenbank ein: vorher ein Backup anlegen. Es werden nur Stunden vor dem ersten vorhandenen Wert geschrieben; ein zweiter Aufruf findet nichts mehr.",
       "fields": {
         "config_entry_id": {
           "name": "Anlage",
@@ -298,6 +305,10 @@
         "start": {
           "name": "Ab",
           "description": "Erster nachzutragender Tag, z. B. der 1. Januar oder die Inbetriebnahme."
+        },
+        "replace": {
+          "name": "Vorhandene Statistik ersetzen",
+          "description": "Berechnet auch die vorhandene Statistik von Erlös und entgangenem Erlös ab diesem Tag mit dem aktuellen Satz neu, wie die Schaltfläche „Statistik neu berechnen“. Vor diesem Tag bleibt die Statistik, wie sie ist."
         }
       }
     }
@@ -332,6 +343,30 @@
     },
     "import_prices_missing": {
       "message": "Für {count} Viertelstunden dieses Zeitraums sind die Preise unbekannt. Bitte unter „Neu konfigurieren“ „Frühere negative Viertelstunden von SMARD.de nachzählen“ einschalten, den Abruf abwarten und es erneut versuchen."
+    },
+    "import_busy": {
+      "message": "Die Statistik dieser Anlage wird gerade schon nachgetragen oder neu berechnet. Bitte warten, bis das fertig ist."
+    },
+    "import_nothing_to_recalculate": {
+      "message": "Nichts neu zu berechnen: Ab diesem Tag gibt es keine Statistik."
+    },
+    "import_energy_statistics_missing": {
+      "message": "Die Statistik der Energie-Sensoren fehlt für Stunden, in denen Erlös oder entgangener Erlös Statistik haben (gelöscht?). Ohne sie lassen sich die Geldwerte nicht neu berechnen."
+    },
+    "recalculated_title": {
+      "message": "Einspeisewacht: Statistik neu berechnet ({name})"
+    },
+    "recalculated": {
+      "message": "Die Statistik von {count} Sensoren wurde vom {start} bis {end} mit dem aktuellen Satz von {rate} ct/kWh neu berechnet. Die nächsten Werte schließen daran an."
+    },
+    "recalculated_changes": {
+      "message": "Änderung der Summe:"
+    },
+    "recalculated_skipped": {
+      "message": "Unverändert (Statistik der Energie fehlt): {sensors}"
+    },
+    "recalculate_failed_title": {
+      "message": "Einspeisewacht: Statistik nicht neu berechnet ({name})"
     }
   }
 }

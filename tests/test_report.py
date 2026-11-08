@@ -8,7 +8,13 @@ import pytest
 
 from custom_components.einspeisewacht.const import BERLIN
 from custom_components.einspeisewacht.quarters import QuarterCounter
-from custom_components.einspeisewacht.report import HOUR, build_report, split_hour
+from custom_components.einspeisewacht.report import (
+    HOUR,
+    build_report,
+    implausible_summary,
+    plausible_hours,
+    split_hour,
+)
 from custom_components.einspeisewacht.rules import AlwaysPaid, NegativeQuarterHour
 from custom_components.einspeisewacht.smard import parse_week
 from tests.conftest import load_fixture
@@ -144,3 +150,77 @@ def test_split_hour_until_spreads_over_the_quarter_hours_before() -> None:
     assert split_hour(hour, 1.0, counter(), rule, until=until) == pytest.approx(
         (0.0, 1.0)
     )
+
+
+# Meter statistics of a meter that briefly reported Wh as kWh (seen with a
+# Homematic IP meter): hourly (start, change, state) in kWh as Home Assistant
+# compiles them - the fall back counts as a new cycle with the whole reading.
+GLITCH = [
+    (0, 0.4, 107.0),
+    (1, 109_744.5, 109_851.5),  # Wh as kWh
+    (2, 110.131, 110.131),  # back: "new cycle"
+    (3, 0.369, 110.5),
+    (4, 8.0, 118.5),  # a sunny hour of a 9 kWp plant stays
+    (5, -2.0, 116.5),  # statistics adjusted / meter replaced
+    (6, 0.5, 117.0),
+]
+
+
+def glitch_rows(start: datetime) -> list[tuple[datetime, float, float]]:
+    return [(start + h * HOUR, change, state) for h, change, state in GLITCH]
+
+
+def test_plausible_hours_leave_out_a_unit_glitch() -> None:
+    hour = datetime(2026, 1, 1, tzinfo=UTC)
+    kept, left_out = plausible_hours(glitch_rows(hour), max_power_kw=9.0)
+    assert left_out == [hour + HOUR, hour + 2 * HOUR, hour + 5 * HOUR]
+    assert kept == [
+        (hour, 0.4),
+        (hour + 3 * HOUR, 0.369),
+        (hour + 4 * HOUR, 8.0),
+        (hour + 6 * HOUR, 0.5),
+    ]
+
+
+def test_the_fall_back_after_a_jump_is_left_out_below_the_bound() -> None:
+    """A 100 kWp plant may feed in 110 kWh an hour: the fall back after the
+    jump still goes (Home Assistant adds the whole reading as a new cycle)."""
+    hour = datetime(2026, 1, 1, tzinfo=UTC)
+    kept, left_out = plausible_hours(glitch_rows(hour), max_power_kw=100.0)
+    assert left_out == [hour + HOUR, hour + 2 * HOUR, hour + 5 * HOUR]
+    assert (hour + 4 * HOUR, 8.0) in kept
+
+
+def test_plausible_hours_bound_is_the_live_meters() -> None:
+    """Power x 1.5 per hour (+ 2 Wh rounding), as for every live reading."""
+    hour = datetime(2026, 6, 1, 10, tzinfo=UTC)
+    assert plausible_hours([(hour, 13.502, None)], 9.0)[1] == []
+    assert plausible_hours([(hour, 13.51, None)], 9.0)[1] == [hour]
+    # The other channel of the same meter: +661,683 kWh in an hour.
+    assert plausible_hours([(hour, 661_683.0, 661_790.0)], 9.0)[1] == [hour]
+
+
+def test_plausible_hours_after_home_assistant_was_off() -> None:
+    """No rows while Home Assistant was off: the first row after it holds the
+    whole gap, the bound grows with the hours since the previous row."""
+    hour = datetime(2026, 6, 1, 8, tzinfo=UTC)
+    rows = [(hour, 2.0, 100.0), (hour + 4 * HOUR, 30.0, 130.0)]
+    assert plausible_hours(rows, 9.0) == ([(hour, 2.0), (hour + 4 * HOUR, 30.0)], [])
+
+
+def test_a_new_cycle_without_a_jump_stays() -> None:
+    """A state that falls without a jump before (meter replaced, starts at
+    0): Home Assistant adds the new reading, which stays."""
+    hour = datetime(2026, 1, 1, tzinfo=UTC)
+    rows = [(hour, 1.0, 500.0), (hour + HOUR, 0.4, 0.4)]
+    assert plausible_hours(rows, 9.0) == ([(hour, 1.0), (hour + HOUR, 0.4)], [])
+
+
+def test_implausible_summary_names_the_first_five_hours_locally() -> None:
+    hour = datetime(2026, 1, 1, tzinfo=UTC)
+    assert implausible_summary([], BERLIN) is None
+    summary = implausible_summary([hour + h * HOUR for h in range(7)], BERLIN)
+    assert summary == {
+        "count": 7,
+        "hours": [f"2026-01-01T0{h + 1}:00:00+01:00" for h in range(5)],
+    }

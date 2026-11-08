@@ -1,5 +1,6 @@
 """Actions: einspeisewacht.report (sums for any period) and
-einspeisewacht.import_statistics (history of the total sensors before setup)."""
+einspeisewacht.import_statistics (history of the total sensors before setup;
+with `replace` also the money statistics recalculated with the current rate)."""
 
 from __future__ import annotations
 
@@ -19,7 +20,11 @@ from homeassistant.helpers import config_validation as cv
 from homeassistant.util import dt as dt_util
 
 from .const import BERLIN, DOMAIN
-from .statistics_import import StatisticsImportError, async_import_history
+from .statistics_import import (
+    StatisticsImportError,
+    async_import_history,
+    async_recalculate,
+)
 
 if TYPE_CHECKING:
     from . import EinspeisewachtConfigEntry
@@ -29,6 +34,7 @@ SERVICE_IMPORT_STATISTICS = "import_statistics"
 ATTR_CONFIG_ENTRY_ID = "config_entry_id"
 ATTR_START = "start"
 ATTR_END = "end"
+ATTR_REPLACE = "replace"
 
 REPORT_SCHEMA = vol.Schema(
     {
@@ -41,6 +47,7 @@ IMPORT_SCHEMA = vol.Schema(
     {
         vol.Required(ATTR_CONFIG_ENTRY_ID): cv.string,
         vol.Required(ATTR_START): cv.date,
+        vol.Optional(ATTR_REPLACE, default=False): cv.boolean,
     }
 )
 
@@ -83,7 +90,10 @@ async def _async_report(call: ServiceCall) -> ServiceResponse:
 async def _async_import_statistics(call: ServiceCall) -> ServiceResponse:
     entry = _loaded_entry(call)
     try:
-        result = await async_import_history(call.hass, entry, call.data[ATTR_START])
+        if call.data[ATTR_REPLACE]:
+            result = await async_recalculate(call.hass, entry, call.data[ATTR_START])
+        else:
+            result = await async_import_history(call.hass, entry, call.data[ATTR_START])
     except StatisticsImportError as err:
         raise _error(f"import_{err.key}", err.placeholders) from err
     return result if call.return_response else None

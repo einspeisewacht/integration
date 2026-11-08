@@ -4,6 +4,10 @@ Home Assistant keeps the meter's energy per hour (long-term statistics). Each
 hour is spread evenly over its four quarter hours, which is exact whenever all
 four have the same outcome and an estimate otherwise. Quarter hours whose price
 was never seen count as remunerated and are listed as gaps.
+
+Hourly changes of the meter are checked first (`plausible_hours`) with the
+bound the live meter applies to every reading: a meter that briefly reports
+Wh as kWh would otherwise add 100,000 kWh to a day.
 """
 
 from __future__ import annotations
@@ -13,11 +17,14 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta, tzinfo
 from typing import Any
 
+from .meter import POWER_MARGIN, ROUNDING_TOLERANCE_KWH
 from .quarters import QuarterCounter
 from .rules import Rule
 from .timeslots import QUARTER
 
 HOUR = timedelta(hours=1)
+# Implausible hours named in a result (the first ones).
+IMPLAUSIBLE_SHOWN = 5
 
 
 @dataclass
@@ -44,6 +51,52 @@ def _ranges(slots: list[datetime]) -> list[tuple[datetime, datetime]]:
         else:
             ranges.append((slot, slot + QUARTER))
     return ranges
+
+
+def plausible_hours(
+    rows: Iterable[tuple[datetime, float, float | None]], max_power_kw: float
+) -> tuple[list[tuple[datetime, float]], list[datetime]]:
+    """Hourly changes of the meter (start, change in kWh, state of the row)
+    split into plausible ones and the hours left out.
+
+    The bound is the live meter's (meter.py, MeterEvent.JUMP): the plant's
+    power x POWER_MARGIN per hour since the previous row (Home Assistant was
+    off in between: the first row after it holds the whole gap). Left out:
+    more than that (a unit glitch, e.g. Wh reported as kWh: 107 -> 109851.5),
+    less than 0 (meter replaced or the statistics adjusted), and the hour
+    after a jump in which the state falls again (109851.5 -> 110.131): Home
+    Assistant takes that for a new cycle and adds the whole reading (110 kWh)
+    to the sum.
+    """
+    kept: list[tuple[datetime, float]] = []
+    left_out: list[datetime] = []
+    jump_state: float | None = None
+    previous: datetime | None = None
+    for hour, change, state in sorted(rows, key=lambda row: row[0]):
+        hours = 1.0 if previous is None else (hour - previous) / HOUR
+        previous = hour
+        bound = max_power_kw * POWER_MARGIN * max(hours, 1.0) + ROUNDING_TOLERANCE_KWH
+        back = jump_state is not None and state is not None and state < jump_state
+        if change < 0 or change > bound or back:
+            left_out.append(hour)
+            jump_state = state if change > bound else None
+        else:
+            kept.append((hour, change))
+            jump_state = None
+    return kept, left_out
+
+
+def implausible_summary(hours: Iterable[datetime], tz: tzinfo) -> dict[str, Any] | None:
+    """Hours left out as implausible: how many, and the first ones (local)."""
+    found = sorted(set(hours))
+    if not found:
+        return None
+    return {
+        "count": len(found),
+        "hours": [
+            hour.astimezone(tz).isoformat() for hour in found[:IMPLAUSIBLE_SHOWN]
+        ],
+    }
 
 
 def split_hour(
