@@ -32,6 +32,7 @@ from custom_components.einspeisewacht.const import (
     CONF_SMART_METER_DATE,
     DOMAIN,
 )
+from custom_components.einspeisewacht.recalculate import ROW_TOLERANCE as TOLERANCE
 from custom_components.einspeisewacht.regime import local_midnight
 from custom_components.einspeisewacht.runtime import PlantRuntime
 from custom_components.einspeisewacht.smard import parse_week
@@ -98,7 +99,8 @@ async def rows(hass: HomeAssistant, statistic_id: str, period: str) -> Rows:
 async def assert_money_follows_energy(
     hass: HomeAssistant, entry: MockConfigEntry, rate: float
 ) -> None:
-    """Every money row is the energy row at the same start times the rate."""
+    """Every money row is the energy row at the same start times the rate
+    (rows already that close are not rewritten)."""
     for money, energy in PAIRS.items():
         money_id, energy_id = (
             entity_id(hass, entry, money),
@@ -111,8 +113,14 @@ async def assert_money_follows_energy(
             assert money_rows, (money, period)
             for start, state, total in money_rows:
                 energy_state, energy_sum = energy_rows[start]
-                assert total == pytest.approx(rate * energy_sum), (money, start)
-                assert state == pytest.approx(rate * energy_state), (money, start)
+                assert total == pytest.approx(rate * energy_sum, abs=TOLERANCE), (
+                    money,
+                    start,
+                )
+                assert state == pytest.approx(rate * energy_state, abs=TOLERANCE), (
+                    money,
+                    start,
+                )
 
 
 async def press(hass: HomeAssistant, entry: MockConfigEntry) -> tuple[str, str]:
@@ -280,16 +288,14 @@ async def test_only_changed_rows_are_written(
     assert after["revenue_lost"] == before["revenue_lost"]
     for key in ("revenue", "shadow_revenue_lost"):
         info = sensors[ids[key]]
-        # The rows of 03:00 and 03:30, before anything was booked, stay 0
-        # at any rate; the hour and the rows of 03:55 and 04:00 change.
+        # The rows of 03:00 and 03:30 (nothing or almost nothing booked)
+        # stay within the tolerance; the hour, 03:55 and 04:00 change.
         assert (info["hours_written"], info["short_term_written"]) == (1, 2), key
         assert written[ids[key]] == 3, key
         old_rows = before[key][0] + before[key][1]
         new_rows = after[key][0] + after[key][1]
         changed = [n for o, n in zip(old_rows, new_rows, strict=True) if o != n]
         assert len(changed) == 3, key
-        kept = [o for o, n in zip(old_rows, new_rows, strict=True) if o == n]
-        assert all(state == total == 0 for _, state, total in kept), key
     # 6 of 15 rows of the three money sensors.
     assert result["rows_written"] == 6 == sum(written.values())
     await assert_money_follows_energy(hass, entry, NEW_RATE)
