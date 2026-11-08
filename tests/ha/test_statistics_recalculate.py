@@ -26,7 +26,6 @@ from pytest_homeassistant_custom_component.components.recorder.common import (
     async_wait_recording_done,
 )
 
-from custom_components.einspeisewacht import statistics_import
 from custom_components.einspeisewacht.const import (
     CONF_RATES,
     CONF_SMART_METER,
@@ -145,30 +144,18 @@ async def recalculate(
     hass: HomeAssistant, entry: MockConfigEntry
 ) -> tuple[dict[str, Any], dict[str, int]]:
     """The recalculation's result, and the rows really handed to the
-    recorder (hourly and short-term) per statistic id."""
+    recorder per statistic id (hourly and short-term: Home Assistant's
+    `async_import_statistics` goes through the same method)."""
     instance = get_instance(hass)
     written: dict[str, int] = {}
-    hourly, short = (
-        statistics_import.async_import_statistics,
-        instance.async_import_statistics,
-    )
+    original = instance.async_import_statistics
 
-    def count(metadata: Any, data: Any) -> None:
+    def counted(metadata: Any, data: Any, table: Any) -> Any:
         key = metadata["statistic_id"]
         written[key] = written.get(key, 0) + len(data)
+        return original(metadata, data, table)
 
-    def hourly_counted(hass: HomeAssistant, metadata: Any, data: Any) -> None:
-        count(metadata, data)
-        hourly(hass, metadata, data)
-
-    def short_counted(metadata: Any, data: Any, table: Any) -> Any:
-        count(metadata, data)
-        return short(metadata, data, table)
-
-    with (
-        patch.object(statistics_import, "async_import_statistics", hourly_counted),
-        patch.object(instance, "async_import_statistics", short_counted),
-    ):
+    with patch.object(instance, "async_import_statistics", counted):
         result = await async_recalculate(hass, entry)
     await async_wait_recording_done(hass)
     return result, written
