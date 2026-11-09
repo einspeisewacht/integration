@@ -14,7 +14,9 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.event import async_call_later
 from homeassistant.helpers.typing import ConfigType
 
+from .cards import async_setup_cards
 from .const import DOMAIN
+from .frontend_resource import async_register_card, async_unregister_card
 from .rename import renamed_data, renamed_unique_id, sources
 from .runtime import PlantRuntime
 from .services import async_setup_services
@@ -46,8 +48,10 @@ type EinspeisewachtConfigEntry = ConfigEntry[PlantRuntime]
 
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
-    """Register the actions and follow renamed sources (once, for all entries)."""
+    """Register the actions, the card and follow renamed sources (once, for
+    all entries)."""
     async_setup_services(hass)
+    await async_setup_cards(hass)
     _async_follow_renames(hass)
     return True
 
@@ -126,6 +130,10 @@ async def async_setup_entry(
     hass: HomeAssistant, entry: EinspeisewachtConfigEntry
 ) -> bool:
     """Set up one plant and meter."""
+    # The card resource per entry: after removing the last entry and adding
+    # the integration again, async_setup does not run before the next restart.
+    if getattr(hass, "http", None) is not None:
+        await async_register_card(hass)
     runtime = PlantRuntime(hass, entry.entry_id, entry.data)
     await runtime.async_start()
     entry.runtime_data = runtime
@@ -155,5 +163,11 @@ async def async_unload_entry(
 async def async_remove_entry(
     hass: HomeAssistant, entry: EinspeisewachtConfigEntry
 ) -> None:
-    """Delete the stored bookings."""
+    """Delete the stored bookings; with the last entry also the card
+    resource."""
     await PlantRuntime(hass, entry.entry_id, entry.data).async_remove()
+    if not any(
+        other.entry_id != entry.entry_id
+        for other in hass.config_entries.async_entries(DOMAIN)
+    ):
+        await async_unregister_card(hass)

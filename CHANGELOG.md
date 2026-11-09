@@ -2,6 +2,7 @@
 
 ## Unveröffentlicht
 
+- **Neu: eigene Dashboard-Karte**, ohne Zusatzkarten aus HACS: *Dashboard bearbeiten → Karte hinzufügen* und nach „Einspeisewacht“ suchen. Oben steht, ob die laufende Viertelstunde vergütet wird und wann heute und morgen nicht (sobald die Day-Ahead-Preise da sind). Darunter das Kalenderjahr: entgangener Erlös groß, Erlös und Anteil unvergütet daneben, Viertelstunden ohne Vergütung, Nachholung und „Vergütung bis“. Unten die eingespeiste Energie der letzten zwölf Monate, vergütet und unvergütet gestapelt, darüber der Anteil unvergütet. Greift die Regel noch nicht (ohne iMSys), zeigt die Karte, was bei greifender Regel unvergütet wäre. Offene Reparaturhinweise stehen orange darüber. Jahr und Monate kommen aus der Langzeitstatistik der Summen-Sensoren, also auch für nachgetragene Zeit vor der Einrichtung; die Karte fragt sie einmal beim Öffnen der Seite ab, danach höchstens stündlich. Die Dashboard-Ressource trägt Einspeisewacht selbst ein und mit dem letzten Eintrag wieder aus. Der „Bericht für Fehlermeldung“ nennt, ob die Karte eingetragen ist.
 - **Übersicht in „Neu konfigurieren“ mit Überschriften wie in den anderen Wachten:** oben „Eingerichtet“, darunter „Was fehlt“ (ohne Doppelpunkt), nur wenn etwas fehlt. Inhalt unverändert.
 
 ## 0.1.9 – 2026-11-08

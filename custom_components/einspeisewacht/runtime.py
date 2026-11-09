@@ -105,6 +105,16 @@ RATE_EPSILON = 1e-9
 # SMARD.de: one request per week of history; be gentle with the website.
 SMARD_PAUSE = 0.5
 SMARD_TIMEOUT = aiohttp.ClientTimeout(total=30)
+# Repair issues of an entry (translation keys; the card names them).
+ISSUES = (
+    "smard_failed",
+    "price_missing",
+    "meter_unit",
+    "meter_missing",
+    "rule_changed",
+    "own_entity",
+    "statistics_outdated",
+)
 
 
 def plant_from_config(config: Mapping[str, Any]) -> Plant:
@@ -296,19 +306,21 @@ class PlantRuntime:
     async def async_remove(self) -> None:
         await self._store.async_remove()
         await self._history.async_remove()
-        for issue in (
-            self.issue_id,
-            self._issue("price_missing"),
-            self._issue("meter_unit"),
-            self._issue("meter_missing"),
-            self._issue("rule_changed"),
-            self._issue("own_entity"),
-            self._issue("statistics_outdated"),
-        ):
-            ir.async_delete_issue(self.hass, DOMAIN, issue)
+        for key in ISSUES:
+            ir.async_delete_issue(self.hass, DOMAIN, self._issue(key))
 
     def _issue(self, key: str) -> str:
         return f"{key}_{self.entry_id}"
+
+    def active_issues(self) -> list[str]:
+        """Keys of the open repair issues of this entry (not ignored)."""
+        registry = ir.async_get(self.hass)
+        active = []
+        for key in ISSUES:
+            issue = registry.async_get_issue(DOMAIN, self._issue(key))
+            if issue is not None and issue.active and issue.dismissed_version is None:
+                active.append(key)
+        return active
 
     @property
     def meter_own(self) -> bool:
@@ -439,7 +451,7 @@ class PlantRuntime:
 
     @property
     def issue_id(self) -> str:
-        return f"smard_failed_{self.entry_id}"
+        return self._issue("smard_failed")
 
     async def async_backfill(self) -> None:
         """Count quarter hours from commissioning until live counting began.

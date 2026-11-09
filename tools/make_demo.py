@@ -22,11 +22,13 @@ import random
 import sys
 from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
+from custom_components.einspeisewacht.cards import card_days  # noqa: E402
 from custom_components.einspeisewacht.catchup import extension  # noqa: E402
 from custom_components.einspeisewacht.const import BERLIN  # noqa: E402
 from custom_components.einspeisewacht.engine import Engine  # noqa: E402
@@ -64,6 +66,15 @@ PLANTS = {
     "garage": ("Garage", Plant(date(2025, 6, 20), KWP, None)),
 }
 LEAD = timedelta(hours=12)  # README "Hinweis am Vortag": offset -12:00:00
+# The totals the card reads per month from the long-term statistics.
+TOTALS = (
+    "energy_paid",
+    "energy_unpaid",
+    "revenue",
+    "revenue_lost",
+    "shadow_energy_unpaid",
+    "shadow_revenue_lost",
+)
 
 
 # ---- Made-up weather, prices and feed-in -----------------------------------------------
@@ -160,6 +171,37 @@ def _totals(engine: Engine) -> dict[str, float]:
     return dict(engine.ledger.totals)
 
 
+def month_statistics(
+    midnights: dict[date, dict[str, float]],
+    totals: dict[str, float],
+    now: datetime,
+    keys: tuple[str, ...],
+) -> dict[str, list[dict[str, Any]]]:
+    """Monthly "change" of the totals as recorder/statistics_during_period
+    hands it to the card (start in ms), from the first booked month to now."""
+    today = now.date()
+    months = []
+    first = START.date()
+    while first <= today:
+        following = date(first.year + first.month // 12, first.month % 12 + 1, 1)
+        months.append((first, following))
+        first = following
+    result: dict[str, list[dict[str, Any]]] = {}
+    for key in keys:
+        rows = []
+        for first, following in months:
+            start = midnights.get(first, {})
+            end = midnights[following] if following <= today else totals
+            rows.append(
+                {
+                    "start": int(local_midnight(first).timestamp() * 1000),
+                    "change": round(end.get(key, 0.0) - start.get(key, 0.0), 4),
+                }
+            )
+        result[key] = rows
+    return result
+
+
 def snapshot(
     name: str,
     plant: Plant,
@@ -232,6 +274,13 @@ def snapshot(
         at = w.start - LEAD
         if not w.paid and utc_now - timedelta(hours=36) < at <= utc_now:
             pushes.append({"at": at.isoformat(), "start": w.start.isoformat(), "end": w.end.isoformat()})  # fmt: skip
+    # The card's websocket answer, from the prices the engine knows.
+    known = SimpleNamespace(prices=_day_prices(all_prices, today))
+    plant_runtime = SimpleNamespace(
+        engine=SimpleNamespace(prices=known, rule=engine.rule)
+    )
+    card = {"days": card_days(plant_runtime, utc_now), "issues": []}
+    keys = TOTALS if shadow else TOTALS[:4]
     year = now.year
     result: dict[str, Any] = {
         "now": now.isoformat(),
@@ -248,6 +297,8 @@ def snapshot(
         "curve": curve,
         "calendar": calendar,
         "pushes": sorted(pushes, key=lambda p: p["at"], reverse=True),
+        "card": card,
+        "statistics": month_statistics(midnights, totals, now, keys),
     }  # fmt: skip
     if shadow:
         result["shadow_negative_quarter_hours"] = engine.shadow_counts().get(year, 0)

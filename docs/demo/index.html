@@ -77,6 +77,9 @@
       .sections { display: grid; gap: 24px 16px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); }
       .section { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
       .section.wide { grid-column: 1 / -1; }
+      .cardtype { padding: 0 4px; font-size: 12px; color: var(--secondary-text-color); }
+      .cardtype code { font: 12px ui-monospace, Consolas, monospace; }
+      .card.flash { outline: 2px solid var(--brand); outline-offset: 2px; }
       @media (max-width: 720px) { header a.repo { display: none; } }
       .heading { display: flex; align-items: center; gap: 8px; min-height: 36px; font-size: 16px; font-weight: 500;
         color: var(--primary-text-color); }
@@ -177,13 +180,15 @@
         <div class="box">
           <h2 data-t="build"></h2>
           <p data-t="cards"></p>
-          <p><a href="https://github.com/einspeisewacht/integration#dashboard-karte-mit-tages--und-jahreswerten" data-t="readme"></a></p>
+          <p><a href="https://github.com/einspeisewacht/integration#karte" data-t="readme"></a></p>
         </div>
       </div>
     </div>
 
     <script type="module">
       import { PATHS } from "./icons.js";
+      // The integration's own card, unchanged (frontend/einspeisewacht-card.js).
+      import "../../custom_components/einspeisewacht/frontend/einspeisewacht-card.js";
 
       const PLANTS = ["dach", "garage"];
       const MOMENTS = ["mai", "januar"];
@@ -234,6 +239,7 @@
           },
           rules: { quarter_hour: "Jede negative Viertelstunde", waiting_smart_meter: "Wartet auf iMSys" },
           fullLoad: "Volllast-Viertelstunden",
+          quarterHours: "Viertelstunden",
           ruleFrom: (d) => `gilt ab ${d}`,
           rate: (r) => `Satz ${r} ct/kWh`,
           shadowNote:
@@ -272,7 +278,7 @@
             (p.smart_meter_installed ? "mit Smart-Meter-Gateway" : "noch ohne Smart-Meter-Gateway") +
             `, Beispielsatz ${num(p.rate_ct, 2)} ct/kWh`,
           build: "Selbst bauen",
-          cards: "Die Karte „Einspeisung“ nutzt nur Bordmittel (Statistik-Diagramm, Statistik, Entitäten, Kachel); die README hat sie fertig zum Einfügen.",
+          cards: "Die Karte oben links bringt Einspeisewacht mit, unverändert wie in Home Assistant: im Dashboard „Karte hinzufügen“ → „Einspeisewacht“. Ein Tipp auf einen Wert zeigt hier das Gerät mit allen Sensoren.",
           readme: "Karte in der README →",
         },
         en: {
@@ -316,6 +322,7 @@
           },
           rules: { quarter_hour: "Every negative quarter hour", waiting_smart_meter: "Waiting for iMSys" },
           fullLoad: "full-load quarter hours",
+          quarterHours: "quarter hours",
           ruleFrom: (d) => `applies from ${d}`,
           rate: (r) => `rate ${r} ct/kWh`,
           shadowNote:
@@ -354,7 +361,7 @@
             (p.smart_meter_installed ? "with smart meter gateway" : "no smart meter gateway yet") +
             `, example rate ${num(p.rate_ct, 2)} ct/kWh`,
           build: "Build it yourself",
-          cards: "The “Feed-in” card uses built-in cards only (statistics graph, statistic, entities, tile); the README has it ready to paste.",
+          cards: "Einspeisewacht brings the card at the top left, unchanged as in Home Assistant: in the dashboard “Add card” → “Einspeisewacht”. Tapping a value shows the device with all sensors here.",
           readme: "Card in the README →",
         },
       };
@@ -421,44 +428,117 @@
       const legend = (tx) =>
         `<div class="legend"><span><i style="background:var(--paid)"></i>${tx.paid}</span><span><i style="background:var(--unpaid)"></i>${tx.unpaid}</span></div>`;
 
-      const stat = (name, value) =>
-        `<div class="card stat"><div class="name">${escapeHtml(name)}</div><div class="value">${num(value, 2)}<span>€</span></div></div>`;
-
       const row = (mdi, name, value, note = "") =>
         `<div class="row">${icon(mdi)}<span>${escapeHtml(name)}${note ? `<small>${escapeHtml(note)}</small>` : ""}</span><span class="value">${value}</span></div>`;
 
-      // The README's card "Dashboard-Karte mit Tages- und Jahreswerten".
-      function cardSection(view) {
-        const tx = t();
-        const days = view.days.map((d, i) => ({
-          title: dateFmt(d.date, { day: "numeric", month: "short" }),
-          label: i % 5 === 4 ? dateFmt(d.date, { day: "numeric", month: "numeric" }) : "",
-          paid: d.paid,
-          unpaid: d.unpaid,
-        }));
-        const stats = view.shadow
-          ? [stat(tx.revenueToday, view.today.revenue), stat(tx.shadowToday, view.today.shadow_revenue_lost),
-             stat(tx.revenueYear, view.year.revenue), stat(tx.shadowYear, view.year.shadow_revenue_lost)]
-          : [stat(tx.revenueToday, view.today.revenue), stat(tx.lostToday, view.today.revenue_lost),
-             stat(tx.revenueYear, view.year.revenue), stat(tx.lostYear, view.year.revenue_lost)];
-        const negative = view.shadow
-          ? row("timer-minus-outline", tx.entities.shadow_negative_quarter_hours, num(view.shadow_negative_quarter_hours, 0))
-          : row("timer-minus-outline", tx.without, num(view.negative_quarter_hours, 0)) +
-            row("calendar-plus", tx.entities.catch_up, `${num(view.catch_up.full_load_quarter_hours, 0)} ${tx.fullLoad}`) +
-            row("calendar-end", tx.entities.remunerated_until, dateFmt(view.catch_up.extended_end, { day: "numeric", month: "long", year: "numeric" }));
-        const paid = view.paid_now;
-        const nowState = paid === null ? tx.states.unknown : paid ? tx.states.on : tx.states.off;
-        return `
-          <section class="section">
-            <div class="heading">${icon("solar-power-variant")}<span>${tx.feedIn}</span></div>
-            <div class="card"><div class="card-title">${tx.perDay}</div>${stackChart(days)}${legend(tx)}</div>
-            <div class="grid">${stats.join("")}</div>
-            <div class="card"><div class="card-title">${tx.negativeTitle}</div><div class="rows">${negative}</div>
-              ${view.shadow ? `<div class="note">${tx.shadowNote}</div>` : ""}</div>
-            <div class="card tile"><div class="shape ${paid === false ? "unpaid" : "paid"}">${icon(paid === false ? "cash-remove" : "cash-check")}</div>
-              <div><b>${tx.nowTile}</b><small>${nowState}</small></div></div>
-          </section>`;
+      // ---- The real card on a made-up Home Assistant --------------------------------
+      // What the card uses of Home Assistant: the entity registry, devices,
+      // states, formatEntityState, the websocket commands, ha-card and ha-icon.
+
+      if (!customElements.get("ha-card")) {
+        customElements.define("ha-card", class extends HTMLElement {
+          constructor() {
+            super();
+            this.attachShadow({ mode: "open" }).innerHTML =
+              "<style>:host{display:block;background:var(--card-background-color);border:1px solid var(--divider-color);" +
+              "border-radius:12px;color:var(--primary-text-color)}</style><slot></slot>";
+          }
+        });
       }
+      if (!customElements.get("ha-icon")) {
+        customElements.define("ha-icon", class extends HTMLElement {
+          connectedCallback() {
+            const path = PATHS[(this.getAttribute("icon") || "").replace("mdi:", "")] ?? "";
+            this.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true" style="display:block;width:var(--mdc-icon-size,24px);` +
+              `height:var(--mdc-icon-size,24px);fill:currentColor"><path d="${path}"/></svg>`;
+          }
+        });
+      }
+
+      const KWH = ["energy_paid", "energy_unpaid", "shadow_energy_unpaid"];
+      const EUR = ["revenue", "revenue_lost", "shadow_revenue_lost"];
+
+      /** Home Assistant at the demo moment. Device and entity ids carry plant
+       * and moment: the card keeps what it asked per device. */
+      function demoHass(data, view) {
+        const tx = t();
+        const device = `demo_${state.plant}_${state.time}`;
+        const entities = {};
+        const states = {};
+        const add = (domain, key, value, attributes = {}) => {
+          const id = `${domain}.${state.plant}_${state.time}_${key}`;
+          entities[id] = { entity_id: id, platform: "einspeisewacht", device_id: device, translation_key: key };
+          states[id] = {
+            entity_id: id,
+            state: value === null || value === undefined ? "unknown" : String(value),
+            attributes: { friendly_name: tx.entities[key] ?? key, ...attributes },
+            last_changed: view.now,
+            last_updated: view.now,
+          };
+        };
+        const keys = view.shadow ? [...KWH, ...EUR] : [...KWH, ...EUR].filter((k) => !k.startsWith("shadow_"));
+        for (const key of keys) add("sensor", key, view.totals[key] ?? 0);
+        add("sensor", "negative_quarter_hours", view.negative_quarter_hours);
+        if (view.shadow) add("sensor", "shadow_negative_quarter_hours", view.shadow_negative_quarter_hours);
+        else {
+          add("sensor", "catch_up", view.catch_up.full_load_quarter_hours);
+          add("sensor", "remunerated_until", view.catch_up.extended_end);
+        }
+        add("sensor", "active_rule", view.rule, { applies_from: view.applies_from, applies_today: !view.shadow });
+        add("binary_sensor", "remunerated", view.paid_now === null ? null : view.paid_now ? "on" : "off");
+        add("calendar", "unpaid_windows", "off");
+        const byKey = Object.fromEntries(Object.values(entities).map((e) => [e.translation_key, e.entity_id]));
+        return {
+          entities,
+          states,
+          devices: { [device]: { id: device, name: view.device } },
+          language: state.lang,
+          locale: { language: state.lang, number_format: "language", time_format: "24", time_zone: "server" },
+          config: { time_zone: "Europe/Berlin" },
+          formatEntityState: (s) => formatState(entities[s.entity_id]?.translation_key, s),
+          callWS: async (message) => {
+            if (message.type === "einspeisewacht/card") return view.card;
+            if (message.type === "recorder/statistics_during_period") {
+              return Object.fromEntries(Object.entries(view.statistics).filter(([k]) => byKey[k]).map(([k, rows]) => [byKey[k], rows]));
+            }
+            throw new Error(`not in the demo: ${message.type}`);
+          },
+        };
+      }
+
+      /** A state as Home Assistant formats it: language, decimals, unit. */
+      function formatState(key, s) {
+        const tx = t();
+        if (s.state === "unknown") return tx.states.unknown;
+        if (KWH.includes(key)) return `${num(Number(s.state), 2)} kWh`;
+        if (EUR.includes(key)) return eur(Number(s.state));
+        if (key === "catch_up") return `${num(Number(s.state), 0)} ${tx.fullLoad}`;
+        if (key === "remunerated_until") return dateFmt(s.state, { day: "numeric", month: "long", year: "numeric" });
+        if (key === "active_rule") return tx.rules[s.state] ?? s.state;
+        if (key === "remunerated") return s.state === "on" ? tx.states.on : tx.states.off;
+        return `${num(Number(s.state), 0)} ${tx.quarterHours}`;
+      }
+
+      function cardSection(data, view) {
+        const card = document.createElement("einspeisewacht-card");
+        card.setConfig({});
+        card.hass = demoHass(data, view);
+        const section = document.createElement("section");
+        section.className = "section";
+        section.append(card);
+        section.insertAdjacentHTML("beforeend", `<div class="cardtype"><code>type: custom:einspeisewacht-card</code></div>`);
+        return section;
+      }
+
+      // A tap on a value of the card shows the device with all sensors.
+      document.addEventListener("hass-more-info", () => {
+        const device = document.querySelector(".card .device");
+        if (!device) return;
+        const card = device.closest(".card");
+        card.classList.add("flash");
+        setTimeout(() => card.classList.remove("flash"), 1500);
+        card.scrollIntoView({ behavior: "smooth", block: "center" });
+      });
 
       function todaySection(view) {
         const tx = t();
@@ -604,7 +684,12 @@
           timeZone: "Europe/Berlin", weekday: "long", day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit",
         });
         document.getElementById("banner").innerHTML = `${icon("information-outline")}<span>${tx.banner(when)}</span>`;
-        document.getElementById("dashboard").innerHTML = cardSection(view) + todaySection(view) + deviceSection(data, view) + yearSection(data);
+        // The card asks Date.now() for the running month and past windows.
+        const moment = new Date(view.now).getTime();
+        Date.now = () => moment;
+        const dashboard = document.getElementById("dashboard");
+        dashboard.innerHTML = todaySection(view) + deviceSection(data, view) + yearSection(data);
+        dashboard.prepend(cardSection(data, view));
         const list = [];
         for (const key of PLANTS) {
           const d = await load(key);

@@ -15,7 +15,7 @@
 
 **How much of your PV feed-in goes unpaid because of negative electricity prices?** Under Germany's Solarspitzengesetz, new PV plants lose their feed-in tariff in every quarter hour with a negative day-ahead price. Einspeisewacht tracks this in Home Assistant, quarter hour by quarter hour, with the price of exactly that quarter hour – and shows what it costs you and how much remuneration time is added at the end in return.
 
-**Try it without installing:** the [demo](https://einspeisewacht.github.io/integration/?lang=en) shows the dashboard card, calendar, day-before notice, device and report for a plant with and one without a smart meter gateway – with made-up yields and prices, but computed by the integration's own code.
+**Try it without installing:** the [demo](https://einspeisewacht.github.io/integration/?lang=en) shows the card, calendar, day-before notice, device and report for a plant with and one without a smart meter gateway – with made-up yields and prices, but computed by the integration's own code.
 
 > **Not legal or billing advice.** The values are a guide. What counts is your grid operator's statement – it uses its meter's readings, Home Assistant usually inverter or optical-reader values.
 
@@ -25,8 +25,8 @@ The integration's UI is available in German and English and follows your Home As
 
 - [What Einspeisewacht does](#what-einspeisewacht-does) · [Which rule applies](#which-rule-applies--51-eeg) · [What Einspeisewacht does not do](#what-einspeisewacht-does-not-do)
 - **Getting started:** [Requirements](#requirements) · [Installation](#installation) · [Setup](#setup)
-- **Using it:** [Entities](#entities) · [Report for a period](#report-for-a-period) · [Import statistics](#import-statistics) · [Recalculate statistics](#recalculate-statistics)
-- **[Examples](#examples):** [Dashboard card](#dashboard-card-with-daily-and-yearly-values)
+- **Using it:** [Entities](#entities) · [Card](#card) · [Report for a period](#report-for-a-period) · [Import statistics](#import-statistics) · [Recalculate statistics](#recalculate-statistics)
+- **[Examples](#examples):** [Card with built-in cards](#dashboard-card-with-daily-and-yearly-values)
 - **More:** [Privacy](#privacy) · [Troubleshooting](#troubleshooting) · [Removal](#removal) · [Reporting issues](#reporting-issues) · [Sister integrations](#sister-integrations) · [License and sources](#license-and-sources)
 
 ## What Einspeisewacht does
@@ -34,6 +34,7 @@ The integration's UI is available in German and English and follows your Home As
 - **Feed-in remunerated / not remunerated** (kWh) and **revenue / lost revenue** (€), with long-term statistics for day, month and year.
 - **Quarter hours without remuneration** in the current year and the resulting **extension** under § 51a EEG: full-load quarter hours and the date your remuneration then runs until.
 - **Remunerated**: binary sensor for automations – charge the battery, the car, or curtail.
+- **Own dashboard card** with remuneration now, the windows today and tomorrow, the year and the last twelve months, no extra cards from HACS.
 - **Calendar "Negative prices"** with the windows without remuneration – today and, once the day-ahead forecast is out (usually around 1 pm), tomorrow.
 - **Action "Report"** for any period, by month – also for the time before setup, as far back as your meter's statistics reach.
 - Derives the **applicable rule** from commissioning date, capacity and smart meter, with a manual override if your grid operator settles differently.
@@ -114,6 +115,27 @@ If you rename the feed-in meter or the price sensor in Home Assistant (new entit
 
 While the rule does not apply yet (e.g. no iMSys), "… if the rule applied" sensors are added and the extension sensors are left out.
 
+## Card
+
+Einspeisewacht brings its own card, no extra cards from HACS needed: *Edit dashboard → Add card* and search for "Einspeisewacht". Einspeisewacht adds the dashboard resource itself (*Settings → Dashboards → ⋮ → Resources*, removed again with the last entry; with resources in YAML mode Home Assistant loads the card directly instead).
+
+<img src="https://raw.githubusercontent.com/einspeisewacht/integration/main/assets/screenshots/card.png" alt="Card of a plant: no remuneration now, today 9 am to 5 pm without remuneration, in the year 7.45 euros lost with 116.82 euros revenue and 6 percent not remunerated, tiles for quarter hours without remuneration, extension and end of remuneration, below bars of the feed-in per month, remunerated green and not remunerated magenta" width="420">
+
+- **Now:** whether the current quarter hour is remunerated, and the windows with a negative price today and tomorrow – tomorrow once the day-ahead prices are out (usually from about 1 pm).
+- **Year:** the calendar year – lost revenue large, revenue and the share not remunerated beside it, below quarter hours without remuneration, [extension](#which-rule-applies--51-eeg) and end of remuneration. If the rule does not apply yet (no iMSys), the card shows what would not be remunerated if it did.
+- **Months:** the feed-in of the last twelve months, remunerated and not remunerated stacked, the share not remunerated in percent above. Months of the current year are strong, those before paler.
+
+Year and months come from the long-term statistics of the total sensors, so after [Import statistics](#import-statistics) also for the time before setup. The card asks for them once when the page opens and at most hourly after. Open repair issues of the plant are shown in orange at the top; a click leads to *Repairs*. A click on a value opens the sensor. The card finds its entities itself (independent of language and entity IDs); you only pick a plant if there are several.
+
+```yaml
+type: custom:einspeisewacht-card
+# device_id: …              # only with several plants
+# sections: [now, year]     # only these sections (now, year, months)
+# title: PV                 # own heading; a single space hides it
+```
+
+**The card does not show up in the search?** Home Assistant loads it with the integration, so only after the restart with an entry set up. Then reload the page once (Ctrl+F5); in the Companion app reset the frontend cache. Whether the file is there shows `http://<HA address>:8123/einspeisewacht/einspeisewacht-card.js`.
+
 ## Report for a period
 
 *Developer tools → Actions →* **Einspeisewacht: Report**, choose plant and period, "Show response":
@@ -145,7 +167,7 @@ It computes like the report and writes the hours **before** the first existing s
 
 ## Recalculate statistics
 
-If you correct the rate (under *Reconfigure*; also tiers, capacity or full/partial feed-in when they change the rate), revenue and lost revenue show the new totals at once. The long-term statistics of past hours – statistics graphs, values per day and month, the [dashboard card](#dashboard-card-with-daily-and-yearly-values) – keep the old rate, imported ones too; Home Assistant books the whole difference into the hour of the change. *Repairs* reminds you with "Statistics with the old rate". The plant's device has the button **Recalculate statistics** for this (under *Configuration*):
+If you correct the rate (under *Reconfigure*; also tiers, capacity or full/partial feed-in when they change the rate), revenue and lost revenue show the new totals at once. The long-term statistics of past hours – statistics graphs, values per day and month, the [card](#card) – keep the old rate, imported ones too; Home Assistant books the whole difference into the hour of the change. *Repairs* reminds you with "Statistics with the old rate". The plant's device has the button **Recalculate statistics** for this (under *Configuration*):
 
 - It recalculates the statistics of revenue, lost revenue and – while the rule does not apply yet – "Lost revenue if the rule applied" from their first value to the latest with the current rate: from the energy sensors' statistics, so exactly from what is booked per hour. The statistics after it continue without a jump.
 - Only rows whose value changes are written; sensors without a change are left alone. That spares the SD card of a Raspberry Pi.
@@ -164,7 +186,7 @@ The calendar "Negative prices" shows the windows without remuneration – here t
 
 ### Dashboard card with daily and yearly values
 
-The total sensors count from setup; daily, monthly and yearly values come from their long-term statistics – after [Import statistics](#import-statistics) also for the time before. This card uses built-in cards only (German UI, values made up):
+The total sensors count from setup; daily, monthly and yearly values come from their long-term statistics – after [Import statistics](#import-statistics) also for the time before. Rather built-in cards only, or values per day, than the [own card](#card)? This card uses built-in cards only (German UI, values made up):
 
 <img src="https://raw.githubusercontent.com/einspeisewacht/integration/main/assets/screenshots/dashboard.png" alt="Card with daily bars remunerated/not remunerated, revenue and lost revenue for today and the year, negative quarter hours, extension and end of remuneration" width="400">
 

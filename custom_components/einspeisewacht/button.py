@@ -36,6 +36,7 @@ from .const import (
     VERSION,
 )
 from .entity import PlantEntity
+from .frontend_resource import card_status
 from .issue_report import Lines, build, show, utc
 from .issue_report import settings as format_settings
 from .prices import ParsedPrices
@@ -248,6 +249,7 @@ def entry_lines(runtime: PlantRuntime) -> Lines:
         ),
         ("rule change", _rule_change(engine.rule_change)),
         ("SMARD.de", _smard(runtime)),
+        ("card", card_status(runtime.hass)),
     ]
     if runtime.unknown_unit is not None:
         lines.append(("unknown meter unit", runtime.unknown_unit))
