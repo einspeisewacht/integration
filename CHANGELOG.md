@@ -1,6 +1,6 @@
 # Changelog
 
-## Unveröffentlicht
+## 0.2.1 – 2026-11-09
 
 - **Karte, Feinschliff nach dem ersten Blick mit echten Daten:** „Vergütung bis“ steht als Datum da („30. April 2046“ statt „2046-04-30“). Lange Werte in den Kacheln brechen zwischen Zahl und Einheit um statt mitten im Wort („1.860 Viertelstun-den“). Ein Monat mit sehr wenig unvergüteter Einspeisung zeigt im Diagramm „<1“ statt „0“.
 
