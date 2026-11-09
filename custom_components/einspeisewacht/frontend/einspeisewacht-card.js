@@ -382,6 +382,12 @@ class EinspeisewachtCard extends HTMLElement {
 
   _format(state) {
     if (!this._known(state)) return "–";
+    // Home Assistant hands date sensors over as "2046-04-30".
+    const day = state.attributes?.device_class === "date" && /^(\d{4})-(\d{2})-(\d{2})$/.exec(state.state);
+    if (day) {
+      return new Date(Date.UTC(+day[1], +day[2] - 1, +day[3], 12)).toLocaleDateString(
+        this._hass.locale?.language || "en", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
+    }
     return this._hass.formatEntityState ? this._hass.formatEntityState(state)
       : `${state.state} ${state.attributes.unit_of_measurement || ""}`.trim();
   }
@@ -631,7 +637,9 @@ class EinspeisewachtCard extends HTMLElement {
     const state = this._state(key);
     if (!state) return "";
     return `<div class="tile" data-entity="${escapeHtml(this._entities[key])}"><div class="label">${escapeHtml(label)}</div>`
-      + `<div class="value">${escapeHtml(this._format(state))}</div></div>`;
+      // Home Assistant ties number and unit with a no-break space: let a
+      // narrow tile wrap there ("1.860 / Viertelstunden").
+      + `<div class="value">${escapeHtml(this._format(state).replace(/\u00a0/g, " "))}</div></div>`;
   }
 
   // ---- Months -------------------------------------------------------------
@@ -686,7 +694,8 @@ class EinspeisewachtCard extends HTMLElement {
         base += v;
       }
       if (m.unpaid > 0 && base > 0) {
-        bars += `<text x="${x.toFixed(1)}" y="${(y(base) - 3).toFixed(1)}" text-anchor="middle">${this._num((100 * m.unpaid) / base, 0)}</text>`;
+        const share = (100 * m.unpaid) / base;
+        bars += `<text x="${x.toFixed(1)}" y="${(y(base) - 3).toFixed(1)}" text-anchor="middle">${share < 0.5 ? "<1" : this._num(share, 0)}</text>`;
       }
       bars += `<text x="${x.toFixed(1)}" y="${H - 6}" text-anchor="middle">${escapeHtml(label)}</text>`;
     });

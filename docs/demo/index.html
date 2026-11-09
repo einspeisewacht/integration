@@ -482,7 +482,7 @@
         if (view.shadow) add("sensor", "shadow_negative_quarter_hours", view.shadow_negative_quarter_hours);
         else {
           add("sensor", "catch_up", view.catch_up.full_load_quarter_hours);
-          add("sensor", "remunerated_until", view.catch_up.extended_end);
+          add("sensor", "remunerated_until", view.catch_up.extended_end, { device_class: "date" });
         }
         add("sensor", "active_rule", view.rule, { applies_from: view.applies_from, applies_today: !view.shadow });
         add("binary_sensor", "remunerated", view.paid_now === null ? null : view.paid_now ? "on" : "off");
@@ -510,13 +510,15 @@
       function formatState(key, s) {
         const tx = t();
         if (s.state === "unknown") return tx.states.unknown;
-        if (KWH.includes(key)) return `${num(Number(s.state), 2)} kWh`;
+        // A no-break space between number and unit, as Home Assistant.
+        if (KWH.includes(key)) return `${num(Number(s.state), 2)}\u00a0kWh`;
         if (EUR.includes(key)) return eur(Number(s.state));
-        if (key === "catch_up") return `${num(Number(s.state), 0)} ${tx.fullLoad}`;
-        if (key === "remunerated_until") return dateFmt(s.state, { day: "numeric", month: "long", year: "numeric" });
+        if (key === "catch_up") return `${num(Number(s.state), 0)}\u00a0${tx.fullLoad}`;
+        // Home Assistant hands date sensors over unformatted ("2046-01-31").
+        if (key === "remunerated_until") return s.state;
         if (key === "active_rule") return tx.rules[s.state] ?? s.state;
         if (key === "remunerated") return s.state === "on" ? tx.states.on : tx.states.off;
-        return `${num(Number(s.state), 0)} ${tx.quarterHours}`;
+        return `${num(Number(s.state), 0)}\u00a0${tx.quarterHours}`;
       }
 
       function cardSection(data, view) {

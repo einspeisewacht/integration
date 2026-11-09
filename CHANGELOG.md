@@ -1,5 +1,9 @@
 # Changelog
 
+## Unveröffentlicht
+
+- **Karte, Feinschliff nach dem ersten Blick mit echten Daten:** „Vergütung bis“ steht als Datum da („30. April 2046“ statt „2046-04-30“). Lange Werte in den Kacheln brechen zwischen Zahl und Einheit um statt mitten im Wort („1.860 Viertelstun-den“). Ein Monat mit sehr wenig unvergüteter Einspeisung zeigt im Diagramm „<1“ statt „0“.
+
 ## 0.2.0 – 2026-11-09
 
 - **Neu: eigene Dashboard-Karte**, ohne Zusatzkarten aus HACS: *Dashboard bearbeiten → Karte hinzufügen* und nach „Einspeisewacht“ suchen. Oben steht, ob die laufende Viertelstunde vergütet wird und wann heute und morgen nicht (sobald die Day-Ahead-Preise da sind). Darunter das Kalenderjahr: entgangener Erlös groß, Erlös und Anteil unvergütet daneben, Viertelstunden ohne Vergütung, Nachholung und „Vergütung bis“. Unten die eingespeiste Energie der letzten zwölf Monate, vergütet und unvergütet gestapelt, darüber der Anteil unvergütet. Greift die Regel noch nicht (ohne iMSys), zeigt die Karte, was bei greifender Regel unvergütet wäre. Offene Reparaturhinweise stehen orange darüber. Jahr und Monate kommen aus der Langzeitstatistik der Summen-Sensoren, also auch für nachgetragene Zeit vor der Einrichtung; die Karte fragt sie einmal beim Öffnen der Seite ab, danach höchstens stündlich. Die Dashboard-Ressource trägt Einspeisewacht selbst ein und mit dem letzten Eintrag wieder aus. Der „Bericht für Fehlermeldung“ nennt, ob die Karte eingetragen ist.
