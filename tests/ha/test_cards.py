@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 
-from freezegun.api import FrozenDateTimeFactory
+import pytest
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import issue_registry as ir
@@ -20,14 +20,17 @@ from .test_init import setup
 MORNING = datetime(2026, 10, 25, 6, 0, tzinfo=UTC)
 
 
+# Frozen from the start: the access token of the client is issued at the
+# frozen time, not later (it would be invalid then).
+@pytest.mark.freeze_time(MORNING)
 async def test_windows_and_issues_for_the_card(
-    hass: HomeAssistant, hass_ws_client, freezer: FrozenDateTimeFactory
+    hass: HomeAssistant, hass_ws_client
 ) -> None:
     assert await async_setup_component(hass, "websocket_api", {})
-    client = await hass_ws_client(hass)
-    # Only now: an access token issued later than the frozen time is invalid.
-    freezer.move_to(MORNING)
+    # The entry first: the client starts the web server, whose router takes
+    # no new paths (the card file) afterwards.
     entry = await setup(hass)
+    client = await hass_ws_client(hass)
     (device,) = dr.async_entries_for_config_entry(dr.async_get(hass), entry.entry_id)
 
     await client.send_json(
