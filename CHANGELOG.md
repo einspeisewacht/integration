@@ -1,5 +1,9 @@
 # Changelog
 
+## Unveröffentlicht
+
+- **Übersicht in „Neu konfigurieren“ mit Überschriften wie in den anderen Wachten:** oben „Eingerichtet“, darunter „Was fehlt“ (ohne Doppelpunkt), nur wenn etwas fehlt. Inhalt unverändert.
+
 ## 0.1.9 – 2026-11-08
 
 - **Übersicht oben in „Neu konfigurieren“:** Der erste Schritt zeigt jetzt kurz, was eingerichtet ist – Anlage (kWp, Inbetriebnahme), Vergütungssatz (bei Staffel der Mischsatz mit den Sätzen je Stufe und der Einspeiseart), welche Regel **heute** gilt und seit wann (z. B. „Viertelstunden-Regel seit 01.01.2026 (iMSys eingebaut am …)“ oder „noch keine – ab 01.01.2027“), Einspeisezähler, Preissensor und ob SMARD.de genutzt wird. Darunter steht unter **„Was fehlt“** nur, was etwas kostet, mit der Folge: Zähler nicht gefunden oder in falscher Einheit (es wird nichts gebucht), Preissensor ohne Preis (die Einspeisung zählt nach 24 Stunden als vergütet, mit SMARD.de springt SMARD.de ein), kein iMSys eingetragen, SMARD.de aus bei einer Anlage, die schon vor der Einrichtung lief (die Nachholung zählt dann erst ab der Einrichtung).

@@ -214,6 +214,7 @@
     },
     "overview": {
       "options": {
+        "configured": "**Set up**",
         "plant": "**Plant:** {power} kWp, commissioned on {commissioned}",
         "rate_single": "**Remuneration:** {rate} ct/kWh",
         "rate_tiered": "**Remuneration:** {rate} ct/kWh – blended by capacity from {parts}; {feed_in}",
@@ -234,7 +235,7 @@
         "price": "**Day-ahead price:** {price}",
         "smard_on": "**SMARD.de:** on – earlier quarter hours counted, stands in for missing prices",
         "smard_off": "**SMARD.de:** off",
-        "missing": "**What is missing:**",
+        "missing": "**Missing**",
         "hint_meter_missing": "Feed-in meter {meter} not found – nothing is booked until it is back.",
         "hint_meter_unit": "The feed-in meter reports “{unit}” – nothing is booked until it reports Wh, kWh or MWh.",
         "hint_meter_own": "The feed-in meter is a sensor of Einspeisewacht itself and is not read – nothing is booked.",

@@ -320,6 +320,7 @@ async def test_reconfigure_starts_with_an_overview(hass: HomeAssistant) -> None:
     result = await entry.start_reconfigure_flow(hass)
     text = result["description_placeholders"]["overview"]
     assert text.splitlines() == [
+        "**Set up**",
         "- **Plant:** 8.5 kWp, commissioned on 2025-06-15",
         "- **Remuneration:** 7.94 ct/kWh",
         "- **Rule today:** quarter-hour rule (§ 51 EEG) since 2026-01-01"
@@ -328,7 +329,7 @@ async def test_reconfigure_starts_with_an_overview(hass: HomeAssistant) -> None:
         "- **Day-ahead price:** EPEX Spot Data Market Price",
         "- **SMARD.de:** off",
         "",
-        "**What is missing:**",
+        "**Missing**",
         # Set up today, commissioned in 2025.
         "- Without SMARD.de the extension (§ 51a EEG) counts negative quarter"
         " hours only from setup, not since commissioning.",
@@ -342,7 +343,7 @@ async def test_overview_says_what_is_missing(hass: HomeAssistant) -> None:
     entry = add_entry(hass, **{CONF_BACKFILL: True})
     result = await entry.start_reconfigure_flow(hass)
     text = result["description_placeholders"]["overview"]
-    assert "**What is missing:**" in text
+    assert "**Missing**" in text
     assert f"Feed-in meter {METER} not found – nothing is booked" in text
     assert "after an hour SMARD.de stands in" in text
 

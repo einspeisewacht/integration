@@ -69,7 +69,8 @@ def build(
     texts: Mapping[str, str],
     language: str,
 ) -> str:
-    """The overview as Markdown: a list of what is set up, then what is missing.
+    """The overview as Markdown: "Set up" with a list, then "Missing" (only
+    when something is missing), headed as in the sister integrations.
 
     `texts` maps the keys of `selector.overview.options` (and `regime_<x>`,
     `feed_in_<x>` for the labels of those selectors) to translated templates.
@@ -97,7 +98,7 @@ def build(
         text("smard_on" if smard else "smard_off"),
     ]
     hints = _hints(config, derived, meter, price, smard, commissioned, setup_day, text)
-    result = "\n".join(f"- {line}" for line in lines)
+    result = text("configured") + "\n" + "\n".join(f"- {line}" for line in lines)
     if hints:
         result += "\n\n" + text("missing") + "\n" + "\n".join(f"- {h}" for h in hints)
     return result

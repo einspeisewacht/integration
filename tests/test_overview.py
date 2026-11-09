@@ -107,6 +107,7 @@ def build(
 
 def test_everything_set_up_german() -> None:
     assert build(config()) == (
+        "**Eingerichtet**\n"
         "- **Anlage:** 9 kWp, in Betrieb seit 31.07.2025\n"
         "- **Vergütung:** 7,94 ct/kWh\n"
         "- **Regel heute:** Viertelstunden-Regel (§ 51 EEG) seit 01.01.2026"
@@ -138,7 +139,7 @@ def test_without_imsys_says_what_is_missing() -> None:
     values = config(**{CONF_SMART_METER: False, CONF_SMART_METER_DATE: None})
     text = build(values)
     assert "**Regel heute:** keine – greift erst ab dem 1. Januar" in text
-    assert "**Was fehlt:**\n- Kein iMSys eingetragen" in text
+    assert "**Was fehlt**\n- Kein iMSys eingetragen" in text
 
 
 def test_tiered_rate_names_the_bands() -> None:
@@ -212,7 +213,7 @@ def test_hints_with_consequence(
     meter: overview.Source, price: overview.Source, smard: bool, expected: str
 ) -> None:
     text = build(config(**{CONF_BACKFILL: smard}), meter=meter, price=price)
-    assert "**Was fehlt:**" in text
+    assert "**Was fehlt**" in text
     assert expected in text
 
 
@@ -229,7 +230,14 @@ def test_smard_off_hint_only_when_it_costs_counting() -> None:
 def test_every_overview_key_exists_in_all_languages() -> None:
     keys = set(texts("en"))
     assert set(texts("de")) == keys
-    for key in ("plant", "rule", "missing", "hint_smard_off", "rule_start"):
+    for key in (
+        "configured",
+        "plant",
+        "rule",
+        "missing",
+        "hint_smard_off",
+        "rule_start",
+    ):
         assert key in keys
 
 

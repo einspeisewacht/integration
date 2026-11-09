@@ -214,6 +214,7 @@
     },
     "overview": {
       "options": {
+        "configured": "**Eingerichtet**",
         "plant": "**Anlage:** {power} kWp, in Betrieb seit {commissioned}",
         "rate_single": "**Vergütung:** {rate} ct/kWh",
         "rate_tiered": "**Vergütung:** {rate} ct/kWh – Mischsatz nach Leistung aus {parts}; {feed_in}",
@@ -234,7 +235,7 @@
         "price": "**Day-Ahead-Preis:** {price}",
         "smard_on": "**SMARD.de:** an – frühere Viertelstunden nachgezählt, Ersatz für fehlende Preise",
         "smard_off": "**SMARD.de:** aus",
-        "missing": "**Was fehlt:**",
+        "missing": "**Was fehlt**",
         "hint_meter_missing": "Einspeisezähler {meter} nicht gefunden – bis er wieder da ist, wird nichts gebucht.",
         "hint_meter_unit": "Der Einspeisezähler meldet „{unit}“ – gebucht wird erst, wenn er Wh, kWh oder MWh meldet.",
         "hint_meter_own": "Der Einspeisezähler ist ein Sensor von Einspeisewacht selbst und wird nicht gelesen – es wird nichts gebucht.",
