@@ -83,7 +83,7 @@ Three steps; what few people need is collapsed.
 2. **Remuneration:** the rate from your grid operator's statement in ct/kWh (after the 0.4 ct deduction). Plants above 10 kWp with several rates open "Several rates by capacity band" and then enter the rate per band; Einspeisewacht forms the blended rate (§ 23c EEG).
 3. **Data sources and rule:** on top the rule that follows from your details, when it starts and the rate. Below the feed-in meter and the price sensor – if you have set up [Tarifwacht](https://github.com/tarifwacht/integration), Einspeisewacht proposes both from there – and the option **Use SMARD.de**: it counts earlier negative quarter hours so the extension covers the time before setup too, and stands in when the price sensor fails (public price data, see [Privacy](#privacy)). If your grid operator settles differently, override the rule under "Does your grid operator settle differently?" ("every negative quarter hour from …" or "not affected").
 
-<img src="https://raw.githubusercontent.com/einspeisewacht/integration/main/assets/screenshots/einrichtung_regel.png" alt="Last setup step with the derived rule (German UI)" width="420">
+<img src="https://raw.githubusercontent.com/einspeisewacht/integration/main/assets/screenshots/einrichtung_regel.png" alt="Last setup step: the derived rule, data sources, SMARD.de (German UI)" width="420">
 
 Several plants or meters: one entry each. To change: *Einspeisewacht → entry → ⋮ → Reconfigure*. It starts with a short overview – plant, rate, which rule applies today, meter, price, SMARD.de – and below it what is missing and what that costs (e.g. "Feed-in meter not found – nothing is booked until it is back").
 
