@@ -90,6 +90,36 @@ def test_meter_first_reading_is_baseline() -> None:
     assert update.pieces == []
 
 
+def test_meter_after_restart_counts_from_the_last_change() -> None:
+    """After a restart the meter writes its old value with a new time stamp;
+    the next real increase seconds later is booked, not a jump."""
+    meter = MeterTracker(max_power_kw=9, source="sensor.export")
+    meter.update(100.0, utc(2026, 6, 1, 11, 10))
+    meter.update(100.4, utc(2026, 6, 1, 11, 15))
+    restarted = MeterTracker(max_power_kw=9, source="sensor.export")
+    restarted.restore(meter.as_dict())
+    assert restarted.update(100.4, utc(2026, 6, 1, 11, 20, 2)).event is None
+    # 0.5 kWh in 3 s would be 600 kW; since the last change (11:15) 6 kW.
+    update = restarted.update(100.9, utc(2026, 6, 1, 11, 20, 5))
+    assert update.event is None
+    assert sum(e for _, e in update.pieces) == pytest.approx(0.5)
+
+
+def test_meter_restores_a_state_without_last_change() -> None:
+    """Stored before the change: the last reading stands in."""
+    meter = MeterTracker(max_power_kw=9)
+    meter.restore({"last_value": 10.0, "last_time": "2026-06-01T11:15:00+00:00"})
+    assert meter.last_change == utc(2026, 6, 1, 11, 15)
+    assert meter.update(10.5, utc(2026, 6, 1, 11, 20)).event is None
+
+
+def test_meter_unchanged_readings_do_not_hide_a_real_jump() -> None:
+    meter = MeterTracker(max_power_kw=9)
+    meter.update(100.0, utc(2026, 6, 1, 11, 0))
+    meter.update(100.0, utc(2026, 6, 1, 11, 5))
+    assert meter.update(5000.0, utc(2026, 6, 1, 11, 6)).event is MeterEvent.JUMP
+
+
 def test_meter_reset_and_jump_are_not_booked() -> None:
     meter = MeterTracker(max_power_kw=9)
     meter.update(1234.567, utc(2026, 1, 1, 9, 0))

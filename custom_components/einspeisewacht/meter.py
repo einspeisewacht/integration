@@ -1,6 +1,14 @@
 """Turn readings of a cumulative energy meter into energy per quarter hour.
 
 Copies: tarifwacht/custom_components/tarifwacht/meter.py (derived).
+
+The bound of a plausible increase counts from the last change of the value
+(`last_change`), not from the last reading: after a restart of Home Assistant
+the meter's integration writes its old value again with a new time stamp, and
+the next real increase a few seconds later looked like far more than the
+plant can deliver and was dropped as a jump (seen in Tarifwacht on
+2026-11-09: 0.86 kWh three seconds after the old value). The energy is still
+spread from the last reading on.
 """
 
 from __future__ import annotations
@@ -64,6 +72,9 @@ class MeterTracker:
     last_time: datetime | None = None
     source: str | None = None
     aliases: tuple[str, ...] = ()
+    # When the value last changed (or the baseline began): the bound of a
+    # plausible increase counts from here (see the module).
+    last_change: datetime | None = None
 
     def update(
         self,
@@ -79,17 +90,20 @@ class MeterTracker:
         if previous_time is not None and at < previous_time:
             # Out-of-order reading: ignore, keep the newer baseline.
             return MeterUpdate()
+        changed_at = self.last_change or previous_time
         self.last_value, self.last_time = value, at
-        if previous_value is None or previous_time is None:
+        if previous_value is None or previous_time is None or changed_at is None:
+            self.last_change = at
             return MeterUpdate(event=MeterEvent.FIRST)
         delta = value - previous_value
-        if delta < 0:
-            return MeterUpdate(event=MeterEvent.RESET, delta=delta)
-        hours = (at - previous_time).total_seconds() / 3600
-        if delta > self.max_power_kw * POWER_MARGIN * hours + ROUNDING_TOLERANCE_KWH:
-            return MeterUpdate(event=MeterEvent.JUMP, delta=delta)
         if delta == 0:
             return MeterUpdate()
+        self.last_change = at
+        if delta < 0:
+            return MeterUpdate(event=MeterEvent.RESET, delta=delta)
+        hours = (at - changed_at).total_seconds() / 3600
+        if delta > self.max_power_kw * POWER_MARGIN * hours + ROUNDING_TOLERANCE_KWH:
+            return MeterUpdate(event=MeterEvent.JUMP, delta=delta)
         if weight is not None and at - previous_time > LONG_GAP:
             return MeterUpdate(
                 pieces=split_interval(previous_time, at, delta, weight),
@@ -102,6 +116,7 @@ class MeterTracker:
         return {
             "last_value": self.last_value,
             "last_time": self.last_time.isoformat() if self.last_time else None,
+            "last_change": self.last_change.isoformat() if self.last_change else None,
             "source": self.source,
         }
 
@@ -119,3 +134,6 @@ class MeterTracker:
         self.last_value = data.get("last_value")
         last_time = data.get("last_time")
         self.last_time = datetime.fromisoformat(last_time) if last_time else None
+        # Stored before 0.2.2: the last reading is the best guess.
+        last_change = data.get("last_change") or last_time
+        self.last_change = datetime.fromisoformat(last_change) if last_change else None
