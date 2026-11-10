@@ -248,3 +248,13 @@ def test_applies_on() -> None:
     assert not applies_on(Derived(Regime.WAITING_SMART_METER), TODAY)
     assert applies_on(manual(date(2026, 5, 1)), TODAY)
     assert not applies_on(manual(None), TODAY)
+
+
+@pytest.mark.parametrize(
+    ("value", "digits", "expected"),
+    [(90, 0, "90"), (100, 0, "100"), (0, 0, "0"), (0.5, 3, "0,5"), (90.0, 2, "90")],
+)
+def test_format_number_keeps_whole_numbers(
+    value: float, digits: int, expected: str
+) -> None:
+    assert overview.format_number(value, "de", digits) == expected

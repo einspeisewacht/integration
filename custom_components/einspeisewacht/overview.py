@@ -54,7 +54,10 @@ def format_date(day: date | None, language: str) -> str:
 
 def format_number(value: float, language: str, digits: int = 3) -> str:
     """Up to `digits` decimals without trailing zeros, decimal comma in German."""
-    text = f"{value:.{digits}f}".rstrip("0").rstrip(".")
+    text = f"{value:.{digits}f}"
+    # Only decimals lose their trailing zeros: 90 with no decimals stays 90.
+    if "." in text:
+        text = text.rstrip("0").rstrip(".")
     return text.replace(".", ",") if language.startswith("de") else text
 
 
