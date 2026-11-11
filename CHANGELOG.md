@@ -1,10 +1,10 @@
 # Changelog
 
-## Unveröffentlicht
+## 0.2.3 – 2026-11-11
 
 ### Neu
 
-- **Zähler und Preissensor auch ohne Tarifwacht vorgeschlagen.** Beim Einrichten steht im Feld „Einspeisezähler“ die Netzeinspeisung aus dem Energie-Dashboard, sofern sie noch keine Anlage liest, und im Feld „Preissensor“ der Marktpreis von EPEX Spot (nie dessen Gesamtpreis). Was Tarifwacht vorschlägt, geht weiter vor. Jeder Vorschlag lässt sich ändern.
+- **Zähler und Preissensor auch ohne Tarifwacht vorgeschlagen.** Beim Einrichten steht im Feld „Einspeisezähler“ die Netzeinspeisung aus dem Energie-Dashboard, sofern sie noch keine Anlage liest, und im Feld „Day-Ahead-Preis“ der Marktpreis von EPEX Spot (nie dessen Gesamtpreis). Was Tarifwacht vorschlägt, geht weiter vor. Jeder Vorschlag lässt sich ändern.
 
 ### Geändert
 
