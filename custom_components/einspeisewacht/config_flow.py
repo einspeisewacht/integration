@@ -60,6 +60,7 @@ from .meter import UNIT_FACTORS
 from .regime import Derived
 from .runtime import derived_from_config, parse_price_state, rate_from_config
 from .sisters import TARIFWACHT, TARIFWACHT_URL, tarifwacht_sources
+from .suggest import async_suggested_meter, suggested_price
 from .tariff import PARTIAL_BANDS, bands
 
 CONF_RATE = "rate"
@@ -319,6 +320,7 @@ class EinspeisewachtConfigFlow(ConfigFlow, domain=DOMAIN):
 
         if self.source != SOURCE_RECONFIGURE and self._suggested is None:
             self._suggest_from_tarifwacht()
+            await self._async_suggest_others()
         expanded = stored_override != OVERRIDE_AUTO or "base" in errors
         schema = vol.Schema(
             {
@@ -398,6 +400,20 @@ class EinspeisewachtConfigFlow(ConfigFlow, domain=DOMAIN):
             self._hint = HINT_TARIFWACHT
             self._tarifwacht_title = title
 
+    async def _async_suggest_others(self) -> None:
+        """What Tarifwacht did not give: the grid export of the energy
+        dashboard as meter, EPEX Spot's market price as price sensor."""
+        suggested = self._suggested if self._suggested is not None else {}
+        if CONF_METER not in suggested and (
+            meter := await async_suggested_meter(
+                self.hass, {e.unique_id for e in self._async_current_entries()}
+            )
+        ):
+            suggested[CONF_METER] = meter
+        if CONF_PRICE not in suggested and (price := suggested_price(self.hass)):
+            suggested[CONF_PRICE] = price
+        self._suggested = suggested
+
     def _follow_renames(self, meter: str, price: str) -> tuple[str, str]:
         """Renamed while the flow was open: the form still holds the old id;
         keep the new one (__init__.py followed the rename)."""
@@ -442,6 +458,10 @@ class EinspeisewachtConfigFlow(ConfigFlow, domain=DOMAIN):
             errors[CONF_PRICE] = "own_entity"
         elif price_state is None:
             errors[CONF_PRICE] = "entity_missing"
+        elif price_state.state in (STATE_UNAVAILABLE, STATE_UNKNOWN):
+            # The sensor of an integration that is not loaded (it keeps its
+            # attributes from the registry): "no price found" would mislead.
+            errors[CONF_PRICE] = "price_unavailable"
         else:
             parsed = parse_price_state(price_state)
             if parsed is None or not parsed.prices:

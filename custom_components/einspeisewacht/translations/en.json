@@ -165,6 +165,7 @@
       "meter_unit": "The meter must report Wh, kWh or MWh.",
       "meter_state_class": "The meter must be cumulative (state class total or total_increasing).",
       "price_invalid": "No price found: the sensor has neither a forecast attribute `data` nor a numeric state.",
+      "price_unavailable": "The price sensor is unavailable right now. Is the integration that provides it (e.g. EPEX Spot) running? See Settings → Devices & services.",
       "override_date_required": "Under “Does your grid operator settle differently?”, the date for “Every negative quarter hour from a date” is missing.",
       "date_in_future": "The date must not be in the future."
     },

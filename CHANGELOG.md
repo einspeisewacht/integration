@@ -1,5 +1,15 @@
 # Changelog
 
+## Unveröffentlicht
+
+### Neu
+
+- **Zähler und Preissensor auch ohne Tarifwacht vorgeschlagen.** Beim Einrichten steht im Feld „Einspeisezähler“ die Netzeinspeisung aus dem Energie-Dashboard, sofern sie noch keine Anlage liest, und im Feld „Preissensor“ der Marktpreis von EPEX Spot (nie dessen Gesamtpreis). Was Tarifwacht vorschlägt, geht weiter vor. Jeder Vorschlag lässt sich ändern.
+
+### Geändert
+
+- **Klare Meldung bei einem nicht verfügbaren Preissensor.** Läuft die Integration des Preissensors gerade nicht (etwa EPEX Spot), meldete das Formular „Kein Preis gefunden …“. Jetzt heißt es: „Der Preissensor ist gerade nicht verfügbar. Läuft die Integration, die ihn liefert (z. B. EPEX Spot)?“
+
 ## 0.2.2 – 2026-11-10
 
 ### Behoben

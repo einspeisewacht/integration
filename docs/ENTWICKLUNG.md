@@ -79,6 +79,8 @@ Nicht verabschiedet (2./3. Lesung voraussichtlich 9.–13.11.2026, Bundesrat 20.
 - Preise exakt `0` sind häufig (25.10.: 48 von 100 Viertelstunden), minimal negativ `-0.00001`.
 - **Der Recorder speichert das Attribut `data` nicht** (nur `price_per_kwh` usw.). Vergangene Prognosen sind also nicht aus der Historie abrufbar; Preise vergangener Viertelstunden aber aus dem Zustandsverlauf (Schrittfunktion, ~10 Tage) bzw. der Langzeitstatistik (`measurement` → nur Stundenmittel!).
 - Fixture: `tests/fixtures/epex_spot_2026-10-25.json` (Attribut wörtlich, 25.10. 00:00–01:00 aus dem Zustandsverlauf ergänzt; alle 138 Viertelstunden gegen den Verlauf geprüft).
+- **Erkennung für den Vorschlag im Formular** (`suggest.py`, seit 2026-11-11, abgeleitet aus Tarifwacht): Plattform `epex_spot`, `unique_id` = `"{Quelle} {key}"`, Key des Marktpreises `MarketPrice` (mampfes/ha_epex_spot 4.1.0, Commit `2aad1eb`, `__init__.py` Z. 275, `sensor.py` Z. 54; im Testsystem `epex_spot SMARD.de DE-LU MarketPrice`). Nie der Gesamtpreis (`Total Price`): § 51 hängt am reinen Börsenpreis.
+- **Integration nicht geladen:** HA schreibt für die Entität den Zustand `unavailable` mit den Attributen aus dem Registry. Das Formular meldet dann `price_unavailable` statt „Kein Preis gefunden“ (gesehen in tarifwacht#3).
 
 ### SMARD.de (optional, geprüft 2026-10-26)
 
@@ -94,6 +96,7 @@ Nicht verabschiedet (2./3. Lesung voraussichtlich 9.–13.11.2026, Bundesrat 20.
 
 - Fronius Smart Meter TS 65A-3 (Plattform `fronius`): Wh, `total_increasing`, ganze Wh. Neuer Zustand nur bei Wertänderung – bei wenig Einspeisung vergehen Minuten zwischen zwei Werten. Ein Delta kann also über eine Viertelstundengrenze reichen und muss anteilig verteilt werden.
 - Riemann-Integral (z. B. SolarNet): kWh, `state_class: total`. Beide Klassen und beide Einheiten (Wh, kWh, ggf. MWh) unterstützen.
+- **Vorschlag aus dem Energie-Dashboard** (`suggest.py`, seit 2026-11-11): Netzeinspeisung (`stat_energy_to`) aus den Einstellungen des Energie-Dashboards (`energy.data.async_get_manager`, einmal beim Öffnen des Schritts, nichts Regelmäßiges), nur wenn Tarifwacht keinen Zähler vorschlägt. Format: eine Netzquelle je Anschluss (schon in HA 2026.3; ältere Speicherstände mit `flow_to` überführt HA beim Laden, `flow_to` wird zur Sicherheit trotzdem gelesen). Vorgeschlagen wird nur eine `sensor.…`-Statistik mit Zustand, die noch kein Eintrag liest; ein Fehler dabei verliert nur den Vorschlag.
 
 ## 4. Entscheidungen
 

@@ -165,6 +165,7 @@
       "meter_unit": "Der Zähler muss Wh, kWh oder MWh liefern.",
       "meter_state_class": "Der Zähler muss fortlaufend zählen (state_class total oder total_increasing).",
       "price_invalid": "Kein Preis gefunden: Der Sensor hat weder ein Prognose-Attribut `data` noch einen Zahlenwert.",
+      "price_unavailable": "Der Preissensor ist gerade nicht verfügbar. Läuft die Integration, die ihn liefert (z. B. EPEX Spot)? Siehe Einstellungen → Geräte & Dienste.",
       "override_date_required": "Unter „Rechnet dein Netzbetreiber anders ab?“ fehlt das Datum für „Jede negative Viertelstunde ab einem Datum“.",
       "date_in_future": "Das Datum darf nicht in der Zukunft liegen."
     },
