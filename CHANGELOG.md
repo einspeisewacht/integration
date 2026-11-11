@@ -2,7 +2,9 @@
 
 ## 0.2.2 – 2026-11-10
 
-- **Fehler behoben: Einspeisung nach einem Neustart verloren.** Nach einem Neustart von Home Assistant schreibt die Integration des Zählers oft ihren alten Stand mit neuer Uhrzeit. Kam der echte neue Stand nur Sekunden danach, rechnete Einspeisewacht die Zunahme auf diese wenigen Sekunden und hielt sie für mehr, als die Anlage leisten kann: Die Ablesung galt als Sprung und wurde nicht gebucht. Jetzt zählt die Plausibilitätsgrenze ab der letzten Änderung des Zählerstands, nicht ab der letzten Ablesung. Ein echter Zählerwechsel gilt weiter als Sprung. Anlass: derselbe Fehler in Tarifwacht, dort in der eigenen Anlage gesehen (0,86 kWh drei Sekunden nach dem Neustart).
+### Behoben
+
+- **Einspeisung nach einem Neustart verloren.** Nach einem Neustart von Home Assistant schreibt die Integration des Zählers oft ihren alten Stand mit neuer Uhrzeit. Kam der echte Stand Sekunden danach, rechnete Einspeisewacht die Zunahme auf diese Sekunden, hielt sie für mehr, als die Anlage leisten kann, und buchte sie als Sprung nicht. Jetzt zählt die Plausibilitätsgrenze ab der letzten Änderung des Zählerstands; ein echter Zählerwechsel gilt weiter als Sprung.
 
 ## 0.2.1 – 2026-11-09
 
