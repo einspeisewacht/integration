@@ -196,10 +196,19 @@
         "https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=" +
         "https%3A%2F%2Fgithub.com%2Feinspeisewacht%2Fintegration%2Fblob%2Fmain%2Fblueprints%2Fautomation%2F" +
         `einspeisewacht%2F${file}.yaml`;
-      // Title and text of the blueprint "Hinweis am Vortag" (German in both languages).
-      const PUSH_TITLE = "Negative Strompreise morgen";
-      const pushText = (times) =>
-        (times.length > 1 ? `${times.slice(0, -1).join(", ")} und ${times.at(-1)}` : times[0]) + " Uhr ohne Vergütung.";
+      // Title and text of the blueprint "Hinweis am Vortag", in the language of the page
+      // (the blueprint's input "language"), the plant's name in the title; a window up to
+      // midnight ends at 24:00.
+      const PUSH = {
+        de: { title: "Negative Strompreise morgen", and: " und ", tail: " Uhr ohne Vergütung." },
+        en: { title: "Negative electricity prices tomorrow", and: " and ", tail: " without remuneration." },
+      };
+      const pushTitle = (plant) => `Einspeisewacht${plant ? ` · ${plant}` : ""}: ${PUSH[state.lang].title}`;
+      const pushText = (times) => {
+        const p = PUSH[state.lang];
+        return (times.length > 1 ? `${times.slice(0, -1).join(", ")}${p.and}${times.at(-1)}` : times[0]) + p.tail;
+      };
+      const pushEnd = (iso) => (clock(iso) === "00:00" ? "24:00" : clock(iso));
 
       const TEXT = {
         de: {
@@ -261,7 +270,7 @@
           notification: "Hinweis am Vortag",
           quiet: "Keine Hinweise an den letzten zwei Abenden.",
           pushNote:
-            "So meldet der Blueprint „Hinweis am Vortag“ – einmal am Abend (hier um 18 Uhr) alle Zeitfenster ohne Vergütung am nächsten Tag. Ein zweiter Blueprint führt eigene Aktionen aus, sobald die Vergütung entfällt (z. B. Speicher laden):",
+            "So meldet der Blueprint „Hinweis am Vortag“ – einmal am Abend (hier um 18 Uhr) alle Zeitfenster ohne Vergütung am nächsten Tag, auf Deutsch oder Englisch, aufs Handy oder zum Beispiel an Telegram. Ein zweiter Blueprint führt eigene Aktionen aus, sobald die Vergütung entfällt (z. B. Speicher laden):",
           importDayBefore: "Blueprint „Hinweis am Vortag“ →",
           importBlueprint: "Blueprint „Bei negativem Preis umschalten“ →",
           device: "Gerät",
@@ -343,7 +352,7 @@
           notification: "Notice the day before",
           quiet: "No notices on the last two evenings.",
           pushNote:
-            "This is what the blueprint “Hinweis am Vortag” (notice the day before) sends (German text) – once in the evening (here at 18:00), with all windows without remuneration of the next day. A second blueprint runs your own actions when remuneration stops (e.g. charge the battery):",
+            "This is what the blueprint “Hinweis am Vortag” (notice the day before) sends – once in the evening (here at 18:00), with all windows without remuneration of the next day, in German or English, to the phone or for example to Telegram. A second blueprint runs your own actions when remuneration stops (e.g. charge the battery):",
           importDayBefore: "Blueprint “notice the day before” →",
           importBlueprint: "Blueprint “switch on negative price” →",
           device: "Device",
@@ -602,7 +611,7 @@
         const tx = t();
         const pushes = view.pushes.length
           ? view.pushes.map((p) => `<div class="push"><div class="app">${icon("bell-ring-outline")}<span>Home Assistant</span><span>${dateFmt(p.at, { weekday: "short" })}, ${timeFmt(p.at)}</span></div>
-              <b>${PUSH_TITLE}</b>${pushText(p.windows.map((w) => `${clock(w.start)}–${clock(w.end)}`))}</div>`).join("")
+              <b>${escapeHtml(pushTitle(view.device))}</b>${pushText(p.windows.map((w) => `${clock(w.start)}–${pushEnd(w.end)}`))}</div>`).join("")
           : `<div class="quiet">${tx.quiet}</div>`;
         return `<div class="heading">${icon("bell-ring-outline")}<span>${tx.notification}</span></div>
           <div class="card"><div class="phone">${pushes}</div>

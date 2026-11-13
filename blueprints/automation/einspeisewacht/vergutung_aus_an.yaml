@@ -1,11 +1,18 @@
 blueprint:
-  name: Einspeisewacht – bei negativem Preis umschalten
+  name: Einspeisewacht – bei negativem Preis umschalten / Switch on negative prices
   description: >-
     Führt eigene Aktionen aus, sobald die Einspeisevergütung wegen eines
     negativen Strompreises entfällt – zum Beispiel den Speicher laden, die
     Wallbox einschalten oder die Einspeisung abregeln – und weitere, sobald sie
     wieder gezahlt wird. Auslöser ist der Binärsensor „Vergütung aktiv“ von
     Einspeisewacht; ein Neustart (unbekannt oder nicht verfügbar) löst nichts aus.
+
+
+    Runs your own actions as soon as the feed-in remuneration stops because of
+    a negative electricity price – for example charge the battery, switch on
+    the wallbox or curtail the feed-in – and others as soon as it is paid
+    again. The trigger is the binary sensor "Remunerated" of Einspeisewacht; a
+    restart (unknown or unavailable) triggers nothing.
   domain: automation
   author: Einspeisewacht
   homeassistant:
@@ -13,22 +20,29 @@ blueprint:
   source_url: https://github.com/einspeisewacht/integration/blob/main/blueprints/automation/einspeisewacht/vergutung_aus_an.yaml
   input:
     remunerated:
-      name: Vergütung aktiv
-      description: Der Binärsensor „Vergütung aktiv“ deiner Anlage.
+      name: Vergütung aktiv / Remunerated
+      description: >-
+        Der Binärsensor „Vergütung aktiv“ deiner Anlage. / The binary sensor
+        "Remunerated" of your plant.
       selector:
         entity:
           filter:
             integration: einspeisewacht
             domain: binary_sensor
     unpaid_actions:
-      name: Wenn die Vergütung entfällt
-      description: Zum Beispiel Speichermodus „Laden“ wählen oder die Wallbox einschalten.
+      name: Wenn die Vergütung entfällt / When remuneration stops
+      description: >-
+        Zum Beispiel Speichermodus „Laden“ wählen oder die Wallbox einschalten.
+        / For example choose the battery mode "charge" or switch on the
+        wallbox.
       default: []
       selector:
         action: {}
     paid_actions:
-      name: Wenn die Vergütung wieder gezahlt wird
-      description: Zum Beispiel den Speichermodus zurückstellen.
+      name: Wenn die Vergütung wieder gezahlt wird / When remuneration resumes
+      description: >-
+        Zum Beispiel den Speichermodus zurückstellen. / For example set the
+        battery mode back.
       default: []
       selector:
         action: {}

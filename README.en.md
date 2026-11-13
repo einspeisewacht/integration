@@ -259,7 +259,16 @@ cards:
 </details>
 
 
-**Blueprint "notice the day before" (Hinweis am Vortag):** asks for the calendar "Negative prices" of your plant, your phone (with the Home Assistant app) and a time (18:00 by default). At that time it sends one notification with all of tomorrow's windows without remuneration (German text: "11:00–14:30 und 15:00–15:45 Uhr ohne Vergütung."), and nothing if there are none. Tomorrow's day-ahead prices are known from about 13:00, so pick a time in the afternoon or evening. [![Import blueprint](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Feinspeisewacht%2Fintegration%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Feinspeisewacht%2Fhinweis_am_vortag.yaml)
+**Blueprint "notice the day before" (Hinweis am Vortag):** asks for the calendar "Negative prices" of your plant, your phone (with the Home Assistant app) and a time (18:00 by default). At that time it sends one notification with all of tomorrow's windows without remuneration and the plant's name in the title, such as "Einspeisewacht · Roof: Negative electricity prices tomorrow" and "11:00–14:30 and 15:00–15:45 without remuneration.", and nothing if there are none. The message comes in German (default) or English. Tomorrow's day-ahead prices are known from about 13:00, so pick a time in the afternoon or evening. [![Import blueprint](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Feinspeisewacht%2Fintegration%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Feinspeisewacht%2Fhinweis_am_vortag.yaml)
+
+- The **phone** is optional: without one, the message only goes to the more actions.
+- **More actions** (collapsed): run with the finished text; `{{ title }}` and `{{ message }}` are ready to use. For Telegram: *Add action*, search for "Telegram", pick "Send message", with the text `{{ title }}: {{ message }}`, in YAML:
+
+  ```yaml
+  - action: telegram_bot.send_message
+    data:
+      message: "{{ title }}: {{ message }}"
+  ```
 
 **Blueprint "switch on negative prices":** runs your own actions when remuneration stops (charge the battery, switch on the wallbox, curtail) and others when it resumes. [![Import blueprint](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Feinspeisewacht%2Fintegration%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Feinspeisewacht%2Fvergutung_aus_an.yaml)
 

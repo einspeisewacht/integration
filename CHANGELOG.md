@@ -4,11 +4,15 @@
 
 ### Neu
 
-- **Blueprint „Hinweis am Vortag“.** Schickt dir einmal am Tag zur gewählten Uhrzeit (vorgegeben 18 Uhr) eine Nachricht aufs Handy mit allen Zeitfenstern ohne Vergütung von morgen, etwa „11:00–14:30 und 15:00–15:45 Uhr ohne Vergütung.“ – und keine, wenn es morgen keine gibt. Er fragt nur nach dem Kalender „Negative Preise“, dem Handy und der Uhrzeit; der Import-Knopf steht im README. Er ersetzt das bisherige YAML-Beispiel, das sich zwölf Stunden vor jedem Zeitfenster einzeln meldete, bei Mittagsfenstern also mitten in der Nacht, frühe Fenster oft verpasste und nur mit deutscher Oberfläche funktionierte.
+- **Blueprint „Hinweis am Vortag“.** Schickt dir einmal am Tag zur gewählten Uhrzeit (vorgegeben 18 Uhr) eine Nachricht aufs Handy mit allen Zeitfenstern ohne Vergütung von morgen, etwa „Einspeisewacht · Dach: Negative Strompreise morgen“ und „11:00–14:30 und 15:00–15:45 Uhr ohne Vergütung.“ – und keine, wenn es morgen keine gibt. Er fragt nur nach dem Kalender „Negative Preise“, dem Handy und der Uhrzeit; die Nachricht gibt es auf Deutsch oder Englisch, und unter „Weitere Aktionen“ geht sie auch an Telegram oder andere Dienste. Der Import-Knopf steht im README. Er ersetzt das bisherige YAML-Beispiel, das sich zwölf Stunden vor jedem Zeitfenster einzeln meldete, bei Mittagsfenstern also mitten in der Nacht, frühe Fenster oft verpasste und nur mit deutscher Oberfläche funktionierte.
 
 ### Behoben
 
 - **Hinweis „Vorbelegt aus Tarifwacht“ stimmt jetzt.** Lieferte Tarifwacht beim Einrichten nur eines der beiden Felder und kam das andere aus dem Energie-Dashboard oder von EPEX Spot, nannte der Hinweis Tarifwacht für beide. Jetzt steht da, woher welches Feld kommt, etwa „Day-Ahead-Preis aus Tarifwacht „Haus“ vorbelegt, Einspeisezähler aus dem Energie-Dashboard – bitte prüfen.“
+
+### Geändert
+
+- **Blueprint „Bei negativem Preis umschalten“ zweisprachig.** Name, Beschreibung und Felder stehen jetzt auf Deutsch und Englisch. Bestehende Automationen laufen unverändert; die neuen Texte gibt es nach einem erneuten Import des Blueprints.
 
 ## 0.2.3 – 2026-11-11
 
