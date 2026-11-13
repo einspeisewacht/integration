@@ -11,7 +11,7 @@ by quarter hour from 1 January 2026 (`Engine`, `derive`/`rule_for`,
 
 The page shows two moments (a sunny Sunday in May, a grey day in January) and
 the year so far; for each moment the files hold what the dashboard card, the
-devices, the calendar and the README's "day before" automation would show.
+devices, the calendar and the "day before" blueprint would show.
 """
 
 from __future__ import annotations
@@ -20,7 +20,7 @@ import json
 import math
 import random
 import sys
-from datetime import UTC, date, datetime, timedelta
+from datetime import UTC, date, datetime, time, timedelta
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
@@ -65,7 +65,9 @@ PLANTS = {
     "dach": ("Dach", Plant(date(2025, 9, 15), KWP, date(2025, 9, 15))),
     "garage": ("Garage", Plant(date(2025, 6, 20), KWP, None)),
 }
-LEAD = timedelta(hours=12)  # README "Hinweis am Vortag": offset -12:00:00
+# Blueprint "Hinweis am Vortag": its default time, and how many evenings the page shows.
+NOTICE_AT = time(18, 0)
+NOTICE_EVENINGS = 2
 # The totals the card reads per month from the long-term statistics.
 TOTALS = (
     "energy_paid",
@@ -267,13 +269,25 @@ def snapshot(
         }
         for w in windows
     ]
-    # README "Hinweis am Vortag": 12 h before each window without remuneration.
+    # Blueprint "Hinweis am Vortag": in the evening, the windows without
+    # remuneration of the next day, from the prices known then (calendar
+    # overlap: end after its midnight, start before the next); last two evenings.
     pushes = []
-    yesterday = _day_prices(all_prices, today - timedelta(days=1))
-    for w in negative_windows(yesterday | _day_prices(all_prices, today), engine.rule):
-        at = w.start - LEAD
-        if not w.paid and utc_now - timedelta(hours=36) < at <= utc_now:
-            pushes.append({"at": at.isoformat(), "start": w.start.isoformat(), "end": w.end.isoformat()})  # fmt: skip
+    for back in range(3):
+        evening = datetime.combine(today - timedelta(days=back), NOTICE_AT, BERLIN)
+        if evening > now or len(pushes) == NOTICE_EVENINGS:
+            continue
+        day = evening.date() + timedelta(days=1)
+        a = local_midnight(day).astimezone(UTC)
+        b = local_midnight(day + timedelta(days=1)).astimezone(UTC)
+        known_then = _day_prices(all_prices, evening.date())
+        windows = [
+            {"start": w.start.isoformat(), "end": w.end.isoformat()}
+            for w in negative_windows(known_then, engine.rule)
+            if not w.paid and w.end > a and w.start < b
+        ]
+        if windows:
+            pushes.append({"at": evening.astimezone(UTC).isoformat(), "windows": windows})  # fmt: skip
     # The card's websocket answer, from the prices the engine knows.
     known = SimpleNamespace(prices=_day_prices(all_prices, today))
     plant_runtime = SimpleNamespace(

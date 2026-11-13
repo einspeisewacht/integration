@@ -1,5 +1,11 @@
 # Changelog
 
+## Unveröffentlicht
+
+### Neu
+
+- **Blueprint „Hinweis am Vortag“.** Schickt dir einmal am Tag zur gewählten Uhrzeit (vorgegeben 18 Uhr) eine Nachricht aufs Handy mit allen Zeitfenstern ohne Vergütung von morgen, etwa „11:00–14:30 und 15:00–15:45 Uhr ohne Vergütung.“ – und keine, wenn es morgen keine gibt. Er fragt nur nach dem Kalender „Negative Preise“, dem Handy und der Uhrzeit; der Import-Knopf steht im README. Er ersetzt das bisherige YAML-Beispiel, das sich zwölf Stunden vor jedem Zeitfenster einzeln meldete, bei Mittagsfenstern also mitten in der Nacht, frühe Fenster oft verpasste und nur mit deutscher Oberfläche funktionierte.
+
 ## 0.2.3 – 2026-11-11
 
 ### Neu

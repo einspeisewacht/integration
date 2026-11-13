@@ -26,7 +26,7 @@ Die Oberfläche gibt es auf Deutsch und Englisch; sie folgt der Sprache deines H
 - [Was Einspeisewacht kann](#was-einspeisewacht-kann) · [Welche Regel gilt](#welche-regel-gilt--51-eeg) · [Was Einspeisewacht nicht kann](#was-einspeisewacht-nicht-kann)
 - **Loslegen:** [Voraussetzungen](#voraussetzungen) · [Installation](#installation) · [Einrichtung](#einrichtung)
 - **Nutzen:** [Entitäten](#entitäten) · [Karte](#karte) · [Bericht für einen Zeitraum](#bericht-für-einen-zeitraum) · [Statistik nachtragen](#statistik-nachtragen) · [Statistik neu berechnen](#statistik-neu-berechnen)
-- **[Was du damit bauen kannst](#was-du-damit-bauen-kannst):** [Karte mit Bordmitteln](#dashboard-karte-mit-tages--und-jahreswerten) · [Blueprint](#fertiger-blueprint) · [Speicher laden](#speicher-laden-solange-es-keine-vergütung-gibt-als-eigene-automation) · [Hinweis am Vortag](#hinweis-am-vortag)
+- **[Was du damit bauen kannst](#was-du-damit-bauen-kannst):** [Karte mit Bordmitteln](#dashboard-karte-mit-tages--und-jahreswerten) · [Blueprints](#fertige-blueprints) · [Hinweis am Vortag](#hinweis-am-vortag) · [Speicher laden](#speicher-laden-solange-es-keine-vergütung-gibt-als-eigene-automation)
 - **Mehr:** [Datenschutz](#datenschutz) · [Fehlerbehebung](#fehlerbehebung) · [Entfernen](#entfernen) · [Fehler melden](#fehler-melden) · [Weitere Wachten](#weitere-wachten) · [Lizenz und Quellen](#lizenz-und-quellen)
 
 ## Was Einspeisewacht kann
@@ -282,11 +282,24 @@ cards:
 
 </details>
 
-### Fertiger Blueprint
+### Fertige Blueprints
 
 | Blueprint | Was er tut | |
 |---|---|---|
+| **Hinweis am Vortag** | schickt dir abends eine Nachricht aufs Handy, wann es morgen keine Vergütung gibt ([mehr](#hinweis-am-vortag)) | [![Blueprint importieren](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Feinspeisewacht%2Fintegration%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Feinspeisewacht%2Fhinweis_am_vortag.yaml) |
 | **Bei negativem Preis umschalten** | führt eigene Aktionen aus, sobald die Vergütung entfällt (z. B. Speicher laden, Wallbox an, abregeln), und andere, sobald sie wieder gezahlt wird | [![Blueprint importieren](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Feinspeisewacht%2Fintegration%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Feinspeisewacht%2Fvergutung_aus_an.yaml) |
+
+### Hinweis am Vortag
+
+Der Blueprint **Hinweis am Vortag** fragt nur drei Dinge: den Kalender „Negative Preise“ deiner Anlage, dein Handy (mit der Home-Assistant-App) und die Uhrzeit, vorgegeben 18 Uhr. Dann schaut er jeden Tag zu dieser Uhrzeit in den Kalender und schickt dir alle Zeitfenster ohne Vergütung von morgen in einer Nachricht:
+
+> **Negative Strompreise morgen**<br>
+> 11:00–14:30 und 15:00–15:45 Uhr ohne Vergütung.
+
+- Gibt es morgen keine, kommt keine Nachricht.
+- Die Day-Ahead-Preise für morgen sind ab etwa 13 Uhr bekannt. Wählst du eine frühere Uhrzeit, findet er oft noch nichts.
+- Greift die Regel für deine Anlage noch nicht (Kalendereintrag „Negativer Preis (noch vergütet)“), meldet er nichts.
+- Mehrere Anlagen: je Anlage eine Automation aus dem Blueprint anlegen.
 
 ### Speicher laden, solange es keine Vergütung gibt (als eigene Automation)
 
@@ -303,28 +316,6 @@ actions:
     data:
       option: "Laden aus PV"
 mode: single
-```
-
-### Hinweis am Vortag
-
-```yaml
-alias: Morgen gibt es Viertelstunden ohne Vergütung
-triggers:
-  - trigger: calendar
-    event: start
-    offset: "-12:00:00"
-    entity_id: calendar.dach_negative_preise
-conditions:
-  - condition: template
-    value_template: "{{ trigger.calendar_event.summary == 'Keine Einspeisevergütung' }}"
-actions:
-  - action: notify.mobile_app_mein_handy   # dein Gerät
-    data:
-      title: Negative Strompreise
-      message: >-
-        {{ as_timestamp(trigger.calendar_event.start) | timestamp_custom('%H:%M') }}–{{
-        as_timestamp(trigger.calendar_event.end) | timestamp_custom('%H:%M') }} Uhr ohne Vergütung.
-mode: queued
 ```
 
 Die Entitäts-IDs hängen vom Namen deiner Anlage ab (hier „Dach“).

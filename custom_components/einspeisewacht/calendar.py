@@ -19,7 +19,8 @@ from .entity import PlantEntity
 from .windows import Window, negative_windows
 
 # Event texts are not part of the entity translations; German or English by
-# the instance language.
+# the instance language. The blueprint "Hinweis am Vortag" picks the windows by
+# the "unpaid" titles (checked in tests/test_blueprints.py).
 TEXTS = {
     "de": {
         "unpaid": "Keine Einspeisevergütung",

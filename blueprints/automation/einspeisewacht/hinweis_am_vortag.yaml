@@ -1,0 +1,83 @@
+blueprint:
+  name: Einspeisewacht – Hinweis am Vortag
+  description: >-
+    Schickt dir einmal am Tag zur gewählten Uhrzeit eine Nachricht aufs Handy,
+    wenn es morgen Zeitfenster ohne Einspeisevergütung gibt – zum Beispiel
+    „11:00–14:30 und 15:00–15:45 Uhr ohne Vergütung.“ So kannst du den Speicher,
+    die Wallbox oder die Waschmaschine darauf einstellen. Gibt es morgen keine,
+    kommt keine Nachricht. Die Zeitfenster stammen aus dem Kalender „Negative
+    Preise“ von Einspeisewacht. Die Day-Ahead-Preise für morgen sind ab etwa
+    13 Uhr bekannt; wähle deshalb eine Uhrzeit am Nachmittag oder Abend.
+  domain: automation
+  author: Einspeisewacht
+  homeassistant:
+    min_version: "2026.3.0"
+  source_url: https://github.com/einspeisewacht/integration/blob/main/blueprints/automation/einspeisewacht/hinweis_am_vortag.yaml
+  input:
+    calendar:
+      name: Kalender „Negative Preise“
+      description: Der Kalender deiner Anlage.
+      selector:
+        entity:
+          filter:
+            integration: einspeisewacht
+            domain: calendar
+    notify_device:
+      name: Handy
+      description: Das Gerät, das die Nachricht bekommt. Darauf muss die Home-Assistant-App laufen.
+      selector:
+        device:
+          filter:
+            integration: mobile_app
+    time:
+      name: Uhrzeit
+      description: Wann die Nachricht kommt. Vor etwa 14 Uhr fehlen oft noch die Preise für morgen.
+      default: "18:00:00"
+      selector:
+        time: {}
+
+mode: single
+
+triggers:
+  - trigger: time
+    at: !input time
+
+variables:
+  calendar: !input calendar
+  # Titles of the windows without remuneration in the calendar (calendar.py,
+  # TEXTS), German and English by the language of Home Assistant. Windows the
+  # rule does not apply to yet ("still remunerated") are left out.
+  unpaid_titles:
+    - Keine Einspeisevergütung
+    - No feed-in remuneration
+
+actions:
+  # Tomorrow from midnight to midnight, local time (23 or 25 hours on the
+  # days the clocks change).
+  - action: calendar.get_events
+    target:
+      entity_id: !input calendar
+    data:
+      start_date_time: "{{ (today_at() + timedelta(days=1)).isoformat() }}"
+      end_date_time: "{{ (today_at() + timedelta(days=2)).isoformat() }}"
+    response_variable: agenda
+  - variables:
+      windows: >-
+        {{ agenda[calendar].events | selectattr('summary', 'in', unpaid_titles) | list }}
+  - condition: template
+    value_template: "{{ windows | count > 0 }}"
+  - domain: mobile_app
+    type: notify
+    device_id: !input notify_device
+    title: Negative Strompreise morgen
+    message: >-
+      {%- set ns = namespace(times=[]) -%}
+      {%- for window in windows -%}
+      {%- set ns.times = ns.times + [(window.start | as_datetime | as_local).strftime('%H:%M')
+        ~ '–' ~ (window.end | as_datetime | as_local).strftime('%H:%M')] -%}
+      {%- endfor -%}
+      {%- if ns.times | count > 1 -%}
+      {{ ns.times[:-1] | join(', ') }} und {{ ns.times[-1] }}
+      {%- else -%}
+      {{ ns.times[0] }}
+      {%- endif %} Uhr ohne Vergütung.

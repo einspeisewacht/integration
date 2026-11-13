@@ -192,10 +192,14 @@
 
       const PLANTS = ["dach", "garage"];
       const MOMENTS = ["mai", "januar"];
-      const BLUEPRINT_URL =
+      const blueprintUrl = (file) =>
         "https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=" +
         "https%3A%2F%2Fgithub.com%2Feinspeisewacht%2Fintegration%2Fblob%2Fmain%2Fblueprints%2Fautomation%2F" +
-        "einspeisewacht%2Fvergutung_aus_an.yaml";
+        `einspeisewacht%2F${file}.yaml`;
+      // Title and text of the blueprint "Hinweis am Vortag" (German in both languages).
+      const PUSH_TITLE = "Negative Strompreise morgen";
+      const pushText = (times) =>
+        (times.length > 1 ? `${times.slice(0, -1).join(", ")} und ${times.at(-1)}` : times[0]) + " Uhr ohne Vergütung.";
 
       const TEXT = {
         de: {
@@ -255,11 +259,10 @@
           windowPaid: "Negativer Preis (noch vergütet)",
           lowest: (p) => `Niedrigster Day-Ahead-Preis: ${p} ct/kWh`,
           notification: "Hinweis am Vortag",
-          quiet: "Keine Hinweise in den letzten 36 Stunden.",
-          pushTitle: "Negative Strompreise",
-          pushText: (a, b) => `${a}–${b} Uhr ohne Vergütung.`,
+          quiet: "Keine Hinweise an den letzten zwei Abenden.",
           pushNote:
-            "So meldet die Automation „Hinweis am Vortag“ aus der README – 12 Stunden vor jedem Zeitfenster ohne Vergütung. Fertig zum Import gibt es den Blueprint, der beim Wegfall der Vergütung eigene Aktionen ausführt (z. B. Speicher laden):",
+            "So meldet der Blueprint „Hinweis am Vortag“ – einmal am Abend (hier um 18 Uhr) alle Zeitfenster ohne Vergütung am nächsten Tag. Ein zweiter Blueprint führt eigene Aktionen aus, sobald die Vergütung entfällt (z. B. Speicher laden):",
+          importDayBefore: "Blueprint „Hinweis am Vortag“ →",
           importBlueprint: "Blueprint „Bei negativem Preis umschalten“ →",
           device: "Gerät",
           year: "Jahr bisher",
@@ -338,11 +341,10 @@
           windowPaid: "Negative price (still remunerated)",
           lowest: (p) => `Lowest day-ahead price: ${p} ct/kWh`,
           notification: "Notice the day before",
-          quiet: "No notices in the last 36 hours.",
-          pushTitle: "Negative Strompreise",
-          pushText: (a, b) => `${a}–${b} Uhr ohne Vergütung.`,
+          quiet: "No notices on the last two evenings.",
           pushNote:
-            "This is what the README automation “Hinweis am Vortag” sends (German text) – 12 hours before each window without remuneration. Ready to import is the blueprint that runs your own actions when remuneration stops (e.g. charge the battery):",
+            "This is what the blueprint “Hinweis am Vortag” (notice the day before) sends (German text) – once in the evening (here at 18:00), with all windows without remuneration of the next day. A second blueprint runs your own actions when remuneration stops (e.g. charge the battery):",
+          importDayBefore: "Blueprint “notice the day before” →",
           importBlueprint: "Blueprint “switch on negative price” →",
           device: "Device",
           year: "Year so far",
@@ -600,11 +602,12 @@
         const tx = t();
         const pushes = view.pushes.length
           ? view.pushes.map((p) => `<div class="push"><div class="app">${icon("bell-ring-outline")}<span>Home Assistant</span><span>${dateFmt(p.at, { weekday: "short" })}, ${timeFmt(p.at)}</span></div>
-              <b>${tx.pushTitle}</b>${tx.pushText(clock(p.start), clock(p.end))}</div>`).join("")
+              <b>${PUSH_TITLE}</b>${pushText(p.windows.map((w) => `${clock(w.start)}–${clock(w.end)}`))}</div>`).join("")
           : `<div class="quiet">${tx.quiet}</div>`;
         return `<div class="heading">${icon("bell-ring-outline")}<span>${tx.notification}</span></div>
           <div class="card"><div class="phone">${pushes}</div>
-            <div class="blueprint">${tx.pushNote}<br /><a href="${BLUEPRINT_URL}" target="_blank" rel="noopener">${tx.importBlueprint}</a></div></div>`;
+            <div class="blueprint">${tx.pushNote}<br /><a href="${blueprintUrl("hinweis_am_vortag")}" target="_blank" rel="noopener">${tx.importDayBefore}</a>
+              <br /><a href="${blueprintUrl("vergutung_aus_an")}" target="_blank" rel="noopener">${tx.importBlueprint}</a></div></div>`;
       }
 
       function deviceSection(data, view) {
