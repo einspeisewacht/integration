@@ -5,12 +5,17 @@ from __future__ import annotations
 import asyncio
 from pathlib import Path
 from typing import Any
+from unittest.mock import patch
 
 import pytest
 from homeassistant.components.automation.config import AUTOMATION_BLUEPRINT_SCHEMA
 from homeassistant.components.blueprint.models import Blueprint
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.template import Template
+from homeassistant.helpers.template.extensions.config_entries import (
+    ConfigEntryExtension,
+)
+from homeassistant.helpers.template.extensions.devices import DeviceExtension
 from homeassistant.util.yaml import load_yaml
 
 from custom_components.einspeisewacht.calendar import TEXTS
@@ -141,13 +146,23 @@ def _render_day_before(
     lang: str = "de",
     device: str | None = "Dach",
     phone: str = "phone_id",
+    plants: int = 1,
 ) -> dict[str, Any] | None:
     """What the blueprint sends for these events of tomorrow (rendered by
     Home Assistant's template engine): title, message and the phone's notify
-    action; None when it stays quiet. The device registry is stubbed:
-    `device_name` of the calendar gives `device`, the phone is "Pixel 8"."""
+    action; None when it stays quiet. The registries are stubbed: Einspeisewacht
+    has `plants` devices, each with a calendar and a sensor; the calendar's
+    device is named `device` (None: the calendar has no device, and neither has
+    its sensor), the phone is "Pixel 8"."""
     raw = load_yaml(DAY_BEFORE)
     variables, actions = raw["variables"], raw["actions"]
+    devices: dict[str, str | None] = {
+        CALENDAR: "dach_id" if device else None,
+        "sensor.dach_einspeisung_vergutet": "dach_id" if device else None,
+    }
+    for n in range(1, plants):
+        devices[f"calendar.anlage_{n}_negative_preise"] = f"plant_{n}"
+        devices[f"sensor.anlage_{n}_einspeisung_vergutet"] = f"plant_{n}"
     stubs = {
         "device_name": lambda entity: device if entity == CALENDAR else None,
         "device_attr": lambda device_id, attr: (
@@ -157,6 +172,17 @@ def _render_day_before(
 
     async def render() -> dict[str, Any] | None:
         hass = HomeAssistant(str(Path(__file__).parent))
+        # Function and filter (`map('device_id')`) come from these extensions.
+        integration = patch.object(
+            ConfigEntryExtension,
+            "integration_entities",
+            lambda self, name: list(devices) if name == "einspeisewacht" else [],
+        )
+        device_id = patch.object(
+            DeviceExtension, "device_id", lambda self, entity: devices.get(entity)
+        )
+        integration.start()
+        device_id.start()
         await hass.config.async_set_time_zone("Europe/Berlin")
         try:
             values: dict[str, Any] = {
@@ -195,6 +221,8 @@ def _render_day_before(
             }
             return sent
         finally:
+            integration.stop()
+            device_id.stop()
             await hass.async_stop(force=True)
 
     return asyncio.run(render())
@@ -225,7 +253,7 @@ SEVERAL = [
 
 def test_day_before_text_german() -> None:
     assert _render_day_before(ONE) == {
-        "title": "Einspeisewacht · Dach: Negative Strompreise morgen",
+        "title": "Einspeisewacht: Negative Strompreise morgen",
         "message": "11:00–14:30 Uhr ohne Vergütung.",
         "phone": "notify.mobile_app_pixel_8",
     }
@@ -236,7 +264,7 @@ def test_day_before_text_german() -> None:
 
 def test_day_before_text_english() -> None:
     assert _render_day_before(ONE, lang="en") == {
-        "title": "Einspeisewacht · Dach: Negative electricity prices tomorrow",
+        "title": "Einspeisewacht: Negative electricity prices tomorrow",
         "message": "11:00–14:30 without remuneration.",
         "phone": "notify.mobile_app_pixel_8",
     }
@@ -245,10 +273,20 @@ def test_day_before_text_english() -> None:
     )
 
 
+def test_day_before_names_the_plant_when_there_are_several() -> None:
+    """One plant: just Einspeisewacht in the title (above). Two: its name."""
+    assert _render_day_before(ONE, plants=2)["title"] == (
+        "Einspeisewacht · Dach: Negative Strompreise morgen"
+    )
+    assert _render_day_before(ONE, lang="en", plants=2)["title"] == (
+        "Einspeisewacht · Dach: Negative electricity prices tomorrow"
+    )
+
+
 def test_day_before_without_device_or_phone() -> None:
-    """A calendar without a device: just Einspeisewacht in the title. No
-    phone: only the more actions run."""
-    sent = _render_day_before(ONE, device=None, phone="")
+    """A calendar without a device: just Einspeisewacht in the title, even
+    with other plants. No phone: only the more actions run."""
+    sent = _render_day_before(ONE, device=None, phone="", plants=3)
     assert sent == {
         "title": "Einspeisewacht: Negative Strompreise morgen",
         "message": "11:00–14:30 Uhr ohne Vergütung.",

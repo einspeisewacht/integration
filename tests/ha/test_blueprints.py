@@ -21,10 +21,14 @@ from pytest_homeassistant_custom_component.common import (
 )
 
 from custom_components.einspeisewacht.const import (
+    CONF_METER,
+    CONF_NAME,
     CONF_SMART_METER,
     CONF_SMART_METER_DATE,
+    DOMAIN,
 )
 
+from .conftest import METER_ATTRIBUTES, entry_data
 from .test_init import entity_id, setup
 
 BLUEPRINTS = (
@@ -86,6 +90,22 @@ async def test_switches_on_changes_only(hass: HomeAssistant) -> None:
 WINDOWS = "04:00–04:15, 04:30–04:45, 06:00–06:15, 14:00–14:30 {} 15:00–15:15"
 
 
+async def add_plant(hass: HomeAssistant, name: str) -> MockConfigEntry:
+    """A second plant with its own meter."""
+    meter = f"sensor.grid_export_{name.lower()}"
+    hass.states.async_set(meter, "500", METER_ATTRIBUTES)
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        unique_id=meter,
+        title=name,
+        data=entry_data(**{CONF_NAME: name, CONF_METER: meter}),
+    )
+    entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    return entry
+
+
 def add_phone(hass: HomeAssistant) -> str:
     """A phone of the Home Assistant app named "Phone": its notify action is
     notify.mobile_app_phone."""
@@ -103,23 +123,27 @@ def add_phone(hass: HomeAssistant) -> str:
 
 
 @pytest.mark.parametrize(
-    ("ha_language", "language", "phone", "changes", "expected"),
+    ("ha_language", "language", "phone", "plants", "changes", "expected"),
     [
+        # One plant: no name in the title.
         (
             "de",
             "de",
             True,
+            1,
             {},
             (
-                "Einspeisewacht · Dach: Negative Strompreise morgen",
+                "Einspeisewacht: Negative Strompreise morgen",
                 WINDOWS.format("und") + " Uhr ohne Vergütung.",
             ),
         ),
-        # English calendar titles, English message.
+        # English calendar titles, English message; two plants: the name of
+        # the calendar's plant in the title.
         (
             "en",
             "en",
             True,
+            2,
             {},
             (
                 "Einspeisewacht · Dach: Negative electricity prices tomorrow",
@@ -131,6 +155,7 @@ def add_phone(hass: HomeAssistant) -> str:
             "en",
             "de",
             False,
+            2,
             {},
             (
                 "Einspeisewacht · Dach: Negative Strompreise morgen",
@@ -142,11 +167,12 @@ def add_phone(hass: HomeAssistant) -> str:
             "de",
             "de",
             True,
+            1,
             {CONF_SMART_METER: False, CONF_SMART_METER_DATE: None},
             None,
         ),
     ],
-    ids=["de", "en", "en_calendar_de_message_no_phone", "rule_not_yet"],
+    ids=["de", "en_two_plants", "en_calendar_de_message_no_phone", "rule_not_yet"],
 )
 @pytest.mark.freeze_time(EVENING - timedelta(minutes=1))
 async def test_day_before(
@@ -155,12 +181,15 @@ async def test_day_before(
     ha_language: str,
     language: str,
     phone: bool,
+    plants: int,
     changes: dict[str, Any],
     expected: tuple[str, str] | None,
 ) -> None:
     await hass.config.async_set_time_zone("Europe/Berlin")
     hass.config.language = ha_language
     entry = await setup(hass, **changes)
+    if plants == 2:
+        await add_plant(hass, "Garage")
     calendar = entity_id(hass, entry, "unpaid_windows")
     assert calendar is not None
     notify = async_mock_service(hass, "notify", "mobile_app_phone")

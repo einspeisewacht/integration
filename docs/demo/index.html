@@ -197,13 +197,14 @@
         "https%3A%2F%2Fgithub.com%2Feinspeisewacht%2Fintegration%2Fblob%2Fmain%2Fblueprints%2Fautomation%2F" +
         `einspeisewacht%2F${file}.yaml`;
       // Title and text of the blueprint "Hinweis am Vortag", in the language of the page
-      // (the blueprint's input "language"), the plant's name in the title; a window up to
-      // midnight ends at 24:00.
+      // (the blueprint's input "language"); the plant's name in the title only with several
+      // plants (the demo has two); a window up to midnight ends at 24:00.
       const PUSH = {
         de: { title: "Negative Strompreise morgen", and: " und ", tail: " Uhr ohne Vergütung." },
         en: { title: "Negative electricity prices tomorrow", and: " and ", tail: " without remuneration." },
       };
-      const pushTitle = (plant) => `Einspeisewacht${plant ? ` · ${plant}` : ""}: ${PUSH[state.lang].title}`;
+      const pushTitle = (plant) =>
+        `Einspeisewacht${plant && PLANTS.length > 1 ? ` · ${plant}` : ""}: ${PUSH[state.lang].title}`;
       const pushText = (times) => {
         const p = PUSH[state.lang];
         return (times.length > 1 ? `${times.slice(0, -1).join(", ")}${p.and}${times.at(-1)}` : times[0]) + p.tail;

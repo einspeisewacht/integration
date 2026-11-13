@@ -6,10 +6,11 @@ blueprint:
     „11:00–14:30 und 15:00–15:45 Uhr ohne Vergütung.“ So kannst du den Speicher,
     die Wallbox oder die Waschmaschine darauf einstellen. Gibt es morgen keine,
     kommt keine Nachricht. Unter „Weitere Aktionen“ gehen auch Telegram und
-    andere Dienste. Im Titel steht der Name der Anlage, die Nachricht gibt es
-    auf Deutsch oder Englisch. Die Zeitfenster stammen aus dem Kalender
-    „Negative Preise“ von Einspeisewacht. Die Day-Ahead-Preise für morgen sind
-    ab etwa 13 Uhr bekannt; wähle deshalb eine Uhrzeit am Nachmittag oder Abend.
+    andere Dienste. Hast du mehrere Anlagen, steht ihr Name im Titel. Die
+    Nachricht gibt es auf Deutsch oder Englisch. Die Zeitfenster stammen aus
+    dem Kalender „Negative Preise“ von Einspeisewacht. Die Day-Ahead-Preise für
+    morgen sind ab etwa 13 Uhr bekannt; wähle deshalb eine Uhrzeit am
+    Nachmittag oder Abend.
 
 
     Sends you a message on your phone once a day at the chosen time when
@@ -17,10 +18,10 @@ blueprint:
     "11:00–14:30 and 15:00–15:45 without remuneration." So you can set up the
     battery, the wallbox or the washing machine for them. If there are none
     tomorrow, no message comes. Telegram and other services go under "More
-    actions". The title names the plant, the message comes in German or
-    English. The windows come from the calendar "Negative prices" of
-    Einspeisewacht. Tomorrow's day-ahead prices are known from about 13:00, so
-    pick a time in the afternoon or evening.
+    actions". With several plants, the title names the plant. The message
+    comes in German or English. The windows come from the calendar "Negative
+    prices" of Einspeisewacht. Tomorrow's day-ahead prices are known from about
+    13:00, so pick a time in the afternoon or evening.
   domain: automation
   author: Einspeisewacht
   homeassistant:
@@ -106,9 +107,14 @@ variables:
   unpaid_titles:
     - Keine Einspeisevergütung
     - No feed-in remuneration
-  # The plant of the calendar, for the title; without a device just
-  # Einspeisewacht.
-  device: "{{ device_name(calendar) or '' }}"
+  # The plant of the calendar, for the title, only when there are several:
+  # each plant is a device of its own (entity.py) and Einspeisewacht has no
+  # other devices, so the devices of its entities are the plants. With one
+  # plant, or a calendar without a device, just Einspeisewacht.
+  device: >-
+    {%- set plants = integration_entities('einspeisewacht') | map('device_id')
+      | reject('none') | unique | list -%}
+    {{ (device_name(calendar) or '') if plants | count > 1 else '' }}
   head: "{{ 'Einspeisewacht' ~ (' · ' ~ device if device else '') }}"
   # The phone's notify action: mobile_app names it after the registered device.
   phone_action: >-

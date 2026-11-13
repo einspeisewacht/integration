@@ -291,15 +291,15 @@ cards:
 
 ### Hinweis am Vortag
 
-Der Blueprint **Hinweis am Vortag** fragt nur nach dem Kalender „Negative Preise“ deiner Anlage, deinem Handy (mit der Home-Assistant-App) und der Uhrzeit, vorgegeben 18 Uhr. Dann schaut er jeden Tag zu dieser Uhrzeit in den Kalender und schickt dir alle Zeitfenster ohne Vergütung von morgen in einer Nachricht, mit dem Namen der Anlage im Titel:
+Der Blueprint **Hinweis am Vortag** fragt nur nach dem Kalender „Negative Preise“ deiner Anlage, deinem Handy (mit der Home-Assistant-App) und der Uhrzeit, vorgegeben 18 Uhr. Dann schaut er jeden Tag zu dieser Uhrzeit in den Kalender und schickt dir alle Zeitfenster ohne Vergütung von morgen in einer Nachricht:
 
-> **Einspeisewacht · Dach: Negative Strompreise morgen**<br>
+> **Einspeisewacht: Negative Strompreise morgen**<br>
 > 11:00–14:30 und 15:00–15:45 Uhr ohne Vergütung.
 
 - Gibt es morgen keine, kommt keine Nachricht.
 - Die Day-Ahead-Preise für morgen sind ab etwa 13 Uhr bekannt. Wählst du eine frühere Uhrzeit, findet er oft noch nichts.
 - Greift die Regel für deine Anlage noch nicht (Kalendereintrag „Negativer Preis (noch vergütet)“), meldet er nichts.
-- Mehrere Anlagen: je Anlage eine Automation aus dem Blueprint anlegen.
+- Mehrere Anlagen: je Anlage eine Automation aus dem Blueprint anlegen. Dann steht der Name der Anlage im Titel, etwa „Einspeisewacht · Dach: Negative Strompreise morgen“.
 - **Sprache** der Nachricht: Deutsch (Vorgabe) oder Englisch („Negative electricity prices tomorrow“, „11:00–14:30 and 15:00–15:45 without remuneration.“).
 - **Handy** ist optional: Ohne Handy geht die Nachricht nur an die weiteren Aktionen.
 - **Weitere Aktionen** (eingeklappt): laufen mit dem fertigen Text; `{{ title }}` und `{{ message }}` stehen bereit. Für Telegram: *Aktion hinzufügen*, nach „Telegram“ suchen, „Nachricht senden“ wählen, als Text `{{ title }}: {{ message }}`, in YAML:
