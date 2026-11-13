@@ -175,6 +175,8 @@ def add_phone(hass: HomeAssistant) -> str:
     ids=["de", "en_two_plants", "en_calendar_de_message_no_phone", "rule_not_yet"],
 )
 @pytest.mark.freeze_time(EVENING - timedelta(minutes=1))
+# The automation's daily time trigger stays scheduled after the test.
+@pytest.mark.parametrize("expected_lingering_timers", [True])
 async def test_day_before(
     hass: HomeAssistant,
     freezer: FrozenDateTimeFactory,

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+from datetime import UTC
 from pathlib import Path
 from typing import Any
 from unittest.mock import patch
@@ -16,6 +17,7 @@ from homeassistant.helpers.template.extensions.config_entries import (
     ConfigEntryExtension,
 )
 from homeassistant.helpers.template.extensions.devices import DeviceExtension
+from homeassistant.util import dt as dt_util
 from homeassistant.util.yaml import load_yaml
 
 from custom_components.einspeisewacht.calendar import TEXTS
@@ -223,6 +225,9 @@ def _render_day_before(
         finally:
             integration.stop()
             device_id.stop()
+            # The time zone is global: leave it as found (UTC), or Home
+            # Assistant's test plugin fails the tests that follow.
+            dt_util.set_default_time_zone(UTC)
             await hass.async_stop(force=True)
 
     return asyncio.run(render())
