@@ -34,7 +34,7 @@ The integration's UI is available in German and English and follows your Home As
 - **Feed-in remunerated / not remunerated** (kWh) and **revenue / lost revenue** (€), with long-term statistics for day, month and year.
 - **Quarter hours without remuneration** in the current year and the resulting **extension** under § 51a EEG: full-load quarter hours and the date your remuneration then runs until.
 - **Remunerated**: binary sensor for automations – charge the battery, the car, or curtail.
-- **Own dashboard card** with remuneration now, the windows today and tomorrow, the year and the last twelve months, no extra cards from HACS.
+- **Own dashboard card** with remuneration now, the windows today and tomorrow, the year and the last twelve months, no extra cards from the Marketplace.
 - **Calendar "Negative prices"** with the windows without remuneration – today and, once the day-ahead forecast is out (usually around 1 pm), tomorrow.
 - **Action "Report"** for any period, by month – also for the time before setup, as far back as your meter's statistics reach.
 - Derives the **applicable rule** from commissioning date, capacity and smart meter, with a manual override if your grid operator settles differently.
@@ -117,7 +117,7 @@ While the rule does not apply yet (e.g. no iMSys), "… if the rule applied" sen
 
 ## Card
 
-Einspeisewacht brings its own card, no extra cards from HACS needed: *Edit dashboard → Add card* and search for "Einspeisewacht". Einspeisewacht adds the dashboard resource itself (*Settings → Dashboards → ⋮ → Resources*, removed again with the last entry; with resources in YAML mode Home Assistant loads the card directly instead).
+Einspeisewacht brings its own card, no extra cards from the Marketplace needed: *Edit dashboard → Add card* and search for "Einspeisewacht". Einspeisewacht adds the dashboard resource itself (*Settings → Dashboards → ⋮ → Resources*, removed again with the last entry; with resources in YAML mode Home Assistant loads the card directly instead).
 
 <img src="https://raw.githubusercontent.com/einspeisewacht/integration/main/assets/screenshots/card.png" alt="Card of a plant: no remuneration now, today 9 am to 5 pm without remuneration, in the year 7.45 euros lost with 116.82 euros revenue and 6 percent not remunerated, tiles for quarter hours without remuneration, extension and end of remuneration, below bars of the feed-in per month, remunerated green and not remunerated magenta" width="420">
 

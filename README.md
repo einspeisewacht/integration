@@ -34,7 +34,7 @@ Die Oberfläche gibt es auf Deutsch und Englisch; sie folgt der Sprache deines H
 - **Einspeisung vergütet / unvergütet** (kWh) und **Erlös / entgangener Erlös** (€) – mit Langzeitstatistik, also auch für Tag, Monat und Jahr.
 - **Viertelstunden ohne Vergütung** im laufenden Jahr und die daraus folgende **Nachholung** nach § 51a EEG: Volllast-Viertelstunden und das Datum, bis zu dem deine Vergütung dann läuft.
 - **Vergütung aktiv**: Binärsensor für Automationen – Speicher laden, Wallbox, Abregeln.
-- **Eigene Dashboard-Karte** mit Vergütung jetzt, Zeitfenstern heute und morgen, dem Jahr und den letzten zwölf Monaten, ohne Zusatzkarten aus HACS.
+- **Eigene Dashboard-Karte** mit Vergütung jetzt, Zeitfenstern heute und morgen, dem Jahr und den letzten zwölf Monaten, ohne Zusatzkarten aus dem Marketplace.
 - **Kalender „Negative Preise“** mit den Zeitfenstern ohne Vergütung – heute und, sobald die Day-Ahead-Prognose da ist (meist ab etwa 13 Uhr), morgen.
 - **Aktion „Bericht“** für einen frei wählbaren Zeitraum, je Monat aufgeschlüsselt – auch für die Zeit vor der Einrichtung, soweit die Statistik deines Zählers zurückreicht.
 - Leitet die **geltende Regel** aus Inbetriebnahme, Leistung und Smart Meter ab – mit manueller Übersteuerung, falls dein Netzbetreiber anders abrechnet.
@@ -121,7 +121,7 @@ Tages-, Monats- und Jahreswerte: Die Summen-Sensoren haben Langzeitstatistik –
 
 ## Karte
 
-Einspeisewacht bringt eine eigene Karte mit, ganz ohne Zusatzkarten aus HACS: *Dashboard bearbeiten → Karte hinzufügen* und nach „Einspeisewacht“ suchen. Die Dashboard-Ressource trägt Einspeisewacht selbst ein (*Einstellungen → Dashboards → ⋮ → Ressourcen*, beim Entfernen des letzten Eintrags wieder ausgetragen; bei Ressourcen im YAML-Modus lädt Home Assistant die Karte stattdessen direkt).
+Einspeisewacht bringt eine eigene Karte mit, ganz ohne Zusatzkarten aus dem Marketplace: *Dashboard bearbeiten → Karte hinzufügen* und nach „Einspeisewacht“ suchen. Die Dashboard-Ressource trägt Einspeisewacht selbst ein (*Einstellungen → Dashboards → ⋮ → Ressourcen*, beim Entfernen des letzten Eintrags wieder ausgetragen; bei Ressourcen im YAML-Modus lädt Home Assistant die Karte stattdessen direkt).
 
 <img src="https://raw.githubusercontent.com/einspeisewacht/integration/main/assets/screenshots/karte.png" alt="Karte einer Anlage: jetzt keine Vergütung, heute 9 bis 17 Uhr ohne Vergütung, im Jahr 7,45 Euro entgangen bei 116,82 Euro Erlös und 6 Prozent unvergütet, Kacheln für Viertelstunden ohne Vergütung, Nachholung und Vergütung bis, darunter Säulen der Einspeisung je Monat, vergütet grün und unvergütet magenta" width="420">
 
