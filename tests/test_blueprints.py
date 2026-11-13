@@ -13,10 +13,14 @@ from homeassistant.components.automation.config import AUTOMATION_BLUEPRINT_SCHE
 from homeassistant.components.blueprint.models import Blueprint
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.template import Template
-from homeassistant.helpers.template.extensions.config_entries import (
-    ConfigEntryExtension,
-)
-from homeassistant.helpers.template.extensions.devices import DeviceExtension
+
+try:  # template extensions as modules: newer than HA 2026.3 (compat job)
+    from homeassistant.helpers.template.extensions.config_entries import (
+        ConfigEntryExtension,
+    )
+    from homeassistant.helpers.template.extensions.devices import DeviceExtension
+except ImportError:  # pragma: no cover - only on the oldest supported HA
+    ConfigEntryExtension = DeviceExtension = None
 from homeassistant.util import dt as dt_util
 from homeassistant.util.yaml import load_yaml
 
@@ -171,6 +175,9 @@ def _render_day_before(
             "Pixel 8" if (device_id, attr) == ("phone_id", "name") else None
         ),
     }
+
+    if ConfigEntryExtension is None or DeviceExtension is None:
+        pytest.skip("template extensions as modules need a newer Home Assistant")
 
     async def render() -> dict[str, Any] | None:
         hass = HomeAssistant(str(Path(__file__).parent))
