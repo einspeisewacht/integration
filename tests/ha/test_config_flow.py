@@ -630,8 +630,37 @@ async def test_tarifwacht_first_then_the_others(hass: HomeAssistant) -> None:
     hass.states.async_set("sensor.other", "1.0", METER_ATTRIBUTES)
     with energy_prefs(hass, prefs):
         result = await to_sources(hass)
-    assert result["step_id"] == "sources_tarifwacht"
+    # The hint names Tarifwacht for the meter only.
+    assert result["step_id"] == "sources_tarifwacht_meter"
+    assert result["description_placeholders"]["tarifwacht"] == "Haus"
     assert suggested(result) == {"meter_entity": METER, "price_entity": market}
+    result = await configure(hass, result, SOURCES)
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+
+
+async def test_tarifwacht_price_meter_from_energy_dashboard(
+    hass: HomeAssistant,
+) -> None:
+    """Tarifwacht gives the price only: the meter comes from the energy
+    dashboard, and the hint says so."""
+    add_tarifwacht(hass, MARKET_TARIFF)
+    prefs = {"energy_sources": [{"type": "grid", "stat_energy_to": METER}]}
+    with energy_prefs(hass, prefs):
+        result = await to_sources(hass)
+    assert result["step_id"] == "sources_tarifwacht_price"
+    assert result["description_placeholders"]["tarifwacht"] == "Haus"
+    assert suggested(result) == {"meter_entity": METER, "price_entity": PRICE}
+    result = await configure(hass, result, SOURCES)
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+
+
+async def test_tarifwacht_price_and_nothing_else(hass: HomeAssistant) -> None:
+    """Tarifwacht gives the price, nothing else has a meter: the hint names
+    Tarifwacht, the meter stays empty."""
+    add_tarifwacht(hass, MARKET_TARIFF)
+    result = await to_sources(hass)
+    assert result["step_id"] == "sources_tarifwacht"
+    assert suggested(result) == {"price_entity": PRICE}
 
 
 async def test_unavailable_price_sensor(hass: HomeAssistant) -> None:

@@ -84,7 +84,12 @@ def test_sources_steps_differ_only_in_the_tarifwacht_hint() -> None:
     for name in ("strings.json", "translations/de.json"):
         steps = load(INTEGRATION / name)["config"]["step"]
         plain = dict(steps["sources"])
-        for variant in ("sources_tarifwacht", "sources_tarifwacht_tip"):
+        for variant in (
+            "sources_tarifwacht",
+            "sources_tarifwacht_meter",
+            "sources_tarifwacht_price",
+            "sources_tarifwacht_tip",
+        ):
             other = dict(steps[variant])
             assert other.pop("description").startswith(plain["description"])
             assert other == {k: v for k, v in plain.items() if k != "description"}

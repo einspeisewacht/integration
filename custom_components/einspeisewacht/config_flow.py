@@ -74,9 +74,13 @@ FEED_IN_TARIFF_LIMIT_KW = 100
 # no section for capacity bands.
 SINGLE_BAND_KW = PARTIAL_BANDS[0]
 # Hint of the sources step at setup: values taken from Tarifwacht, or a tip
-# when it has none (own step ids, own texts).
+# when it has none (own step ids, own texts). When Tarifwacht gives one field
+# and the energy dashboard or EPEX Spot the other, the hint says which is which.
 HINT_TARIFWACHT = "tarifwacht"
+HINT_TARIFWACHT_METER = "tarifwacht_meter"  # meter from Tarifwacht, price EPEX
+HINT_TARIFWACHT_PRICE = "tarifwacht_price"  # price from Tarifwacht, meter energy
 HINT_TARIFWACHT_TIP = "tarifwacht_tip"
+HINTS_FROM_TARIFWACHT = (HINT_TARIFWACHT, HINT_TARIFWACHT_METER, HINT_TARIFWACHT_PRICE)
 # Selector translations that the flow uses as texts (overview, rule, notes),
 # under the names `overview.build` expects.
 TEXT_PREFIXES = {
@@ -347,7 +351,7 @@ class EinspeisewachtConfigFlow(ConfigFlow, domain=DOMAIN):
         )
         auto = derived_from_config({**self._data, CONF_OVERRIDE: OVERRIDE_AUTO})
         placeholders = await self._rule_placeholders(auto)
-        if self._hint == HINT_TARIFWACHT:
+        if self._hint in HINTS_FROM_TARIFWACHT:
             placeholders["tarifwacht"] = self._tarifwacht_title
         elif self._hint == HINT_TARIFWACHT_TIP:
             placeholders["tarifwacht_url"] = TARIFWACHT_URL
@@ -372,6 +376,19 @@ class EinspeisewachtConfigFlow(ConfigFlow, domain=DOMAIN):
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Step 3, with the sources taken from Tarifwacht."""
+        return await self.async_step_sources(user_input)
+
+    async def async_step_sources_tarifwacht_meter(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Step 3, the meter from Tarifwacht, the price from EPEX Spot."""
+        return await self.async_step_sources(user_input)
+
+    async def async_step_sources_tarifwacht_price(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Step 3, the price from Tarifwacht, the meter from the energy
+        dashboard."""
         return await self.async_step_sources(user_input)
 
     async def async_step_sources_tarifwacht_tip(
@@ -402,7 +419,9 @@ class EinspeisewachtConfigFlow(ConfigFlow, domain=DOMAIN):
 
     async def _async_suggest_others(self) -> None:
         """What Tarifwacht did not give: the grid export of the energy
-        dashboard as meter, EPEX Spot's market price as price sensor."""
+        dashboard as meter, EPEX Spot's market price as price sensor. When
+        one of them fills the field Tarifwacht left empty, the hint says so
+        instead of naming Tarifwacht for both."""
         suggested = self._suggested if self._suggested is not None else {}
         if CONF_METER not in suggested and (
             meter := await async_suggested_meter(
@@ -410,8 +429,12 @@ class EinspeisewachtConfigFlow(ConfigFlow, domain=DOMAIN):
             )
         ):
             suggested[CONF_METER] = meter
+            if self._hint == HINT_TARIFWACHT:
+                self._hint = HINT_TARIFWACHT_PRICE
         if CONF_PRICE not in suggested and (price := suggested_price(self.hass)):
             suggested[CONF_PRICE] = price
+            if self._hint == HINT_TARIFWACHT:
+                self._hint = HINT_TARIFWACHT_METER
         self._suggested = suggested
 
     def _follow_renames(self, meter: str, price: str) -> tuple[str, str]:

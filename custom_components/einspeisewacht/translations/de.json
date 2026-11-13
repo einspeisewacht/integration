@@ -126,6 +126,60 @@
           }
         }
       },
+      "sources_tarifwacht_meter": {
+        "title": "Datenquellen und Regel",
+        "description": "**Regel nach deinen Angaben:** {rule}\n**Vergütung:** {rate} ct/kWh\n\n{note}\n\nEinspeisewacht liest die Entitäten unten nur.\n\nEinspeisezähler aus Tarifwacht „{tarifwacht}“ vorbelegt, Day-Ahead-Preis von EPEX Spot – bitte prüfen.",
+        "data": {
+          "meter_entity": "Einspeisezähler",
+          "price_entity": "Day-Ahead-Preis",
+          "backfill_smard": "SMARD.de nutzen: frühere Viertelstunden nachzählen, fehlende Preise ersetzen"
+        },
+        "data_description": {
+          "meter_entity": "Ins Netz eingespeiste Energie (Wh, kWh oder MWh, fortlaufend). Am besten der Zähler am Netzanschlusspunkt.",
+          "price_entity": "Ein Sensor mit der Day-Ahead-Preisprognose je Viertelstunde, z. B. aus der Integration EPEX Spot.",
+          "backfill_smard": "Über das Internet, öffentliche Day-Ahead-Preise der Bundesnetzagentur (SMARD.de, CC BY 4.0): einmalig seit der Inbetriebnahme, damit die Nachholung (§ 51a EEG) auch die Zeit vor der Einrichtung erfasst – und für Viertelstunden, die der Preissensor länger als eine Stunde schuldig bleibt. Ohne diese Option beginnt die Zählung jetzt."
+        },
+        "sections": {
+          "rule": {
+            "name": "Rechnet dein Netzbetreiber anders ab?",
+            "description": "Nur nötig, wenn die Abrechnung nicht der Regel oben folgt.",
+            "data": {
+              "override": "Regel",
+              "override_date": "Jede negative Viertelstunde ab"
+            },
+            "data_description": {
+              "override_date": "Nur für „Jede negative Viertelstunde ab einem Datum“."
+            }
+          }
+        }
+      },
+      "sources_tarifwacht_price": {
+        "title": "Datenquellen und Regel",
+        "description": "**Regel nach deinen Angaben:** {rule}\n**Vergütung:** {rate} ct/kWh\n\n{note}\n\nEinspeisewacht liest die Entitäten unten nur.\n\nDay-Ahead-Preis aus Tarifwacht „{tarifwacht}“ vorbelegt, Einspeisezähler aus dem Energie-Dashboard – bitte prüfen.",
+        "data": {
+          "meter_entity": "Einspeisezähler",
+          "price_entity": "Day-Ahead-Preis",
+          "backfill_smard": "SMARD.de nutzen: frühere Viertelstunden nachzählen, fehlende Preise ersetzen"
+        },
+        "data_description": {
+          "meter_entity": "Ins Netz eingespeiste Energie (Wh, kWh oder MWh, fortlaufend). Am besten der Zähler am Netzanschlusspunkt.",
+          "price_entity": "Ein Sensor mit der Day-Ahead-Preisprognose je Viertelstunde, z. B. aus der Integration EPEX Spot.",
+          "backfill_smard": "Über das Internet, öffentliche Day-Ahead-Preise der Bundesnetzagentur (SMARD.de, CC BY 4.0): einmalig seit der Inbetriebnahme, damit die Nachholung (§ 51a EEG) auch die Zeit vor der Einrichtung erfasst – und für Viertelstunden, die der Preissensor länger als eine Stunde schuldig bleibt. Ohne diese Option beginnt die Zählung jetzt."
+        },
+        "sections": {
+          "rule": {
+            "name": "Rechnet dein Netzbetreiber anders ab?",
+            "description": "Nur nötig, wenn die Abrechnung nicht der Regel oben folgt.",
+            "data": {
+              "override": "Regel",
+              "override_date": "Jede negative Viertelstunde ab"
+            },
+            "data_description": {
+              "override_date": "Nur für „Jede negative Viertelstunde ab einem Datum“."
+            }
+          }
+        }
+      },
       "sources_tarifwacht_tip": {
         "title": "Datenquellen und Regel",
         "description": "**Regel nach deinen Angaben:** {rule}\n**Vergütung:** {rate} ct/kWh\n\n{note}\n\nEinspeisewacht liest die Entitäten unten nur.\n\nTipp: [Tarifwacht]({tarifwacht_url}) vergleicht deine Stromtarife mit denselben Zählern. Ist es eingerichtet, übernimmt Einspeisewacht die Felder von dort.",

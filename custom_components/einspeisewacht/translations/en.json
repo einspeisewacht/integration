@@ -126,6 +126,60 @@
           }
         }
       },
+      "sources_tarifwacht_meter": {
+        "title": "Data sources and rule",
+        "description": "**Rule from your details:** {rule}\n**Remuneration:** {rate} ct/kWh\n\n{note}\n\nEinspeisewacht only reads the entities below.\n\nGrid feed-in meter prefilled from Tarifwacht \"{tarifwacht}\", day-ahead price from EPEX Spot – please check.",
+        "data": {
+          "meter_entity": "Grid feed-in meter",
+          "price_entity": "Day-ahead price",
+          "backfill_smard": "Use SMARD.de: count earlier quarter hours, fill in missing prices"
+        },
+        "data_description": {
+          "meter_entity": "Energy exported to the grid (Wh, kWh or MWh, cumulative). Best: the meter at the grid connection point.",
+          "price_entity": "A sensor with the day-ahead price forecast per quarter hour, e.g. from the EPEX Spot integration.",
+          "backfill_smard": "Over the internet, public day-ahead prices of the Bundesnetzagentur (SMARD.de, CC BY 4.0): once since commissioning, so that the extension (§ 51a EEG) also covers the time before setup – and for quarter hours the price sensor leaves open for more than an hour. Without it, counting starts now."
+        },
+        "sections": {
+          "rule": {
+            "name": "Does your grid operator settle differently?",
+            "description": "Only needed if the statement does not follow the rule above.",
+            "data": {
+              "override": "Rule",
+              "override_date": "Every negative quarter hour from"
+            },
+            "data_description": {
+              "override_date": "Only for “Every negative quarter hour from a date”."
+            }
+          }
+        }
+      },
+      "sources_tarifwacht_price": {
+        "title": "Data sources and rule",
+        "description": "**Rule from your details:** {rule}\n**Remuneration:** {rate} ct/kWh\n\n{note}\n\nEinspeisewacht only reads the entities below.\n\nDay-ahead price prefilled from Tarifwacht \"{tarifwacht}\", grid feed-in meter from the energy dashboard – please check.",
+        "data": {
+          "meter_entity": "Grid feed-in meter",
+          "price_entity": "Day-ahead price",
+          "backfill_smard": "Use SMARD.de: count earlier quarter hours, fill in missing prices"
+        },
+        "data_description": {
+          "meter_entity": "Energy exported to the grid (Wh, kWh or MWh, cumulative). Best: the meter at the grid connection point.",
+          "price_entity": "A sensor with the day-ahead price forecast per quarter hour, e.g. from the EPEX Spot integration.",
+          "backfill_smard": "Over the internet, public day-ahead prices of the Bundesnetzagentur (SMARD.de, CC BY 4.0): once since commissioning, so that the extension (§ 51a EEG) also covers the time before setup – and for quarter hours the price sensor leaves open for more than an hour. Without it, counting starts now."
+        },
+        "sections": {
+          "rule": {
+            "name": "Does your grid operator settle differently?",
+            "description": "Only needed if the statement does not follow the rule above.",
+            "data": {
+              "override": "Rule",
+              "override_date": "Every negative quarter hour from"
+            },
+            "data_description": {
+              "override_date": "Only for “Every negative quarter hour from a date”."
+            }
+          }
+        }
+      },
       "sources_tarifwacht_tip": {
         "title": "Data sources and rule",
         "description": "**Rule from your details:** {rule}\n**Remuneration:** {rate} ct/kWh\n\n{note}\n\nEinspeisewacht only reads the entities below.\n\nTip: [Tarifwacht]({tarifwacht_url}) compares your electricity tariffs using the same meters. Once it is set up, Einspeisewacht takes these fields from there.",
