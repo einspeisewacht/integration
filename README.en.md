@@ -63,8 +63,8 @@ Sources and details (German): [docs/ENTWICKLUNG.md](docs/ENTWICKLUNG.md), sectio
 ## Requirements
 
 - Home Assistant 2026.3 or newer.
-- A **feed-in meter**: cumulative energy sensor (Wh, kWh or MWh, `state_class` `total` or `total_increasing`) – ideally the meter at the grid connection point.
-- A **price sensor** with a day-ahead forecast per quarter hour, e.g. from the [EPEX Spot](https://github.com/mampfes/ha_epex_spot) integration (source SMARD.de, market DE-LU). The `data` attribute of EPEX Spot is tested. Without a forecast attribute the current state counts as the price of the running quarter hour – prices are then missing for times Home Assistant was off, and if the sensor updates only minutes after the quarter-hour boundary, the old value applies until then.
+- A **feed-in meter**: cumulative energy sensor (Wh, kWh or MWh, `state_class` `total` or `total_increasing`) – ideally the meter at the grid connection point, e.g. a smart meter of the inverter maker.
+- A **price sensor** with a day-ahead forecast per quarter hour, e.g. from the [EPEX Spot](https://github.com/mampfes/ha_epex_spot) integration (source SMARD.de, market DE-LU). The `data` attribute of EPEX Spot is tested. Without a forecast attribute the current state counts as the price of the running quarter hour – prices are then missing for times Home Assistant was off, and if the sensor updates only minutes after the quarter-hour boundary, the old value applies until then. Using another price source (Nord Pool, Tibber, ENTSO-E …), or is your sensor not suggested? Feel free to let me know ([Reporting issues](#reporting-issues)); with the diagnostics file it can be added.
 
 <img src="https://raw.githubusercontent.com/einspeisewacht/integration/main/assets/screenshots/integration.png" alt="Einspeisewacht with two entries" width="620">
 
@@ -188,7 +188,7 @@ data:
   start: "2026-01-01"
 ```
 
-It computes like the report and writes the hours **before** the first existing statistic into the long-term statistics of the four total sensors; later sums are shifted to match. Requires the SMARD option (its download finished) and at least one hour of statistics for the sensors. [Implausible hours](#report-for-a-period) of the meter are not imported and are listed in the response under `hours_implausible`. **This changes the statistics database – make a backup first.** A second call finds nothing left to import.
+It computes like the report and writes the hours **before** the first existing statistic into the long-term statistics of "Feed-in remunerated/not remunerated", "Revenue" and "Lost revenue"; later sums are shifted to match. Requires the SMARD option (its download finished) and at least one hour of statistics for the sensors. [Implausible hours](#report-for-a-period) of the meter are not imported and are listed in the response under `hours_implausible`. **This changes the statistics database – make a backup first.** A second call finds nothing left to import.
 
 ## Recalculate statistics
 
@@ -282,7 +282,6 @@ cards:
 ```
 
 </details>
-
 
 ### Ready-made blueprints
 
