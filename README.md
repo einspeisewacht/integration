@@ -34,6 +34,7 @@ Die Oberfläche gibt es auf Deutsch und Englisch; sie folgt der Sprache deines H
 - **Einspeisung vergütet / unvergütet** (kWh) und **Erlös / entgangener Erlös** (€) – mit Langzeitstatistik, also auch für Tag, Monat und Jahr.
 - **Viertelstunden ohne Vergütung** im laufenden Jahr und die daraus folgende **Nachholung** nach § 51a EEG: Volllast-Viertelstunden und das Datum, bis zu dem deine Vergütung dann läuft.
 - **Vergütung aktiv**: Binärsensor für Automationen – Speicher laden, Wallbox, Abregeln.
+- **Zwei Blueprints:** am Vortag eine Nachricht aufs Handy, wann es morgen keine Vergütung gibt, und eigene Aktionen, sobald die Vergütung entfällt oder wieder gezahlt wird ([mehr](#fertige-blueprints)).
 - **Eigene Dashboard-Karte** mit Vergütung jetzt, Zeitfenstern heute und morgen, dem Jahr und den letzten zwölf Monaten, ohne Zusatzkarten aus dem Marketplace.
 - **Kalender „Negative Preise“** mit den Zeitfenstern ohne Vergütung – heute und, sobald die Day-Ahead-Prognose da ist (meist ab etwa 13 Uhr), morgen.
 - **Aktion „Bericht“** für einen frei wählbaren Zeitraum, je Monat aufgeschlüsselt – auch für die Zeit vor der Einrichtung, soweit die Statistik deines Zählers zurückreicht.

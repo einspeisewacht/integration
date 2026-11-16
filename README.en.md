@@ -34,6 +34,7 @@ The integration's UI is available in German and English and follows your Home As
 - **Feed-in remunerated / not remunerated** (kWh) and **revenue / lost revenue** (€), with long-term statistics for day, month and year.
 - **Quarter hours without remuneration** in the current year and the resulting **extension** under § 51a EEG: full-load quarter hours and the date your remuneration then runs until.
 - **Remunerated**: binary sensor for automations – charge the battery, the car, or curtail.
+- **Two blueprints:** a message to your phone the day before when there is no remuneration tomorrow, and your own actions as soon as remuneration stops or resumes ([more](#examples)).
 - **Own dashboard card** with remuneration now, the windows today and tomorrow, the year and the last twelve months, no extra cards from the Marketplace.
 - **Calendar "Negative prices"** with the windows without remuneration – today and, once the day-ahead forecast is out (usually around 1 pm), tomorrow.
 - **Action "Report"** for any period, by month – also for the time before setup, as far back as your meter's statistics reach.
