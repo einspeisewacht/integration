@@ -34,7 +34,7 @@ The integration's UI is available in German and English and follows your Home As
 - **Feed-in remunerated / not remunerated** (kWh) and **revenue / lost revenue** (€), with long-term statistics for day, month and year.
 - **Quarter hours without remuneration** in the current year and the resulting **extension** under § 51a EEG: full-load quarter hours and the date your remuneration then runs until.
 - **Remunerated**: binary sensor for automations – charge the battery, the car, or curtail.
-- **Two blueprints:** a message to your phone the day before when there is no remuneration tomorrow, and your own actions as soon as remuneration stops or resumes ([more](#examples)).
+- **Two blueprints:** a message to your phone the day before when there is no remuneration tomorrow, and your own actions as soon as remuneration stops or resumes ([more](#ready-made-blueprints)).
 - **Own dashboard card** with remuneration now, the windows today and tomorrow, the year and the last twelve months, no extra cards from the Marketplace.
 - **Calendar "Negative prices"** with the windows without remuneration – today and, once the day-ahead forecast is out (usually around 1 pm), tomorrow.
 - **Action "Report"** for any period, by month – also for the time before setup, as far back as your meter's statistics reach.
@@ -65,6 +65,8 @@ Sources and details (German): [docs/ENTWICKLUNG.md](docs/ENTWICKLUNG.md), sectio
 - Home Assistant 2026.3 or newer.
 - A **feed-in meter**: cumulative energy sensor (Wh, kWh or MWh, `state_class` `total` or `total_increasing`) – ideally the meter at the grid connection point.
 - A **price sensor** with a day-ahead forecast per quarter hour, e.g. from the [EPEX Spot](https://github.com/mampfes/ha_epex_spot) integration (source SMARD.de, market DE-LU). The `data` attribute of EPEX Spot is tested. Without a forecast attribute the current state counts as the price of the running quarter hour – prices are then missing for times Home Assistant was off, and if the sensor updates only minutes after the quarter-hour boundary, the old value applies until then.
+
+<img src="https://raw.githubusercontent.com/einspeisewacht/integration/main/assets/screenshots/integration.png" alt="Einspeisewacht with two entries" width="620">
 
 ## Installation
 
@@ -116,6 +118,8 @@ If you rename the feed-in meter or the price sensor in Home Assistant (new entit
 
 While the rule does not apply yet (e.g. no iMSys), "… if the rule applied" sensors are added and the extension sensors are left out.
 
+Daily, monthly and yearly values: the total sensors have long-term statistics – e.g. with the statistics card (period "month", statistic "change"); Einspeisewacht brings its own [card](#card) for this.
+
 ## Card
 
 Einspeisewacht brings its own card, no extra cards from the Marketplace needed: *Edit dashboard → Add card* and search for "Einspeisewacht". Einspeisewacht adds the dashboard resource itself (*Settings → Dashboards → ⋮ → Resources*, removed again with the last entry; with resources in YAML mode Home Assistant loads the card directly instead).
@@ -147,6 +151,26 @@ data:
   config_entry_id: <choose entry>
   start: "2026-01-01"
   end: "2026-12-31"
+```
+
+Example response (shortened, made-up values):
+
+```yaml
+plant: Roof
+rule: quarter_hour
+rate_ct_per_kwh: 7.94
+energy_paid_kwh: 1800.0
+energy_unpaid_kwh: 900.0
+revenue_eur: 142.92
+revenue_lost_eur: 71.46
+negative_quarter_hours: 1860
+months:
+  - month: 2026-04
+    energy_paid_kwh: 120.0
+    energy_unpaid_kwh: 210.0
+    ...
+gaps:
+  quarter_hours_without_price: 0
 ```
 
 The response holds kWh remunerated and not, revenue, lost revenue and the negative quarter hours – in total and by month. It is based on your feed-in meter's long-term statistics (hourly values spread evenly over the four quarter hours – exact when all four end the same way, a close estimate otherwise). Quarter hours without a known price count as remunerated and are listed under `gaps` – including time Home Assistant was off for more than 14 days; with the SMARD option, prices reach back to commissioning.
@@ -260,8 +284,25 @@ cards:
 </details>
 
 
-**Blueprint "notice the day before" (Hinweis am Vortag):** asks for the calendar "Negative prices" of your plant, your phone (with the Home Assistant app) and a time (18:00 by default). At that time it sends one notification with all of tomorrow's windows without remuneration, such as "Einspeisewacht: Negative electricity prices tomorrow" and "11:00–14:30 and 15:00–15:45 without remuneration.", and nothing if there are none. With several plants, create one automation per plant; the title then names the plant, such as "Einspeisewacht · Roof: …". The message comes in German (default) or English. Tomorrow's day-ahead prices are known from about 13:00, so pick a time in the afternoon or evening. [![Import blueprint](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Feinspeisewacht%2Fintegration%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Feinspeisewacht%2Fhinweis_am_vortag.yaml)
+### Ready-made blueprints
 
+| Blueprint | What it does | |
+|---|---|---|
+| **Notice the day before** (Hinweis am Vortag) | sends a message to your phone in the evening when there is no remuneration tomorrow ([more](#notice-the-day-before)) | [![Import blueprint](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Feinspeisewacht%2Fintegration%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Feinspeisewacht%2Fhinweis_am_vortag.yaml) |
+| **Switch on negative prices** | runs your own actions as soon as remuneration stops (e.g. charge the battery, switch on the wallbox, curtail) and others as soon as it is paid again | [![Import blueprint](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Feinspeisewacht%2Fintegration%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Feinspeisewacht%2Fvergutung_aus_an.yaml) |
+
+### Notice the day before
+
+The blueprint **Notice the day before** only asks for the calendar "Negative prices" of your plant, your phone (with the Home Assistant app) and the time, 18:00 by default. Every day at that time it looks into the calendar and sends you all of tomorrow's windows without remuneration in one message:
+
+> **Einspeisewacht: Negative electricity prices tomorrow**<br>
+> 11:00–14:30 and 15:00–15:45 without remuneration.
+
+- If there are none tomorrow, no message comes.
+- Tomorrow's day-ahead prices are known from about 13:00. If you pick an earlier time, it often finds nothing yet.
+- If the rule does not apply to your plant yet (calendar entry "Negative price (still remunerated)"), it reports nothing.
+- Several plants: create one automation from the blueprint per plant. The title then names the plant, such as "Einspeisewacht · Roof: Negative electricity prices tomorrow".
+- **Language** of the message: German (default) or English.
 - The **phone** is optional: without one, the message only goes to the more actions.
 - **More actions** (collapsed): run with the finished text; `{{ title }}` and `{{ message }}` are ready to use. For Telegram: *Add action*, search for "Telegram", pick "Send message", with the text `{{ title }}: {{ message }}`, in YAML:
 
@@ -271,7 +312,7 @@ cards:
       message: "{{ title }}: {{ message }}"
   ```
 
-**Blueprint "switch on negative prices":** runs your own actions when remuneration stops (charge the battery, switch on the wallbox, curtail) and others when it resumes. [![Import blueprint](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Feinspeisewacht%2Fintegration%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Feinspeisewacht%2Fvergutung_aus_an.yaml)
+### Charge the battery while there is no remuneration (as your own automation)
 
 ```yaml
 alias: Charge the battery while there is no remuneration

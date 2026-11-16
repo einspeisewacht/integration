@@ -1,0 +1,8 @@
+{
+  "replace": {
+    "Demo-erfundene_Daten": "Demo-sample_data",
+    "<HA-Adresse>": "<HA address>",
+    "screenshots/karte.png": "screenshots/card.png",
+    "Einspeisewacht/<Version>": "Einspeisewacht/<version>"
+  }
+}
