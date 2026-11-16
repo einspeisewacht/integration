@@ -1,5 +1,11 @@
 # Changelog
 
+## Unveröffentlicht
+
+### Geändert
+
+- **Hinweis zum Melden in der Einrichtung.** Der Schritt „Datenquellen und Regel“ sagt jetzt, wohin man sich wenden kann, wenn der eigene Preissensor oder Zähler nicht vorgeschlagen wird oder nicht passt.
+
 ## 0.3.0 – 2026-11-13
 
 ### Neu

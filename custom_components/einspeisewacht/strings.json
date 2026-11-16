@@ -74,7 +74,7 @@
       },
       "sources": {
         "title": "Data sources and rule",
-        "description": "**Rule from your details:** {rule}\n**Remuneration:** {rate} ct/kWh\n\n{note}\n\nEinspeisewacht only reads the entities below.",
+        "description": "**Rule from your details:** {rule}\n**Remuneration:** {rate} ct/kWh\n\n{note}\n\nEinspeisewacht only reads the entities below. Your price sensor or meter is not suggested or does not fit? Feel free to let us know ([issue]({issues_url})), then Einspeisewacht will recognise it in future.",
         "data": {
           "meter_entity": "Grid feed-in meter",
           "price_entity": "Day-ahead price",
@@ -101,7 +101,7 @@
       },
       "sources_tarifwacht": {
         "title": "Data sources and rule",
-        "description": "**Rule from your details:** {rule}\n**Remuneration:** {rate} ct/kWh\n\n{note}\n\nEinspeisewacht only reads the entities below.\n\nPrefilled from Tarifwacht \"{tarifwacht}\" – please check.",
+        "description": "**Rule from your details:** {rule}\n**Remuneration:** {rate} ct/kWh\n\n{note}\n\nEinspeisewacht only reads the entities below. Your price sensor or meter is not suggested or does not fit? Feel free to let us know ([issue]({issues_url})), then Einspeisewacht will recognise it in future.\n\nPrefilled from Tarifwacht \"{tarifwacht}\" – please check.",
         "data": {
           "meter_entity": "Grid feed-in meter",
           "price_entity": "Day-ahead price",
@@ -128,7 +128,7 @@
       },
       "sources_tarifwacht_meter": {
         "title": "Data sources and rule",
-        "description": "**Rule from your details:** {rule}\n**Remuneration:** {rate} ct/kWh\n\n{note}\n\nEinspeisewacht only reads the entities below.\n\nGrid feed-in meter prefilled from Tarifwacht \"{tarifwacht}\", day-ahead price from EPEX Spot – please check.",
+        "description": "**Rule from your details:** {rule}\n**Remuneration:** {rate} ct/kWh\n\n{note}\n\nEinspeisewacht only reads the entities below. Your price sensor or meter is not suggested or does not fit? Feel free to let us know ([issue]({issues_url})), then Einspeisewacht will recognise it in future.\n\nGrid feed-in meter prefilled from Tarifwacht \"{tarifwacht}\", day-ahead price from EPEX Spot – please check.",
         "data": {
           "meter_entity": "Grid feed-in meter",
           "price_entity": "Day-ahead price",
@@ -155,7 +155,7 @@
       },
       "sources_tarifwacht_price": {
         "title": "Data sources and rule",
-        "description": "**Rule from your details:** {rule}\n**Remuneration:** {rate} ct/kWh\n\n{note}\n\nEinspeisewacht only reads the entities below.\n\nDay-ahead price prefilled from Tarifwacht \"{tarifwacht}\", grid feed-in meter from the energy dashboard – please check.",
+        "description": "**Rule from your details:** {rule}\n**Remuneration:** {rate} ct/kWh\n\n{note}\n\nEinspeisewacht only reads the entities below. Your price sensor or meter is not suggested or does not fit? Feel free to let us know ([issue]({issues_url})), then Einspeisewacht will recognise it in future.\n\nDay-ahead price prefilled from Tarifwacht \"{tarifwacht}\", grid feed-in meter from the energy dashboard – please check.",
         "data": {
           "meter_entity": "Grid feed-in meter",
           "price_entity": "Day-ahead price",
@@ -182,7 +182,7 @@
       },
       "sources_tarifwacht_tip": {
         "title": "Data sources and rule",
-        "description": "**Rule from your details:** {rule}\n**Remuneration:** {rate} ct/kWh\n\n{note}\n\nEinspeisewacht only reads the entities below.\n\nTip: [Tarifwacht]({tarifwacht_url}) compares your electricity tariffs using the same meters. Once it is set up, Einspeisewacht takes these fields from there.",
+        "description": "**Rule from your details:** {rule}\n**Remuneration:** {rate} ct/kWh\n\n{note}\n\nEinspeisewacht only reads the entities below. Your price sensor or meter is not suggested or does not fit? Feel free to let us know ([issue]({issues_url})), then Einspeisewacht will recognise it in future.\n\nTip: [Tarifwacht]({tarifwacht_url}) compares your electricity tariffs using the same meters. Once it is set up, Einspeisewacht takes these fields from there.",
         "data": {
           "meter_entity": "Grid feed-in meter",
           "price_entity": "Day-ahead price",

@@ -131,6 +131,10 @@ async def test_full_flow_single_rate(hass: HomeAssistant) -> None:
     assert placeholders["rule"].endswith(", from 2026-01-01")
     assert placeholders["rate"] == "7.94"
     assert placeholders["note"] == ""
+    # Where to report a price sensor or meter not found.
+    assert placeholders["issues_url"] == (
+        "https://github.com/einspeisewacht/integration/issues"
+    )
     result = await configure(hass, result, SOURCES)
     assert result["type"] is FlowResultType.CREATE_ENTRY
     assert result["title"] == "Dach"

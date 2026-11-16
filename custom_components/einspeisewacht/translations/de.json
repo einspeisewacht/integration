@@ -74,7 +74,7 @@
       },
       "sources": {
         "title": "Datenquellen und Regel",
-        "description": "**Regel nach deinen Angaben:** {rule}\n**Vergütung:** {rate} ct/kWh\n\n{note}\n\nEinspeisewacht liest die Entitäten unten nur.",
+        "description": "**Regel nach deinen Angaben:** {rule}\n**Vergütung:** {rate} ct/kWh\n\n{note}\n\nEinspeisewacht liest die Entitäten unten nur. Dein Preissensor oder Zähler wird nicht vorgeschlagen oder passt nicht? Gib gern Bescheid ([Issue]({issues_url})), dann erkennt Einspeisewacht ihn künftig.",
         "data": {
           "meter_entity": "Einspeisezähler",
           "price_entity": "Day-Ahead-Preis",
@@ -101,7 +101,7 @@
       },
       "sources_tarifwacht": {
         "title": "Datenquellen und Regel",
-        "description": "**Regel nach deinen Angaben:** {rule}\n**Vergütung:** {rate} ct/kWh\n\n{note}\n\nEinspeisewacht liest die Entitäten unten nur.\n\nVorbelegt aus Tarifwacht „{tarifwacht}“ – bitte prüfen.",
+        "description": "**Regel nach deinen Angaben:** {rule}\n**Vergütung:** {rate} ct/kWh\n\n{note}\n\nEinspeisewacht liest die Entitäten unten nur. Dein Preissensor oder Zähler wird nicht vorgeschlagen oder passt nicht? Gib gern Bescheid ([Issue]({issues_url})), dann erkennt Einspeisewacht ihn künftig.\n\nVorbelegt aus Tarifwacht „{tarifwacht}“ – bitte prüfen.",
         "data": {
           "meter_entity": "Einspeisezähler",
           "price_entity": "Day-Ahead-Preis",
@@ -128,7 +128,7 @@
       },
       "sources_tarifwacht_meter": {
         "title": "Datenquellen und Regel",
-        "description": "**Regel nach deinen Angaben:** {rule}\n**Vergütung:** {rate} ct/kWh\n\n{note}\n\nEinspeisewacht liest die Entitäten unten nur.\n\nEinspeisezähler aus Tarifwacht „{tarifwacht}“ vorbelegt, Day-Ahead-Preis von EPEX Spot – bitte prüfen.",
+        "description": "**Regel nach deinen Angaben:** {rule}\n**Vergütung:** {rate} ct/kWh\n\n{note}\n\nEinspeisewacht liest die Entitäten unten nur. Dein Preissensor oder Zähler wird nicht vorgeschlagen oder passt nicht? Gib gern Bescheid ([Issue]({issues_url})), dann erkennt Einspeisewacht ihn künftig.\n\nEinspeisezähler aus Tarifwacht „{tarifwacht}“ vorbelegt, Day-Ahead-Preis von EPEX Spot – bitte prüfen.",
         "data": {
           "meter_entity": "Einspeisezähler",
           "price_entity": "Day-Ahead-Preis",
@@ -155,7 +155,7 @@
       },
       "sources_tarifwacht_price": {
         "title": "Datenquellen und Regel",
-        "description": "**Regel nach deinen Angaben:** {rule}\n**Vergütung:** {rate} ct/kWh\n\n{note}\n\nEinspeisewacht liest die Entitäten unten nur.\n\nDay-Ahead-Preis aus Tarifwacht „{tarifwacht}“ vorbelegt, Einspeisezähler aus dem Energie-Dashboard – bitte prüfen.",
+        "description": "**Regel nach deinen Angaben:** {rule}\n**Vergütung:** {rate} ct/kWh\n\n{note}\n\nEinspeisewacht liest die Entitäten unten nur. Dein Preissensor oder Zähler wird nicht vorgeschlagen oder passt nicht? Gib gern Bescheid ([Issue]({issues_url})), dann erkennt Einspeisewacht ihn künftig.\n\nDay-Ahead-Preis aus Tarifwacht „{tarifwacht}“ vorbelegt, Einspeisezähler aus dem Energie-Dashboard – bitte prüfen.",
         "data": {
           "meter_entity": "Einspeisezähler",
           "price_entity": "Day-Ahead-Preis",
@@ -182,7 +182,7 @@
       },
       "sources_tarifwacht_tip": {
         "title": "Datenquellen und Regel",
-        "description": "**Regel nach deinen Angaben:** {rule}\n**Vergütung:** {rate} ct/kWh\n\n{note}\n\nEinspeisewacht liest die Entitäten unten nur.\n\nTipp: [Tarifwacht]({tarifwacht_url}) vergleicht deine Stromtarife mit denselben Zählern. Ist es eingerichtet, übernimmt Einspeisewacht die Felder von dort.",
+        "description": "**Regel nach deinen Angaben:** {rule}\n**Vergütung:** {rate} ct/kWh\n\n{note}\n\nEinspeisewacht liest die Entitäten unten nur. Dein Preissensor oder Zähler wird nicht vorgeschlagen oder passt nicht? Gib gern Bescheid ([Issue]({issues_url})), dann erkennt Einspeisewacht ihn künftig.\n\nTipp: [Tarifwacht]({tarifwacht_url}) vergleicht deine Stromtarife mit denselben Zählern. Ist es eingerichtet, übernimmt Einspeisewacht die Felder von dort.",
         "data": {
           "meter_entity": "Einspeisezähler",
           "price_entity": "Day-Ahead-Preis",

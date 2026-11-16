@@ -80,6 +80,9 @@ HINT_TARIFWACHT = "tarifwacht"
 HINT_TARIFWACHT_METER = "tarifwacht_meter"  # meter from Tarifwacht, price EPEX
 HINT_TARIFWACHT_PRICE = "tarifwacht_price"  # price from Tarifwacht, meter energy
 HINT_TARIFWACHT_TIP = "tarifwacht_tip"
+# Where to report a price sensor or meter not found (as a placeholder:
+# translations may hold no URLs).
+ISSUES_URL = "https://github.com/einspeisewacht/integration/issues"
 HINTS_FROM_TARIFWACHT = (HINT_TARIFWACHT, HINT_TARIFWACHT_METER, HINT_TARIFWACHT_PRICE)
 # Selector translations that the flow uses as texts (overview, rule, notes),
 # under the names `overview.build` expects.
@@ -351,6 +354,8 @@ class EinspeisewachtConfigFlow(ConfigFlow, domain=DOMAIN):
         )
         auto = derived_from_config({**self._data, CONF_OVERRIDE: OVERRIDE_AUTO})
         placeholders = await self._rule_placeholders(auto)
+        # Where to report a price sensor or meter not found.
+        placeholders["issues_url"] = ISSUES_URL
         if self._hint in HINTS_FROM_TARIFWACHT:
             placeholders["tarifwacht"] = self._tarifwacht_title
         elif self._hint == HINT_TARIFWACHT_TIP:
