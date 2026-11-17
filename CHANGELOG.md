@@ -5,6 +5,7 @@
 ### Geändert
 
 - **Hinweis zum Melden in der Einrichtung.** Der Schritt „Datenquellen und Regel“ sagt jetzt, wohin man sich wenden kann, wenn der eigene Preissensor oder Zähler nicht vorgeschlagen wird oder nicht passt.
+- **README:** Hinweis aufs fehlende Icon im alten HACS-Dashboard entfernt (seit Home Assistant 2026.11 gibt es den Marketplace).
 
 ## 0.3.0 – 2026-11-13
 

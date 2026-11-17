@@ -77,8 +77,6 @@ Oder von Hand:
 1. *Einstellungen → Marketplace → Durchstöbern*, nach Einspeisewacht suchen und installieren (vor Home Assistant 2026.11: in HACS suchen und herunterladen). Home Assistant neu starten.
 2. *Einstellungen → Geräte & Dienste → Integration hinzufügen → Einspeisewacht*.
 
-Hinweis: Im alten HACS-Dashboard (vor Home Assistant 2026.11) fehlt das Icon ([HACS-Issue #5171](https://github.com/hacs/integration/issues/5171)); im Marketplace und in den Einstellungen wird es angezeigt.
-
 ## Einrichtung
 
 Drei Schritte; was nur wenige brauchen, ist eingeklappt.
