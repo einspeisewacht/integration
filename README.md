@@ -359,6 +359,8 @@ Die Langzeitstatistik der gelöschten Sensoren bleibt in Home Assistant erhalten
 
 ## Fehler melden
 
+Fragen, Ideen und Erfahrungen sind in den [Discussions](https://github.com/einspeisewacht/integration/discussions) gut aufgehoben. Für Fehler:
+
 Bitte als [Issue](https://github.com/einspeisewacht/integration/issues), mit dem **Bericht für Fehlermeldung**: *Einspeisewacht → Eintrag → Gerät → Diagnose → Bericht für Fehlermeldung* drücken. Der Bericht erscheint als Benachrichtigung (Glocke unten links) zum Kopieren. Er enthält die Versionen, Regel und Beginn, den Vergütungssatz, den Stand von Preisen, Zähler und Buchung (Zeitpunkte und Anzahlen), die Zuordnung nach Rolle (Integration, Einheit, Zustandsklasse, Zustand – beim Zähler ohne Zählerstand), die Einstellungen (Inbetriebnahme und Smart-Meter-Datum nur mit Monat), welche Sensoren unbekannt sind und warum, und offene Reparaturhinweise. Entity-IDs, der Name der Anlage und Bereiche stehen nicht darin. Lies ihn trotzdem vor dem Teilen und lösche, was du nicht zeigen willst. Sicherheitslücken bitte vertraulich, siehe [SECURITY.md](SECURITY.md).
 
 ### Was steht in der Diagnose-Datei?

@@ -359,6 +359,8 @@ Long-term statistics of the deleted sensors stay until you remove them under *De
 
 ## Reporting issues
 
+Questions, ideas and experiences are welcome in the [Discussions](https://github.com/einspeisewacht/integration/discussions). For bugs:
+
 Please open an [issue](https://github.com/einspeisewacht/integration/issues) with the **report for a bug report**: press *Einspeisewacht → entry → device → Diagnostic → Report for a bug report*. The report shows up as a notification (bell at the bottom left) to copy. It holds the versions, the rule and its start, the rate, the state of prices, meter and bookings (times and counts), the mapping by role (integration, unit, state class, state – for the meter without its reading), the settings (commissioning and smart meter date to the month only), which sensors are unknown and why, and open repair issues. Entity ids, the plant's name and areas are not in it. Still read it before sharing and delete what you would rather not show. Security issues privately, see [SECURITY.md](SECURITY.md).
 
 ### What is in the diagnostics file?
